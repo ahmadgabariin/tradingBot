@@ -215,8 +215,8 @@
 </div>
 
 <script>
-const API = 'http://localhost:8123';
-const WS  = 'ws://localhost:8123/ws';
+const API = `http://${location.hostname}:8123`;
+const WS  = `ws://${location.hostname}:8123/ws`;
 let ws;
 
 function connect() {

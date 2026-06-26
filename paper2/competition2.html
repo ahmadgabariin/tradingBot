@@ -275,8 +275,8 @@
 </div>
 
 <script>
-const WS_URL   = 'ws://localhost:8123/ws';
-const API      = 'http://localhost:8123';
+const WS_URL   = `ws://${location.hostname}:8123/ws`;
+const API      = `http://${location.hostname}:8123`;
 const PER_PAGE = 25;
 
 let ws, raceChart;

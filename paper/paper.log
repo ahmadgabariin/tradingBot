@@ -5421,3 +5421,245 @@
 2026-06-27 01:28:30.976 | INFO     | __main__:run_engine:35 -   [DONCHIAN_BREAK] trades=17 WR=64.7% PnL=$-15.55
 2026-06-27 01:28:30.976 | INFO     | __main__:run_engine:35 -   [ORB] trades=8 WR=37.5% PnL=$-21.57
 2026-06-27 01:28:30.976 | INFO     | __main__:run_engine:40 -   Next check in 5m (fastest tf=15m)
+2026-06-27 01:33:30.977 | INFO     | __main__:run_engine:31 - ── Cycle 805 | active=['KELTNER_BREAK', 'SQUEEZE_BREAK', 'DONCHIAN_BREAK', 'ORB', 'SCORE']
+2026-06-27 01:33:33.607 | INFO     | paper.engine:run_once:815 - [KELTNER_BREAK] BTCUSDT $59890.18 | HOLD rsi=0
+2026-06-27 01:33:34.272 | INFO     | paper.engine:run_once:815 - [KELTNER_BREAK] ETHUSDT $1571.77 | HOLD rsi=0
+2026-06-27 01:33:34.879 | INFO     | paper.engine:run_once:815 - [KELTNER_BREAK] SOLUSDT $71.61 | HOLD rsi=0
+2026-06-27 01:33:34.879 | INFO     | paper.engine:run_once:815 - [SQUEEZE_BREAK] BTCUSDT $59890.18 | HOLD rsi=43.3
+2026-06-27 01:33:34.879 | INFO     | paper.engine:run_once:815 - [SQUEEZE_BREAK] ETHUSDT $1571.77 | HOLD rsi=37.5
+2026-06-27 01:33:34.880 | INFO     | paper.engine:run_once:815 - [SQUEEZE_BREAK] SOLUSDT $71.61 | HOLD rsi=28.5
+2026-06-27 01:33:34.880 | INFO     | paper.engine:run_once:815 - [DONCHIAN_BREAK] BTCUSDT $59890.18 | HOLD rsi=0
+2026-06-27 01:33:34.880 | INFO     | paper.engine:run_once:815 - [DONCHIAN_BREAK] ETHUSDT $1571.77 | HOLD rsi=0
+2026-06-27 01:33:34.880 | INFO     | paper.engine:run_once:815 - [DONCHIAN_BREAK] SOLUSDT $71.61 | HOLD rsi=0
+2026-06-27 01:33:35.515 | INFO     | paper.engine:run_once:815 - [ORB] BTCUSDT $59890.18 | HOLD rsi=0
+2026-06-27 01:33:36.125 | INFO     | paper.engine:run_once:815 - [ORB] ETHUSDT $1571.77 | HOLD rsi=0
+2026-06-27 01:33:36.730 | INFO     | paper.engine:run_once:815 - [ORB] SOLUSDT $71.61 | HOLD rsi=0
+2026-06-27 01:33:37.348 | INFO     | paper.engine:run_once:815 - [SCORE] BTCUSDT $59890.18 | HOLD rsi=46.12
+2026-06-27 01:33:37.966 | INFO     | paper.engine:run_once:815 - [SCORE] ETHUSDT $1571.77 | HOLD rsi=52.22
+2026-06-27 01:33:38.587 | INFO     | paper.engine:run_once:815 - [SCORE] SOLUSDT $71.61 | HOLD rsi=61.02
+2026-06-27 01:33:38.590 | INFO     | __main__:run_engine:35 -   [SCORE] trades=11 WR=81.8% PnL=$10.34
+2026-06-27 01:33:38.590 | INFO     | __main__:run_engine:35 -   [SQUEEZE_BREAK] trades=5 WR=20.0% PnL=$-23.02
+2026-06-27 01:33:38.590 | INFO     | __main__:run_engine:35 -   [KELTNER_BREAK] trades=19 WR=57.9% PnL=$-24.25
+2026-06-27 01:33:38.590 | INFO     | __main__:run_engine:35 -   [DONCHIAN_BREAK] trades=17 WR=64.7% PnL=$-15.55
+2026-06-27 01:33:38.590 | INFO     | __main__:run_engine:35 -   [ORB] trades=8 WR=37.5% PnL=$-21.57
+2026-06-27 01:33:38.590 | INFO     | __main__:run_engine:40 -   Next check in 5m (fastest tf=15m)
+2026-06-27 01:38:38.591 | INFO     | __main__:run_engine:31 - ── Cycle 806 | active=['KELTNER_BREAK', 'SQUEEZE_BREAK', 'DONCHIAN_BREAK', 'ORB', 'SCORE']
+2026-06-27 01:38:41.076 | INFO     | paper.engine:run_once:815 - [KELTNER_BREAK] BTCUSDT $59944.23 | HOLD rsi=0
+2026-06-27 01:38:41.710 | INFO     | paper.engine:run_once:815 - [KELTNER_BREAK] ETHUSDT $1574.26 | HOLD rsi=0
+2026-06-27 01:38:42.351 | INFO     | paper.engine:run_once:815 - [KELTNER_BREAK] SOLUSDT $71.76 | HOLD rsi=0
+2026-06-27 01:38:42.352 | INFO     | paper.engine:run_once:815 - [SQUEEZE_BREAK] BTCUSDT $59944.23 | HOLD rsi=46.3
+2026-06-27 01:38:42.352 | INFO     | paper.engine:run_once:815 - [SQUEEZE_BREAK] ETHUSDT $1574.26 | HOLD rsi=40.7
+2026-06-27 01:38:42.352 | INFO     | paper.engine:run_once:815 - [SQUEEZE_BREAK] SOLUSDT $71.76 | HOLD rsi=30.6
+2026-06-27 01:38:42.352 | INFO     | paper.engine:run_once:815 - [DONCHIAN_BREAK] BTCUSDT $59944.23 | HOLD rsi=0
+2026-06-27 01:38:42.353 | INFO     | paper.engine:run_once:815 - [DONCHIAN_BREAK] ETHUSDT $1574.26 | HOLD rsi=0
+2026-06-27 01:38:42.353 | INFO     | paper.engine:run_once:815 - [DONCHIAN_BREAK] SOLUSDT $71.76 | HOLD rsi=0
+2026-06-27 01:38:43.018 | INFO     | paper.engine:run_once:815 - [ORB] BTCUSDT $59944.23 | HOLD rsi=0
+2026-06-27 01:38:43.621 | INFO     | paper.engine:run_once:815 - [ORB] ETHUSDT $1574.26 | HOLD rsi=0
+2026-06-27 01:38:44.243 | INFO     | paper.engine:run_once:815 - [ORB] SOLUSDT $71.76 | HOLD rsi=0
+2026-06-27 01:38:44.871 | INFO     | paper.engine:run_once:815 - [SCORE] BTCUSDT $59944.23 | HOLD rsi=46.71
+2026-06-27 01:38:45.506 | INFO     | paper.engine:run_once:815 - [SCORE] ETHUSDT $1574.26 | HOLD rsi=53.33
+2026-06-27 01:38:46.153 | INFO     | paper.engine:run_once:815 - [SCORE] SOLUSDT $71.76 | HOLD rsi=62.17
+2026-06-27 01:38:46.156 | INFO     | __main__:run_engine:35 -   [SCORE] trades=11 WR=81.8% PnL=$10.34
+2026-06-27 01:38:46.156 | INFO     | __main__:run_engine:35 -   [SQUEEZE_BREAK] trades=5 WR=20.0% PnL=$-23.02
+2026-06-27 01:38:46.156 | INFO     | __main__:run_engine:35 -   [KELTNER_BREAK] trades=19 WR=57.9% PnL=$-24.25
+2026-06-27 01:38:46.156 | INFO     | __main__:run_engine:35 -   [DONCHIAN_BREAK] trades=17 WR=64.7% PnL=$-15.55
+2026-06-27 01:38:46.156 | INFO     | __main__:run_engine:35 -   [ORB] trades=8 WR=37.5% PnL=$-21.57
+2026-06-27 01:38:46.157 | INFO     | __main__:run_engine:40 -   Next check in 5m (fastest tf=15m)
+2026-06-27 01:43:46.157 | INFO     | __main__:run_engine:31 - ── Cycle 807 | active=['KELTNER_BREAK', 'SQUEEZE_BREAK', 'DONCHIAN_BREAK', 'ORB', 'SCORE']
+2026-06-27 01:43:48.639 | INFO     | paper.engine:run_once:815 - [KELTNER_BREAK] BTCUSDT $59969.66 | HOLD rsi=0
+2026-06-27 01:43:49.259 | INFO     | paper.engine:run_once:815 - [KELTNER_BREAK] ETHUSDT $1576.49 | HOLD rsi=0
+2026-06-27 01:43:49.884 | INFO     | paper.engine:run_once:815 - [KELTNER_BREAK] SOLUSDT $71.87 | HOLD rsi=0
+2026-06-27 01:43:49.885 | INFO     | paper.engine:run_once:815 - [SQUEEZE_BREAK] BTCUSDT $59969.66 | HOLD rsi=47.6
+2026-06-27 01:43:49.885 | INFO     | paper.engine:run_once:815 - [SQUEEZE_BREAK] ETHUSDT $1576.49 | HOLD rsi=44.1
+2026-06-27 01:43:49.885 | INFO     | paper.engine:run_once:815 - [SQUEEZE_BREAK] SOLUSDT $71.87 | HOLD rsi=32.7
+2026-06-27 01:43:49.886 | INFO     | paper.engine:run_once:815 - [DONCHIAN_BREAK] BTCUSDT $59969.66 | HOLD rsi=0
+2026-06-27 01:43:49.886 | INFO     | paper.engine:run_once:815 - [DONCHIAN_BREAK] ETHUSDT $1576.49 | HOLD rsi=0
+2026-06-27 01:43:49.886 | INFO     | paper.engine:run_once:815 - [DONCHIAN_BREAK] SOLUSDT $71.87 | HOLD rsi=0
+2026-06-27 01:43:50.565 | INFO     | paper.engine:run_once:815 - [ORB] BTCUSDT $59969.66 | HOLD rsi=0
+2026-06-27 01:43:51.260 | INFO     | paper.engine:run_once:815 - [ORB] ETHUSDT $1576.49 | HOLD rsi=0
+2026-06-27 01:43:51.979 | INFO     | paper.engine:run_once:815 - [ORB] SOLUSDT $71.87 | HOLD rsi=0
+2026-06-27 01:43:52.634 | INFO     | paper.engine:run_once:815 - [SCORE] BTCUSDT $59969.66 | HOLD rsi=47.0
+2026-06-27 01:43:53.288 | INFO     | paper.engine:run_once:815 - [SCORE] ETHUSDT $1576.49 | HOLD rsi=54.26
+2026-06-27 01:43:53.899 | INFO     | paper.engine:run_once:815 - [SCORE] SOLUSDT $71.87 | HOLD rsi=63.18
+2026-06-27 01:43:53.901 | INFO     | __main__:run_engine:35 -   [SCORE] trades=11 WR=81.8% PnL=$10.34
+2026-06-27 01:43:53.901 | INFO     | __main__:run_engine:35 -   [SQUEEZE_BREAK] trades=5 WR=20.0% PnL=$-23.02
+2026-06-27 01:43:53.901 | INFO     | __main__:run_engine:35 -   [KELTNER_BREAK] trades=19 WR=57.9% PnL=$-24.25
+2026-06-27 01:43:53.901 | INFO     | __main__:run_engine:35 -   [DONCHIAN_BREAK] trades=17 WR=64.7% PnL=$-15.55
+2026-06-27 01:43:53.901 | INFO     | __main__:run_engine:35 -   [ORB] trades=8 WR=37.5% PnL=$-21.57
+2026-06-27 01:43:53.901 | INFO     | __main__:run_engine:40 -   Next check in 5m (fastest tf=15m)
+2026-06-27 01:48:53.902 | INFO     | __main__:run_engine:31 - ── Cycle 808 | active=['KELTNER_BREAK', 'SQUEEZE_BREAK', 'DONCHIAN_BREAK', 'ORB', 'SCORE']
+2026-06-27 01:48:56.391 | INFO     | paper.engine:run_once:815 - [KELTNER_BREAK] BTCUSDT $59966.00 | HOLD rsi=0
+2026-06-27 01:48:56.992 | INFO     | paper.engine:run_once:815 - [KELTNER_BREAK] ETHUSDT $1576.45 | HOLD rsi=0
+2026-06-27 01:48:57.652 | INFO     | paper.engine:run_once:815 - [KELTNER_BREAK] SOLUSDT $71.84 | HOLD rsi=0
+2026-06-27 01:48:57.652 | INFO     | paper.engine:run_once:815 - [SQUEEZE_BREAK] BTCUSDT $59966.00 | HOLD rsi=51.5
+2026-06-27 01:48:57.653 | INFO     | paper.engine:run_once:815 - [SQUEEZE_BREAK] ETHUSDT $1576.45 | HOLD rsi=47.0
+2026-06-27 01:48:57.653 | INFO     | paper.engine:run_once:815 - [SQUEEZE_BREAK] SOLUSDT $71.84 | HOLD rsi=30.5
+2026-06-27 01:48:57.653 | INFO     | paper.engine:run_once:815 - [DONCHIAN_BREAK] BTCUSDT $59966.00 | HOLD rsi=0
+2026-06-27 01:48:57.653 | INFO     | paper.engine:run_once:815 - [DONCHIAN_BREAK] ETHUSDT $1576.45 | HOLD rsi=0
+2026-06-27 01:48:57.653 | INFO     | paper.engine:run_once:815 - [DONCHIAN_BREAK] SOLUSDT $71.84 | HOLD rsi=0
+2026-06-27 01:48:58.309 | INFO     | paper.engine:run_once:815 - [ORB] BTCUSDT $59966.00 | HOLD rsi=0
+2026-06-27 01:48:58.909 | INFO     | paper.engine:run_once:815 - [ORB] ETHUSDT $1576.45 | HOLD rsi=0
+2026-06-27 01:48:59.532 | INFO     | paper.engine:run_once:815 - [ORB] SOLUSDT $71.84 | HOLD rsi=0
+2026-06-27 01:49:00.147 | INFO     | paper.engine:run_once:815 - [SCORE] BTCUSDT $59966.00 | HOLD rsi=46.96
+2026-06-27 01:49:00.761 | INFO     | paper.engine:run_once:815 - [SCORE] ETHUSDT $1576.45 | HOLD rsi=54.25
+2026-06-27 01:49:01.365 | INFO     | paper.engine:run_once:815 - [SCORE] SOLUSDT $71.84 | HOLD rsi=62.84
+2026-06-27 01:49:01.368 | INFO     | __main__:run_engine:35 -   [SCORE] trades=11 WR=81.8% PnL=$10.34
+2026-06-27 01:49:01.368 | INFO     | __main__:run_engine:35 -   [SQUEEZE_BREAK] trades=5 WR=20.0% PnL=$-23.02
+2026-06-27 01:49:01.368 | INFO     | __main__:run_engine:35 -   [KELTNER_BREAK] trades=19 WR=57.9% PnL=$-24.25
+2026-06-27 01:49:01.368 | INFO     | __main__:run_engine:35 -   [DONCHIAN_BREAK] trades=17 WR=64.7% PnL=$-15.55
+2026-06-27 01:49:01.368 | INFO     | __main__:run_engine:35 -   [ORB] trades=8 WR=37.5% PnL=$-21.57
+2026-06-27 01:49:01.368 | INFO     | __main__:run_engine:40 -   Next check in 5m (fastest tf=15m)
+2026-06-27 01:54:01.368 | INFO     | __main__:run_engine:31 - ── Cycle 809 | active=['KELTNER_BREAK', 'SQUEEZE_BREAK', 'DONCHIAN_BREAK', 'ORB', 'SCORE']
+2026-06-27 01:54:04.085 | INFO     | paper.engine:run_once:815 - [KELTNER_BREAK] BTCUSDT $59993.99 | HOLD rsi=0
+2026-06-27 01:54:04.713 | INFO     | paper.engine:run_once:815 - [KELTNER_BREAK] ETHUSDT $1576.71 | HOLD rsi=0
+2026-06-27 01:54:05.352 | INFO     | paper.engine:run_once:815 - [KELTNER_BREAK] SOLUSDT $71.77 | HOLD rsi=0
+2026-06-27 01:54:05.352 | INFO     | paper.engine:run_once:815 - [SQUEEZE_BREAK] BTCUSDT $59993.99 | HOLD rsi=53.0
+2026-06-27 01:54:05.353 | INFO     | paper.engine:run_once:815 - [SQUEEZE_BREAK] ETHUSDT $1576.71 | HOLD rsi=47.6
+2026-06-27 01:54:05.353 | INFO     | paper.engine:run_once:815 - [SQUEEZE_BREAK] SOLUSDT $71.77 | HOLD rsi=30.0
+2026-06-27 01:54:05.353 | INFO     | paper.engine:run_once:815 - [DONCHIAN_BREAK] BTCUSDT $59993.99 | HOLD rsi=0
+2026-06-27 01:54:05.353 | INFO     | paper.engine:run_once:815 - [DONCHIAN_BREAK] ETHUSDT $1576.71 | HOLD rsi=0
+2026-06-27 01:54:05.353 | INFO     | paper.engine:run_once:815 - [DONCHIAN_BREAK] SOLUSDT $71.77 | HOLD rsi=0
+2026-06-27 01:54:06.007 | INFO     | paper.engine:run_once:815 - [ORB] BTCUSDT $59993.99 | HOLD rsi=0
+2026-06-27 01:54:06.640 | INFO     | paper.engine:run_once:815 - [ORB] ETHUSDT $1576.71 | HOLD rsi=0
+2026-06-27 01:54:07.259 | INFO     | paper.engine:run_once:815 - [ORB] SOLUSDT $71.77 | HOLD rsi=0
+2026-06-27 01:54:07.875 | INFO     | paper.engine:run_once:815 - [SCORE] BTCUSDT $59993.99 | HOLD rsi=47.35
+2026-06-27 01:54:08.505 | INFO     | paper.engine:run_once:815 - [SCORE] ETHUSDT $1576.71 | HOLD rsi=54.39
+2026-06-27 01:54:09.117 | INFO     | paper.engine:run_once:815 - [SCORE] SOLUSDT $71.77 | HOLD rsi=62.25
+2026-06-27 01:54:09.120 | INFO     | __main__:run_engine:35 -   [SCORE] trades=11 WR=81.8% PnL=$10.34
+2026-06-27 01:54:09.120 | INFO     | __main__:run_engine:35 -   [SQUEEZE_BREAK] trades=5 WR=20.0% PnL=$-23.02
+2026-06-27 01:54:09.120 | INFO     | __main__:run_engine:35 -   [KELTNER_BREAK] trades=19 WR=57.9% PnL=$-24.25
+2026-06-27 01:54:09.121 | INFO     | __main__:run_engine:35 -   [DONCHIAN_BREAK] trades=17 WR=64.7% PnL=$-15.55
+2026-06-27 01:54:09.121 | INFO     | __main__:run_engine:35 -   [ORB] trades=8 WR=37.5% PnL=$-21.57
+2026-06-27 01:54:09.121 | INFO     | __main__:run_engine:40 -   Next check in 5m (fastest tf=15m)
+2026-06-27 01:59:09.122 | INFO     | __main__:run_engine:31 - ── Cycle 810 | active=['KELTNER_BREAK', 'SQUEEZE_BREAK', 'DONCHIAN_BREAK', 'ORB', 'SCORE']
+2026-06-27 01:59:11.742 | INFO     | paper.engine:run_once:815 - [KELTNER_BREAK] BTCUSDT $60062.01 | HOLD rsi=0
+2026-06-27 01:59:12.369 | INFO     | paper.engine:run_once:815 - [KELTNER_BREAK] ETHUSDT $1577.76 | HOLD rsi=0
+2026-06-27 01:59:13.156 | INFO     | paper.engine:run_once:815 - [KELTNER_BREAK] SOLUSDT $71.82 | HOLD rsi=0
+2026-06-27 01:59:13.157 | INFO     | paper.engine:run_once:815 - [SQUEEZE_BREAK] BTCUSDT $60062.01 | HOLD rsi=55.6
+2026-06-27 01:59:13.157 | INFO     | paper.engine:run_once:815 - [SQUEEZE_BREAK] ETHUSDT $1577.76 | HOLD rsi=48.9
+2026-06-27 01:59:13.158 | INFO     | paper.engine:run_once:815 - [SQUEEZE_BREAK] SOLUSDT $71.82 | HOLD rsi=30.4
+2026-06-27 01:59:13.158 | INFO     | paper.engine:run_once:815 - [DONCHIAN_BREAK] BTCUSDT $60062.01 | HOLD rsi=0
+2026-06-27 01:59:13.158 | INFO     | paper.engine:run_once:815 - [DONCHIAN_BREAK] ETHUSDT $1577.76 | HOLD rsi=0
+2026-06-27 01:59:13.158 | INFO     | paper.engine:run_once:815 - [DONCHIAN_BREAK] SOLUSDT $71.82 | HOLD rsi=0
+2026-06-27 01:59:13.798 | INFO     | paper.engine:run_once:815 - [ORB] BTCUSDT $60062.01 | HOLD rsi=0
+2026-06-27 01:59:14.441 | INFO     | paper.engine:run_once:815 - [ORB] ETHUSDT $1577.76 | HOLD rsi=0
+2026-06-27 01:59:15.083 | INFO     | paper.engine:run_once:815 - [ORB] SOLUSDT $71.82 | HOLD rsi=0
+2026-06-27 01:59:15.729 | INFO     | paper.engine:run_once:815 - [SCORE] BTCUSDT $60062.01 | HOLD rsi=47.98
+2026-06-27 01:59:16.373 | INFO     | paper.engine:run_once:815 - [SCORE] ETHUSDT $1577.76 | HOLD rsi=54.7
+2026-06-27 01:59:17.005 | INFO     | paper.engine:run_once:815 - [SCORE] SOLUSDT $71.82 | HOLD rsi=62.67
+2026-06-27 01:59:17.008 | INFO     | __main__:run_engine:35 -   [SCORE] trades=11 WR=81.8% PnL=$10.34
+2026-06-27 01:59:17.008 | INFO     | __main__:run_engine:35 -   [SQUEEZE_BREAK] trades=5 WR=20.0% PnL=$-23.02
+2026-06-27 01:59:17.008 | INFO     | __main__:run_engine:35 -   [KELTNER_BREAK] trades=19 WR=57.9% PnL=$-24.25
+2026-06-27 01:59:17.008 | INFO     | __main__:run_engine:35 -   [DONCHIAN_BREAK] trades=17 WR=64.7% PnL=$-15.55
+2026-06-27 01:59:17.008 | INFO     | __main__:run_engine:35 -   [ORB] trades=8 WR=37.5% PnL=$-21.57
+2026-06-27 01:59:17.009 | INFO     | __main__:run_engine:40 -   Next check in 5m (fastest tf=15m)
+2026-06-27 02:04:17.010 | INFO     | __main__:run_engine:31 - ── Cycle 811 | active=['KELTNER_BREAK', 'SQUEEZE_BREAK', 'DONCHIAN_BREAK', 'ORB', 'SCORE']
+2026-06-27 02:04:19.520 | INFO     | paper.engine:run_once:815 - [KELTNER_BREAK] BTCUSDT $60117.64 | HOLD rsi=0
+2026-06-27 02:04:20.154 | INFO     | paper.engine:run_once:815 - [KELTNER_BREAK] ETHUSDT $1580.17 | HOLD rsi=0
+2026-06-27 02:04:20.797 | INFO     | paper.engine:run_once:815 - [KELTNER_BREAK] SOLUSDT $71.96 | HOLD rsi=0
+2026-06-27 02:04:20.797 | INFO     | paper.engine:run_once:815 - [SQUEEZE_BREAK] BTCUSDT $60117.64 | HOLD rsi=61.1
+2026-06-27 02:04:20.797 | INFO     | paper.engine:run_once:815 - [SQUEEZE_BREAK] ETHUSDT $1580.17 | HOLD rsi=51.7
+2026-06-27 02:04:20.798 | INFO     | paper.engine:run_once:815 - [SQUEEZE_BREAK] SOLUSDT $71.96 | HOLD rsi=25.6
+2026-06-27 02:04:20.798 | INFO     | paper.engine:run_once:815 - [DONCHIAN_BREAK] BTCUSDT $60117.64 | HOLD rsi=0
+2026-06-27 02:04:20.798 | INFO     | paper.engine:run_once:815 - [DONCHIAN_BREAK] ETHUSDT $1580.17 | HOLD rsi=0
+2026-06-27 02:04:20.798 | INFO     | paper.engine:run_once:815 - [DONCHIAN_BREAK] SOLUSDT $71.96 | HOLD rsi=0
+2026-06-27 02:04:21.445 | INFO     | paper.engine:run_once:815 - [ORB] BTCUSDT $60117.64 | HOLD rsi=0
+2026-06-27 02:04:22.059 | INFO     | paper.engine:run_once:815 - [ORB] ETHUSDT $1580.17 | HOLD rsi=0
+2026-06-27 02:04:22.684 | INFO     | paper.engine:run_once:815 - [ORB] SOLUSDT $71.96 | HOLD rsi=0
+2026-06-27 02:04:23.352 | INFO     | paper.engine:run_once:815 - [SCORE] BTCUSDT $60117.64 | HOLD rsi=54.42
+2026-06-27 02:04:23.981 | INFO     | paper.engine:run_once:815 - [SCORE] ETHUSDT $1580.17 | HOLD rsi=62.47
+2026-06-27 02:04:24.618 | INFO     | paper.engine:run_once:815 - [SCORE] SOLUSDT $71.96 | HOLD rsi=72.23
+2026-06-27 02:04:24.621 | INFO     | __main__:run_engine:35 -   [SCORE] trades=11 WR=81.8% PnL=$10.34
+2026-06-27 02:04:24.621 | INFO     | __main__:run_engine:35 -   [SQUEEZE_BREAK] trades=5 WR=20.0% PnL=$-23.02
+2026-06-27 02:04:24.621 | INFO     | __main__:run_engine:35 -   [KELTNER_BREAK] trades=19 WR=57.9% PnL=$-24.25
+2026-06-27 02:04:24.621 | INFO     | __main__:run_engine:35 -   [DONCHIAN_BREAK] trades=17 WR=64.7% PnL=$-15.55
+2026-06-27 02:04:24.621 | INFO     | __main__:run_engine:35 -   [ORB] trades=8 WR=37.5% PnL=$-21.57
+2026-06-27 02:04:24.621 | INFO     | __main__:run_engine:40 -   Next check in 5m (fastest tf=15m)
+2026-06-27 02:09:24.623 | INFO     | __main__:run_engine:31 - ── Cycle 812 | active=['KELTNER_BREAK', 'SQUEEZE_BREAK', 'DONCHIAN_BREAK', 'ORB', 'SCORE']
+2026-06-27 02:09:27.103 | INFO     | paper.engine:run_once:815 - [KELTNER_BREAK] BTCUSDT $60066.00 | HOLD rsi=0
+2026-06-27 02:09:27.721 | INFO     | paper.engine:run_once:815 - [KELTNER_BREAK] ETHUSDT $1578.25 | HOLD rsi=0
+2026-06-27 02:09:28.377 | INFO     | paper.engine:run_once:815 - [KELTNER_BREAK] SOLUSDT $71.84 | HOLD rsi=0
+2026-06-27 02:09:28.377 | INFO     | paper.engine:run_once:815 - [SQUEEZE_BREAK] BTCUSDT $60066.00 | HOLD rsi=59.1
+2026-06-27 02:09:28.377 | INFO     | paper.engine:run_once:815 - [SQUEEZE_BREAK] ETHUSDT $1578.25 | HOLD rsi=49.3
+2026-06-27 02:09:28.378 | INFO     | paper.engine:run_once:815 - [SQUEEZE_BREAK] SOLUSDT $71.84 | HOLD rsi=23.0
+2026-06-27 02:09:28.378 | INFO     | paper.engine:run_once:815 - [DONCHIAN_BREAK] BTCUSDT $60066.00 | HOLD rsi=0
+2026-06-27 02:09:28.378 | INFO     | paper.engine:run_once:815 - [DONCHIAN_BREAK] ETHUSDT $1578.25 | HOLD rsi=0
+2026-06-27 02:09:28.378 | INFO     | paper.engine:run_once:815 - [DONCHIAN_BREAK] SOLUSDT $71.84 | HOLD rsi=0
+2026-06-27 02:09:29.031 | INFO     | paper.engine:run_once:815 - [ORB] BTCUSDT $60066.00 | HOLD rsi=0
+2026-06-27 02:09:29.704 | INFO     | paper.engine:run_once:815 - [ORB] ETHUSDT $1578.25 | HOLD rsi=0
+2026-06-27 02:09:30.390 | INFO     | paper.engine:run_once:815 - [ORB] SOLUSDT $71.84 | HOLD rsi=0
+2026-06-27 02:09:31.122 | INFO     | paper.engine:run_once:815 - [SCORE] BTCUSDT $60066.00 | HOLD rsi=53.94
+2026-06-27 02:09:31.738 | INFO     | paper.engine:run_once:815 - [SCORE] ETHUSDT $1578.25 | HOLD rsi=61.89
+2026-06-27 02:09:32.371 | INFO     | paper.engine:run_once:815 - [SCORE] SOLUSDT $71.84 | HOLD rsi=71.8
+2026-06-27 02:09:32.373 | INFO     | __main__:run_engine:35 -   [SCORE] trades=11 WR=81.8% PnL=$10.34
+2026-06-27 02:09:32.374 | INFO     | __main__:run_engine:35 -   [SQUEEZE_BREAK] trades=5 WR=20.0% PnL=$-23.02
+2026-06-27 02:09:32.374 | INFO     | __main__:run_engine:35 -   [KELTNER_BREAK] trades=19 WR=57.9% PnL=$-24.25
+2026-06-27 02:09:32.374 | INFO     | __main__:run_engine:35 -   [DONCHIAN_BREAK] trades=17 WR=64.7% PnL=$-15.55
+2026-06-27 02:09:32.374 | INFO     | __main__:run_engine:35 -   [ORB] trades=8 WR=37.5% PnL=$-21.57
+2026-06-27 02:09:32.374 | INFO     | __main__:run_engine:40 -   Next check in 5m (fastest tf=15m)
+2026-06-27 02:14:32.374 | INFO     | __main__:run_engine:31 - ── Cycle 813 | active=['KELTNER_BREAK', 'SQUEEZE_BREAK', 'DONCHIAN_BREAK', 'ORB', 'SCORE']
+2026-06-27 02:14:34.909 | INFO     | paper.engine:run_once:815 - [KELTNER_BREAK] BTCUSDT $60069.99 | HOLD rsi=0
+2026-06-27 02:14:35.534 | INFO     | paper.engine:run_once:815 - [KELTNER_BREAK] ETHUSDT $1578.77 | HOLD rsi=0
+2026-06-27 02:14:36.221 | INFO     | paper.engine:run_once:815 - [KELTNER_BREAK] SOLUSDT $71.89 | HOLD rsi=0
+2026-06-27 02:14:36.221 | INFO     | paper.engine:run_once:815 - [SQUEEZE_BREAK] BTCUSDT $60069.99 | HOLD rsi=59.2
+2026-06-27 02:14:36.221 | INFO     | paper.engine:run_once:815 - [SQUEEZE_BREAK] ETHUSDT $1578.77 | HOLD rsi=50.0
+2026-06-27 02:14:36.221 | INFO     | paper.engine:run_once:815 - [SQUEEZE_BREAK] SOLUSDT $71.89 | HOLD rsi=24.3
+2026-06-27 02:14:36.221 | INFO     | paper.engine:run_once:815 - [DONCHIAN_BREAK] BTCUSDT $60069.99 | HOLD rsi=0
+2026-06-27 02:14:36.221 | INFO     | paper.engine:run_once:815 - [DONCHIAN_BREAK] ETHUSDT $1578.77 | HOLD rsi=0
+2026-06-27 02:14:36.221 | INFO     | paper.engine:run_once:815 - [DONCHIAN_BREAK] SOLUSDT $71.89 | HOLD rsi=0
+2026-06-27 02:14:36.838 | INFO     | paper.engine:run_once:815 - [ORB] BTCUSDT $60069.99 | HOLD rsi=0
+2026-06-27 02:14:37.463 | INFO     | paper.engine:run_once:815 - [ORB] ETHUSDT $1578.77 | HOLD rsi=0
+2026-06-27 02:14:38.120 | INFO     | paper.engine:run_once:815 - [ORB] SOLUSDT $71.89 | HOLD rsi=0
+2026-06-27 02:14:38.745 | INFO     | paper.engine:run_once:815 - [SCORE] BTCUSDT $60069.99 | HOLD rsi=53.98
+2026-06-27 02:14:39.379 | INFO     | paper.engine:run_once:815 - [SCORE] ETHUSDT $1578.77 | HOLD rsi=62.07
+2026-06-27 02:14:39.990 | INFO     | paper.engine:run_once:815 - [SCORE] SOLUSDT $71.89 | HOLD rsi=72.1
+2026-06-27 02:14:39.992 | INFO     | __main__:run_engine:35 -   [SCORE] trades=11 WR=81.8% PnL=$10.34
+2026-06-27 02:14:39.992 | INFO     | __main__:run_engine:35 -   [SQUEEZE_BREAK] trades=5 WR=20.0% PnL=$-23.02
+2026-06-27 02:14:39.993 | INFO     | __main__:run_engine:35 -   [KELTNER_BREAK] trades=19 WR=57.9% PnL=$-24.25
+2026-06-27 02:14:39.993 | INFO     | __main__:run_engine:35 -   [DONCHIAN_BREAK] trades=17 WR=64.7% PnL=$-15.55
+2026-06-27 02:14:39.993 | INFO     | __main__:run_engine:35 -   [ORB] trades=8 WR=37.5% PnL=$-21.57
+2026-06-27 02:14:39.993 | INFO     | __main__:run_engine:40 -   Next check in 5m (fastest tf=15m)
+2026-06-27 02:19:39.996 | INFO     | __main__:run_engine:31 - ── Cycle 814 | active=['KELTNER_BREAK', 'SQUEEZE_BREAK', 'DONCHIAN_BREAK', 'ORB', 'SCORE']
+2026-06-27 02:19:42.628 | INFO     | paper.engine:run_once:815 - [KELTNER_BREAK] BTCUSDT $59994.00 | HOLD rsi=0
+2026-06-27 02:19:43.318 | INFO     | paper.engine:run_once:815 - [KELTNER_BREAK] ETHUSDT $1577.01 | HOLD rsi=0
+2026-06-27 02:19:43.992 | INFO     | paper.engine:run_once:815 - [KELTNER_BREAK] SOLUSDT $71.76 | HOLD rsi=0
+2026-06-27 02:19:43.993 | INFO     | paper.engine:run_once:815 - [SQUEEZE_BREAK] BTCUSDT $59994.00 | HOLD rsi=62.2
+2026-06-27 02:19:43.993 | INFO     | paper.engine:run_once:815 - [SQUEEZE_BREAK] ETHUSDT $1577.01 | HOLD rsi=53.5
+2026-06-27 02:19:43.993 | INFO     | paper.engine:run_once:815 - [SQUEEZE_BREAK] SOLUSDT $71.76 | HOLD rsi=29.1
+2026-06-27 02:19:43.993 | INFO     | paper.engine:run_once:815 - [DONCHIAN_BREAK] BTCUSDT $59994.00 | HOLD rsi=0
+2026-06-27 02:19:43.993 | INFO     | paper.engine:run_once:815 - [DONCHIAN_BREAK] ETHUSDT $1577.01 | HOLD rsi=0
+2026-06-27 02:19:43.993 | INFO     | paper.engine:run_once:815 - [DONCHIAN_BREAK] SOLUSDT $71.76 | HOLD rsi=0
+2026-06-27 02:19:44.650 | INFO     | paper.engine:run_once:815 - [ORB] BTCUSDT $59994.00 | HOLD rsi=0
+2026-06-27 02:19:45.325 | INFO     | paper.engine:run_once:815 - [ORB] ETHUSDT $1577.01 | HOLD rsi=0
+2026-06-27 02:19:45.964 | INFO     | paper.engine:run_once:815 - [ORB] SOLUSDT $71.76 | HOLD rsi=0
+2026-06-27 02:19:46.607 | INFO     | paper.engine:run_once:815 - [SCORE] BTCUSDT $59994.00 | HOLD rsi=53.05
+2026-06-27 02:19:47.232 | INFO     | paper.engine:run_once:815 - [SCORE] ETHUSDT $1577.01 | HOLD rsi=61.24
+2026-06-27 02:19:47.840 | INFO     | paper.engine:run_once:815 - [SCORE] SOLUSDT $71.76 | HOLD rsi=70.99
+2026-06-27 02:19:47.843 | INFO     | __main__:run_engine:35 -   [SCORE] trades=11 WR=81.8% PnL=$10.34
+2026-06-27 02:19:47.843 | INFO     | __main__:run_engine:35 -   [SQUEEZE_BREAK] trades=5 WR=20.0% PnL=$-23.02
+2026-06-27 02:19:47.843 | INFO     | __main__:run_engine:35 -   [KELTNER_BREAK] trades=19 WR=57.9% PnL=$-24.25
+2026-06-27 02:19:47.843 | INFO     | __main__:run_engine:35 -   [DONCHIAN_BREAK] trades=17 WR=64.7% PnL=$-15.55
+2026-06-27 02:19:47.843 | INFO     | __main__:run_engine:35 -   [ORB] trades=8 WR=37.5% PnL=$-21.57
+2026-06-27 02:19:47.843 | INFO     | __main__:run_engine:40 -   Next check in 5m (fastest tf=15m)
+2026-06-27 02:24:47.844 | INFO     | __main__:run_engine:31 - ── Cycle 815 | active=['KELTNER_BREAK', 'SQUEEZE_BREAK', 'DONCHIAN_BREAK', 'ORB', 'SCORE']
+2026-06-27 02:24:50.622 | INFO     | paper.engine:run_once:815 - [KELTNER_BREAK] BTCUSDT $60062.20 | HOLD rsi=0
+2026-06-27 02:24:51.250 | INFO     | paper.engine:run_once:815 - [KELTNER_BREAK] ETHUSDT $1577.81 | HOLD rsi=0
+2026-06-27 02:24:51.874 | INFO     | paper.engine:run_once:815 - [KELTNER_BREAK] SOLUSDT $71.84 | HOLD rsi=0
+2026-06-27 02:24:51.875 | INFO     | paper.engine:run_once:815 - [SQUEEZE_BREAK] BTCUSDT $60062.20 | HOLD rsi=66.3
+2026-06-27 02:24:51.875 | INFO     | paper.engine:run_once:815 - [SQUEEZE_BREAK] ETHUSDT $1577.81 | HOLD rsi=54.6
+2026-06-27 02:24:51.875 | INFO     | paper.engine:run_once:815 - [SQUEEZE_BREAK] SOLUSDT $71.84 | HOLD rsi=29.8
+2026-06-27 02:24:51.875 | INFO     | paper.engine:run_once:815 - [DONCHIAN_BREAK] BTCUSDT $60062.20 | HOLD rsi=0
+2026-06-27 02:24:51.875 | INFO     | paper.engine:run_once:815 - [DONCHIAN_BREAK] ETHUSDT $1577.81 | HOLD rsi=0
+2026-06-27 02:24:51.875 | INFO     | paper.engine:run_once:815 - [DONCHIAN_BREAK] SOLUSDT $71.84 | HOLD rsi=0
+2026-06-27 02:24:52.507 | INFO     | paper.engine:run_once:815 - [ORB] BTCUSDT $60062.20 | HOLD rsi=0
+2026-06-27 02:24:53.119 | INFO     | paper.engine:run_once:815 - [ORB] ETHUSDT $1577.81 | HOLD rsi=0
+2026-06-27 02:24:53.751 | INFO     | paper.engine:run_once:815 - [ORB] SOLUSDT $71.84 | HOLD rsi=0
+2026-06-27 02:24:54.371 | INFO     | paper.engine:run_once:815 - [SCORE] BTCUSDT $60062.20 | HOLD rsi=53.83
+2026-06-27 02:24:54.982 | INFO     | paper.engine:run_once:815 - [SCORE] ETHUSDT $1577.81 | HOLD rsi=61.65
+2026-06-27 02:24:55.609 | INFO     | paper.engine:run_once:815 - [SCORE] SOLUSDT $71.84 | HOLD rsi=71.8
+2026-06-27 02:24:55.612 | INFO     | __main__:run_engine:35 -   [SCORE] trades=11 WR=81.8% PnL=$10.34
+2026-06-27 02:24:55.615 | INFO     | __main__:run_engine:35 -   [SQUEEZE_BREAK] trades=5 WR=20.0% PnL=$-23.02
+2026-06-27 02:24:55.615 | INFO     | __main__:run_engine:35 -   [KELTNER_BREAK] trades=19 WR=57.9% PnL=$-24.25
+2026-06-27 02:24:55.616 | INFO     | __main__:run_engine:35 -   [DONCHIAN_BREAK] trades=17 WR=64.7% PnL=$-15.55
+2026-06-27 02:24:55.616 | INFO     | __main__:run_engine:35 -   [ORB] trades=8 WR=37.5% PnL=$-21.57
+2026-06-27 02:24:55.616 | INFO     | __main__:run_engine:40 -   Next check in 5m (fastest tf=15m)
