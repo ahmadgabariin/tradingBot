@@ -1,0 +1,231 @@
+FAST MEGA BACKTEST — 2026-06-20 11:26:15
+================================================================================
+
+Strategies: 33 | Timeframes: 5 | SL/TP: 16 | Pairs: ['BTCUSDT', 'ETHUSDT', 'SOLUSDT']
+Max candles per pair/TF: 3000
+
+Fetching data...
+  BTCUSDT 5m: 3000 candles
+  ETHUSDT 5m: 3000 candles
+  SOLUSDT 5m: 3000 candles
+  BTCUSDT 15m: 3000 candles
+  ETHUSDT 15m: 3000 candles
+  SOLUSDT 15m: 3000 candles
+  BTCUSDT 1h: 3000 candles
+  ETHUSDT 1h: 3000 candles
+  SOLUSDT 1h: 3000 candles
+  BTCUSDT 4h: 3000 candles
+  ETHUSDT 4h: 3000 candles
+  SOLUSDT 4h: 3000 candles
+  BTCUSDT 1d: 3000 candles
+  ETHUSDT 1d: 3000 candles
+  SOLUSDT 1d: 2140 candles
+
+Precomputing indicators...
+  BTCUSDT 5m: done
+  ETHUSDT 5m: done
+  SOLUSDT 5m: done
+  BTCUSDT 15m: done
+  ETHUSDT 15m: done
+  SOLUSDT 15m: done
+  BTCUSDT 1h: done
+  ETHUSDT 1h: done
+  SOLUSDT 1h: done
+  BTCUSDT 4h: done
+  ETHUSDT 4h: done
+  SOLUSDT 4h: done
+  BTCUSDT 1d: done
+  ETHUSDT 1d: done
+  SOLUSDT 1d: done
+
+Running backtests...
+
+
+======================================================================
+TIMEFRAME: 5m
+======================================================================
+
+TOP 10 for 5m:
+  Strategy                     SL   TP |     N    WR%     EV%
+  ------------------------------------------------------------
+  RSI_Oversold                0.4  0.8 |     9   88.9%  +0.667%
+  RSI_Oversold                0.5  1.0 |     7   85.7%  +0.786%
+  RSI_Oversold                0.5  1.5 |     6   83.3%  +1.167%
+  RSI_Oversold                0.7  1.4 |     6   83.3%  +1.050%
+  RSI_Oversold                0.4  1.2 |     6   83.3%  +0.933%
+  RSI_Oversold                0.6  1.2 |     6   83.3%  +0.900%
+  RSI_Oversold                0.3  0.6 |    15   73.3%  +0.360%
+  RSI_Oversold_Strict         0.4  0.8 |    14   64.3%  +0.371%
+  RSI_Oversold                0.3  0.9 |    11   63.6%  +0.464%
+  RSI_Oversold                0.3  1.2 |     9   55.6%  +0.533%
+
+======================================================================
+TIMEFRAME: 15m
+======================================================================
+
+TOP 10 for 15m:
+  Strategy                     SL   TP |     N    WR%     EV%
+  ------------------------------------------------------------
+  Squeeze_Break               0.8  1.6 |    28   57.1%  +0.571%
+  Golden_Cross                0.4  0.8 |    19   52.6%  +0.232%
+  RSI_Oversold_Strict         1.2  2.4 |     6   50.0%  +0.600%
+  RSI_Oversold_Strict         1.0  2.0 |     6   50.0%  +0.500%
+  Squeeze_Break               0.7  1.4 |    28   50.0%  +0.350%
+  Squeeze_Break               0.4  0.8 |    36   47.2%  +0.167%
+  Squeeze_Break               1.0  2.0 |    24   45.8%  +0.375%
+  Squeeze_Break               0.6  1.2 |    31   45.2%  +0.213%
+  RSI_Oversold                0.6  1.2 |     9   44.4%  +0.200%
+  Squeeze_Break               0.5  1.0 |    34   44.1%  +0.162%
+
+======================================================================
+TIMEFRAME: 1h
+======================================================================
+
+TOP 10 for 1h:
+  Strategy                     SL   TP |     N    WR%     EV%
+  ------------------------------------------------------------
+  EMA_Cross_Filtered          0.8  1.6 |    85   43.5%  +0.245%
+  Golden_Cross                0.5  1.0 |    28   42.9%  +0.143%
+  EMA_Cross_Filtered          1.0  2.0 |    82   42.7%  +0.280%
+  MACD_Cross_Filtered         0.8  1.6 |    68   42.6%  +0.224%
+  MACD_Cross_Filtered         0.6  1.2 |    68   42.6%  +0.168%
+  EMA_Cross_Filtered          0.6  1.2 |    86   41.9%  +0.153%
+  MACD_Cross_Filtered         0.7  1.4 |    68   41.2%  +0.165%
+  EMA_Cross_Filtered          1.5  3.0 |    74   40.5%  +0.324%
+  Price_EMA200_Cross          0.7  1.4 |    74   40.5%  +0.151%
+  EMA_Cross_Filtered          1.2  2.4 |    79   40.5%  +0.258%
+
+======================================================================
+TIMEFRAME: 4h
+======================================================================
+
+TOP 10 for 4h:
+  Strategy                     SL   TP |     N    WR%     EV%
+  ------------------------------------------------------------
+  RSI_Oversold                1.0  3.0 |     9   55.6%  +1.222%
+  RSI_Oversold                1.5  3.0 |     9   55.6%  +1.000%
+  RSI_Oversold                0.8  2.4 |     9   55.6%  +0.978%
+  RSI_Oversold                1.2  2.4 |     9   55.6%  +0.800%
+  RSI_Oversold                1.0  2.0 |     9   55.6%  +0.667%
+  RSI_Oversold                0.8  1.6 |     9   55.6%  +0.533%
+  ORB                         1.5  3.0 |    15   53.3%  +0.900%
+  ORB                         1.2  2.4 |    15   53.3%  +0.720%
+  Trend_Continuation          1.5  3.0 |    35   51.4%  +0.814%
+  ORB                         0.5  1.5 |    15   46.7%  +0.433%
+
+======================================================================
+TIMEFRAME: 1d
+======================================================================
+
+TOP 10 for 1d:
+  Strategy                     SL   TP |     N    WR%     EV%
+  ------------------------------------------------------------
+  Golden_Cross                1.5  3.0 |    16   43.8%  +0.469%
+  Golden_Cross                1.2  2.4 |    16   43.8%  +0.375%
+  Three_Green                 1.5  3.0 |   205   34.1%  +0.037%
+  EMA_Cross                   1.5  3.0 |   138   34.1%  +0.033%
+  Donchian_Break              1.5  3.0 |   175   33.1%  -0.009%
+  EMA_Cross_Filtered          1.5  3.0 |    79   32.9%  -0.019%
+  Williams_Bounce             1.5  3.0 |    76   32.9%  -0.020%
+  Triple_EMA                  1.5  3.0 |   119   32.8%  -0.025%
+  Donchian_Break_Strict       1.5  3.0 |    43   32.6%  -0.035%
+  EMA21_Touch_MACD            1.5  3.0 |   347   32.0%  -0.061%
+
+
+================================================================================
+GLOBAL TOP 50 — ALL TIMEFRAMES (min 10 trades)
+================================================================================
+
+  TF    Strategy                     SL   TP |     N    WR%     EV%
+  ----------------------------------------------------------------------
+  5m    RSI_Oversold                0.3  0.6 |    15   73.3%  +0.360%
+  5m    RSI_Oversold_Strict         0.4  0.8 |    14   64.3%  +0.371%
+  5m    RSI_Oversold                0.3  0.9 |    11   63.6%  +0.464%
+  15m   Squeeze_Break               0.8  1.6 |    28   57.1%  +0.571%
+  4h    ORB                         1.5  3.0 |    15   53.3%  +0.900%
+  4h    ORB                         1.2  2.4 |    15   53.3%  +0.720%
+  5m    RSI_Oversold_Strict         0.3  0.6 |    17   52.9%  +0.176%
+  15m   Golden_Cross                0.4  0.8 |    19   52.6%  +0.232%
+  4h    Trend_Continuation          1.5  3.0 |    35   51.4%  +0.814%
+  5m    Squeeze_Break               1.2  2.4 |    12   50.0%  +0.600%
+  15m   Squeeze_Break               0.7  1.4 |    28   50.0%  +0.350%
+  15m   Squeeze_Break               0.4  0.8 |    36   47.2%  +0.167%
+  4h    ORB                         0.5  1.5 |    15   46.7%  +0.433%
+  5m    Squeeze_Break               1.0  2.0 |    15   46.7%  +0.400%
+  4h    ORB                         1.0  2.0 |    15   46.7%  +0.400%
+  4h    ORB                         0.7  1.4 |    15   46.7%  +0.280%
+  4h    ORB                         0.6  1.2 |    15   46.7%  +0.240%
+  4h    ORB                         0.5  1.0 |    15   46.7%  +0.200%
+  4h    MACD_BB_Combo               1.2  2.4 |    28   46.4%  +0.471%
+  5m    Donchian_Break_Strict       0.8  1.6 |    28   46.4%  +0.314%
+  15m   Squeeze_Break               1.0  2.0 |    24   45.8%  +0.375%
+  4h    Trend_Continuation          1.2  2.4 |    35   45.7%  +0.446%
+  15m   Squeeze_Break               0.6  1.2 |    31   45.2%  +0.213%
+  4h    RSI_50_Cross                1.5  3.0 |   112   44.6%  +0.509%
+  5m    Squeeze_Break               0.3  0.6 |    36   44.4%  +0.100%
+  15m   Squeeze_Break               0.5  1.0 |    34   44.1%  +0.162%
+  1d    Golden_Cross                1.5  3.0 |    16   43.8%  +0.469%
+  1d    Golden_Cross                1.2  2.4 |    16   43.8%  +0.375%
+  1h    EMA_Cross_Filtered          0.8  1.6 |    85   43.5%  +0.245%
+  5m    Donchian_Break_Strict       0.4  0.8 |    46   43.5%  +0.122%
+  5m    Keltner_Break               0.3  0.6 |   146   43.2%  +0.088%
+  4h    Volume_Spike                1.5  3.0 |    79   43.0%  +0.437%
+  15m   ADX_Trend                   0.8  1.6 |    86   43.0%  +0.233%
+  4h    RSI_Oversold_Strict         0.8  2.4 |    14   42.9%  +0.571%
+  4h    RSI_Oversold_Strict         1.2  2.4 |    14   42.9%  +0.343%
+  4h    RSI_Oversold_Strict         1.0  2.0 |    14   42.9%  +0.286%
+  4h    Trend_Continuation          1.0  2.0 |    35   42.9%  +0.286%
+  4h    RSI_Oversold_Strict         0.8  1.6 |    14   42.9%  +0.229%
+  1h    Golden_Cross                0.5  1.0 |    28   42.9%  +0.143%
+  1h    EMA_Cross_Filtered          1.0  2.0 |    82   42.7%  +0.280%
+  1h    MACD_Cross_Filtered         0.8  1.6 |    68   42.6%  +0.224%
+  1h    MACD_Cross_Filtered         0.6  1.2 |    68   42.6%  +0.168%
+  5m    Donchian_Break_Strict       0.6  1.2 |    33   42.4%  +0.164%
+  15m   ADX_Trend                   0.5  1.0 |    97   42.3%  +0.134%
+  15m   Squeeze_Break               0.3  0.6 |    38   42.1%  +0.079%
+  5m    Donchian_Break_Strict       0.3  0.6 |    50   42.0%  +0.078%
+  4h    Triple_EMA                  1.5  3.0 |   131   42.0%  +0.389%
+  4h    Triple_EMA                  1.2  2.4 |   131   42.0%  +0.311%
+  5m    Donchian_Break_Strict       0.7  1.4 |    31   41.9%  +0.181%
+  15m   Trend_Continuation          0.5  1.0 |    31   41.9%  +0.129%
+
+
+================================================================================
+BEST STRATEGY PER TIMEFRAME (min 10 trades)
+================================================================================
+
+  ┌─ [5m] WINNER: RSI_Oversold
+
+
+================================================================================
+EXTRA STRATEGIES TEST — 2026-06-20 11:31:05
+================================================================================
+Testing 11 extra strategies
+
+Fetching data...
+Done.
+
+
+Extra strategies added. Total results: 864
+
+NEW TOP 20 (including extra strategies):
+  TF    Strategy                     SL   TP |     N    WR%     EV%
+  ----------------------------------------------------------------------
+  4h    Momentum_Burst              1.5  3.0 |    60   51.7%  +0.825% ★
+
+
+================================================================================
+EXTRA STRATEGIES TEST — 2026-06-20 11:32:02
+================================================================================
+Testing 11 extra strategies
+
+Fetching data...
+Done.
+
+
+Extra strategies added. Total results: 1728
+
+NEW TOP 20 (including extra strategies):
+  TF    Strategy                     SL   TP |     N    WR%     EV%
+  ----------------------------------------------------------------------
+  4h    Momentum_Burst              1.5  3.0 |    60   51.7%  +0.825% ★

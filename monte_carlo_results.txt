@@ -1,0 +1,164 @@
+MONTE CARLO SIMULATION - 2026-06-20 13:21:20
+================================================================================
+
+Loaded 3888 results from deep_results.json
+Simulating top 20 strategies (10,000 runs each, 200 trades/run)
+Starting balance: $1000 | Position size: 10% per trade
+Ruin threshold: lose >50% of starting balance
+
+====================================================================================================
+#   TF    Strategy                       WR     N |   Median   Best5%  Worst5%  MaxDD50  MaxDD95  Ruin%  Kelly
+----------------------------------------------------------------------------------------------------
+1   5m    Keltner_Break              100.0%    41 | $   1648 $   1648 $   1648     0.0%     0.0%   0.0% 100.0%
+2   5m    MACD_Cross                 100.0%    47 | $   1648 $   1648 $   1648     0.0%     0.0%   0.0% 100.0%
+3   5m    ADX_Trend                  100.0%    30 | $   1491 $   1491 $   1491     0.0%     0.0%   0.0% 100.0%
+4   5m    Combined_Best              100.0%    33 | $   1491 $   1491 $   1491     0.0%     0.0%   0.0% 100.0%
+5   5m    EMA_Ribbon                  99.0%   191 | $   1623 $   1648 $   1587     0.5%     0.5%   0.0%  96.9%
+6   5m    EMA21_Touch_MACD            98.1%   212 | $   1599 $   1635 $   1563     0.5%     1.0%   0.0%  94.3%
+7   5m    Donchian_Break              98.0%    51 | $   1599 $   1635 $   1563     0.5%     1.0%   0.0%  94.1%
+8   5m    Triple_EMA                  97.8%    45 | $   1599 $   1635 $   1552     0.5%     1.0%   0.0%  93.3%
+9   5m    EMA_Stack_Pullback          97.6%   288 | $   1587 $   1623 $   1540     0.5%     1.0%   0.0%  92.7%
+10  5m    Price_EMA200_Cross          97.6%    41 | $   1447 $   1473 $   1413     0.4%     0.8%   0.0%  92.7%
+11  5m    Three_Green                 97.2%    72 | $   1587 $   1623 $   1528     0.5%     1.0%   0.0%  91.7%
+12  5m    Hybrid                      97.1%   102 | $   1575 $   1623 $   1528     0.5%     1.0%   0.0%  91.2%
+13  5m    ORB                         95.2%    83 | $   1540 $   1587 $   1472     0.7%     1.2%   0.0%  85.5%
+14  5m    Confluence                  95.1%   513 | $   1528 $   1587 $   1472     0.7%     1.2%   0.0%  85.4%
+15  5m    Trend_Continuation          94.4%    72 | $   1175 $   1196 $   1151     0.4%     0.7%   0.0%  80.6%
+16  5m    Donchian_Break_Strict       93.8%    32 | $   1388 $   1430 $   1338     0.8%     1.2%   0.0%  81.2%
+17  5m    MACD_BB_Combo               93.1%    72 | $   1483 $   1552 $   1418     1.0%     1.5%   0.0%  79.2%
+18  5m    Golden_Cross                92.6%    54 | $   1159 $   1183 $   1135     0.5%     0.8%   0.0%  74.1%
+19  5m    VWAP_Cross                  89.7%   136 | $   1418 $   1483 $   1335     1.0%     1.7%   0.0%  69.1%
+20  5m    BB_Bounce_Strict            89.1%   285 | $   1397 $   1472 $   1325     1.0%     2.0%   0.0%  67.4%
+====================================================================================================
+
+
+================================================================================
+DETAILED ANALYSIS - TOP 5 STRATEGIES
+================================================================================
+
+#1 Keltner_Break [5m]  WR=100.0%  SL=5.0%  TP=2.5%  Trades in backtest=41
+  Starting balance:      $1000
+  After 200 trades:
+    Median outcome:      $1648  (+64.8%)
+    Mean outcome:        $1648  (+64.8%)
+    Best 5% scenario:    $1648  (+64.8%)
+    Worst 5% scenario:   $1648  (+64.8%)
+    Worst 1% scenario:   $1648  (+64.8%)
+  Max drawdown:
+    Median drawdown:     0.0%
+    95th pct drawdown:   0.0%
+    99th pct drawdown:   0.0%
+  Profitable runs:       100.0%
+  Ruin probability:      0.00%
+  Full Kelly size:       100.0% of bankroll per trade
+  Half Kelly (safer):    50.0% of bankroll per trade
+
+#2 MACD_Cross [5m]  WR=100.0%  SL=5.0%  TP=2.5%  Trades in backtest=47
+  Starting balance:      $1000
+  After 200 trades:
+    Median outcome:      $1648  (+64.8%)
+    Mean outcome:        $1648  (+64.8%)
+    Best 5% scenario:    $1648  (+64.8%)
+    Worst 5% scenario:   $1648  (+64.8%)
+    Worst 1% scenario:   $1648  (+64.8%)
+  Max drawdown:
+    Median drawdown:     0.0%
+    95th pct drawdown:   0.0%
+    99th pct drawdown:   0.0%
+  Profitable runs:       100.0%
+  Ruin probability:      0.00%
+  Full Kelly size:       100.0% of bankroll per trade
+  Half Kelly (safer):    50.0% of bankroll per trade
+
+#3 ADX_Trend [5m]  WR=100.0%  SL=4.0%  TP=2.0%  Trades in backtest=30
+  Starting balance:      $1000
+  After 200 trades:
+    Median outcome:      $1491  (+49.1%)
+    Mean outcome:        $1491  (+49.1%)
+    Best 5% scenario:    $1491  (+49.1%)
+    Worst 5% scenario:   $1491  (+49.1%)
+    Worst 1% scenario:   $1491  (+49.1%)
+  Max drawdown:
+    Median drawdown:     0.0%
+    95th pct drawdown:   0.0%
+    99th pct drawdown:   0.0%
+  Profitable runs:       100.0%
+  Ruin probability:      0.00%
+  Full Kelly size:       100.0% of bankroll per trade
+  Half Kelly (safer):    50.0% of bankroll per trade
+
+#4 Combined_Best [5m]  WR=100.0%  SL=4.0%  TP=2.0%  Trades in backtest=33
+  Starting balance:      $1000
+  After 200 trades:
+    Median outcome:      $1491  (+49.1%)
+    Mean outcome:        $1491  (+49.1%)
+    Best 5% scenario:    $1491  (+49.1%)
+    Worst 5% scenario:   $1491  (+49.1%)
+    Worst 1% scenario:   $1491  (+49.1%)
+  Max drawdown:
+    Median drawdown:     0.0%
+    95th pct drawdown:   0.0%
+    99th pct drawdown:   0.0%
+  Profitable runs:       100.0%
+  Ruin probability:      0.00%
+  Full Kelly size:       100.0% of bankroll per trade
+  Half Kelly (safer):    50.0% of bankroll per trade
+
+#5 EMA_Ribbon [5m]  WR=99.0%  SL=5.0%  TP=2.5%  Trades in backtest=191
+  Starting balance:      $1000
+  After 200 trades:
+    Median outcome:      $1623  (+62.3%)
+    Mean outcome:        $1622  (+62.2%)
+    Best 5% scenario:    $1648  (+64.8%)
+    Worst 5% scenario:   $1587  (+58.7%)
+    Worst 1% scenario:   $1575  (+57.5%)
+  Max drawdown:
+    Median drawdown:     0.5%
+    95th pct drawdown:   0.5%
+    99th pct drawdown:   1.0%
+  Profitable runs:       100.0%
+  Ruin probability:      0.00%
+  Full Kelly size:       96.9% of bankroll per trade
+  Half Kelly (safer):    48.4% of bankroll per trade
+
+
+================================================================================
+RANKINGS BY DIFFERENT METRICS
+================================================================================
+
+  Best median return after 200 trades:
+    Keltner_Break              [5m]  $1648  (+65%)
+    MACD_Cross                 [5m]  $1648  (+65%)
+    EMA_Ribbon                 [5m]  $1623  (+62%)
+
+  Lowest ruin probability:
+    Keltner_Break              [5m]  Ruin=0.00%  Median=$1648
+    MACD_Cross                 [5m]  Ruin=0.00%  Median=$1648
+    ADX_Trend                  [5m]  Ruin=0.00%  Median=$1491
+
+  Smallest 95th pct max drawdown:
+    Keltner_Break              [5m]  MaxDD95=0.0%  Median=$1648
+    MACD_Cross                 [5m]  MaxDD95=0.0%  Median=$1648
+    ADX_Trend                  [5m]  MaxDD95=0.0%  Median=$1491
+
+  Best worst-case (5th percentile):
+    Keltner_Break              [5m]  Worst5%=$1648  (+65%)
+    MACD_Cross                 [5m]  Worst5%=$1648  (+65%)
+    EMA_Ribbon                 [5m]  Worst5%=$1587  (+59%)
+
+
+********************************************************************************
+  RECOMMENDED STRATEGY FOR LIVE TRADING
+********************************************************************************
+  Strategy:         Keltner_Break
+  Timeframe:        5m
+  Win Rate:         100.0%
+  SL / TP:          5.0% / 2.5%
+  Backtest trades:  41
+  Median return (200 trades): $1648 (+64.8%)
+  Ruin risk:        0.00%
+  Max drawdown 95%: 0.0%
+  Kelly position:   100.0% (use 50.0% half-Kelly for safety)
+
+Done in 13s | 200,000 total simulations run
+Saved to monte_carlo_results.txt

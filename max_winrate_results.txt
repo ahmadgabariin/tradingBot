@@ -1,0 +1,183 @@
+MAX WIN RATE HUNT — 2026-06-20 12:10:15
+================================================================================
+
+Tight SL/TP combos: 24 | TFs: ['5m', '15m', '1h', '4h', '1d'] | Strategies: 33
+
+Fetching data...
+Done. Running backtests...
+
+
+[5m] TOP 10 BY WIN RATE:
+  Strategy                     SL   TP |     N    WR%     EV%
+  ------------------------------------------------------------
+  RSI_Oversold                3.0  1.5 |     5  100.0%  +1.500%
+  Hammer                      3.0  1.5 |    10  100.0%  +1.500%
+  ADX_Trend                   3.0  1.5 |    18  100.0%  +1.500%
+  Squeeze_Break               3.0  1.5 |     7  100.0%  +1.500%
+  Donchian_Break              3.0  1.5 |    38   94.7%  +1.263%
+  Keltner_Break               3.0  1.5 |    34   94.1%  +1.235%
+  Donchian_Break_Strict       3.0  1.5 |    14   92.9%  +1.179%
+  Williams_Bounce             3.0  1.5 |    83   92.8%  +1.175%
+  Three_Green                 3.0  1.5 |    40   92.5%  +1.163%
+  Combined_Best               3.0  1.5 |    12   91.7%  +1.125%
+
+[15m] TOP 10 BY WIN RATE:
+  Strategy                     SL   TP |     N    WR%     EV%
+  ------------------------------------------------------------
+  RSI_Oversold                2.0  1.0 |     6  100.0%  +1.000%
+  ADX_Trend                   3.0  1.5 |    46   89.1%  +1.011%
+  RSI_Oversold_Strict         2.0  1.0 |     7   85.7%  +0.571%
+  Squeeze_Break               2.0  1.0 |    30   83.3%  +0.500%
+  Golden_Cross                3.0  1.5 |     6   83.3%  +0.750%
+  Donchian_Break_Strict       3.0  1.5 |    17   82.4%  +0.706%
+  Hammer                      3.0  1.5 |    26   80.8%  +0.635%
+  EMA_Stack_Pullback          3.0  1.5 |   363   77.1%  +0.471%
+  EMA_Ribbon                  3.0  1.5 |   227   76.2%  +0.430%
+  EMA21_Touch_MACD            3.0  1.5 |   238   75.6%  +0.403%
+
+[1h] TOP 10 BY WIN RATE:
+  Strategy                     SL   TP |     N    WR%     EV%
+  ------------------------------------------------------------
+  EMA_Cross_Filtered          3.0  1.5 |    79   83.5%  +0.759%
+  Price_EMA200_Cross          3.0  1.5 |    70   81.4%  +0.664%
+  ADX_Trend                   3.0  1.5 |    84   76.2%  +0.429%
+  MACD_Cross_Filtered         3.0  1.5 |    65   73.8%  +0.323%
+  Volume_Spike                2.0  1.0 |    95   72.6%  +0.179%
+  EMA_Cross                   3.0  1.5 |   147   72.1%  +0.245%
+  MACD_BB_Combo               3.0  1.5 |   121   71.9%  +0.236%
+  Trend_Continuation          3.0  1.5 |    42   71.4%  +0.214%
+  Combined_Best               3.0  1.5 |    79   70.9%  +0.190%
+  Triple_EMA                  2.0  1.0 |   148   70.3%  +0.108%
+
+[4h] TOP 10 BY WIN RATE:
+  Strategy                     SL   TP |     N    WR%     EV%
+  ------------------------------------------------------------
+  ORB                         3.0  1.5 |    15   80.0%  +0.600%
+  RSI_Oversold_Strict         3.0  1.5 |    14   78.6%  +0.536%
+  Triple_EMA                  3.0  1.5 |   131   77.1%  +0.469%
+  Trend_Continuation          2.0  1.0 |    35   74.3%  +0.229%
+  RSI_50_Cross                3.0  1.5 |   112   74.1%  +0.335%
+  Price_EMA200_Cross          3.0  1.5 |    66   72.7%  +0.273%
+  EMA_Ribbon                  3.0  1.5 |   535   72.0%  +0.238%
+  EMA_Cross_Filtered          2.0  1.0 |    83   71.1%  +0.133%
+  EMA21_Touch_MACD            3.0  1.5 |   447   70.9%  +0.191%
+  Keltner_Break               3.0  1.5 |   139   70.5%  +0.173%
+
+[1d] TOP 10 BY WIN RATE:
+  Strategy                     SL   TP |     N    WR%     EV%
+  ------------------------------------------------------------
+  Golden_Cross                3.0  1.5 |    16   75.0%  +0.375%
+  Williams_Bounce             3.0  1.5 |    76   64.5%  -0.099%
+  EMA_Cross_Filtered          3.0  1.5 |    79   63.3%  -0.152%
+  Triple_EMA                  3.0  1.5 |   119   63.0%  -0.164%
+  MACD_Cross_Filtered         3.0  1.5 |    62   62.9%  -0.169%
+  EMA_Cross                   3.0  1.5 |   138   61.6%  -0.228%
+  Three_Green                 3.0  1.5 |   205   61.0%  -0.256%
+  Price_EMA200_Cross          3.0  1.5 |    42   59.5%  -0.321%
+  EMA21_Touch_MACD            3.0  1.5 |   347   59.4%  -0.329%
+  VWAP_Cross                  3.0  1.5 |   294   58.2%  -0.383%
+
+
+================================================================================
+GLOBAL WIN RATE LEADERBOARD (min 10 trades)
+================================================================================
+
+  TF    Strategy                     SL   TP |     N    WR%     EV%
+  ----------------------------------------------------------------------
+  5m    Hammer                      3.0  1.5 |    10  100.0%  +1.500% <--*
+  5m    ADX_Trend                   3.0  1.5 |    18  100.0%  +1.500% <--*
+  5m    ADX_Trend                   2.0  1.0 |    28   96.4%  +0.893% <--*
+  5m    Donchian_Break              3.0  1.5 |    38   94.7%  +1.263% <--*
+  5m    Keltner_Break               3.0  1.5 |    34   94.1%  +1.235% <--*
+  5m    RSI_Oversold                0.5  0.3 |    14   92.9%  +0.243% <--*
+  5m    Donchian_Break_Strict       3.0  1.5 |    14   92.9%  +1.179% <--*
+  5m    Williams_Bounce             3.0  1.5 |    83   92.8%  +1.175% <--*
+  5m    Three_Green                 3.0  1.5 |    40   92.5%  +1.163% <--*
+  5m    RSI_Oversold                0.8  0.5 |    13   92.3%  +0.400% <--*
+  5m    RSI_Oversold                1.0  0.6 |    12   91.7%  +0.467% <--*
+  5m    Combined_Best               3.0  1.5 |    12   91.7%  +1.125% <--*
+  5m    CCI_Bounce                  3.0  1.5 |    81   91.4%  +1.111% <--*
+  5m    Engulfing                   3.0  1.5 |   157   90.4%  +1.070% <--*
+  5m    BB_Bounce                   3.0  1.5 |   168   89.3%  +1.018% <--*
+  15m   ADX_Trend                   3.0  1.5 |    46   89.1%  +1.011% <--*
+  5m    RSI_Oversold_Strict         0.5  0.3 |    18   88.9%  +0.211% <--*
+  5m    Donchian_Break_Strict       2.0  1.0 |    18   88.9%  +0.667% <--*
+  5m    EMA_Ribbon                  3.0  1.5 |   126   88.9%  +1.000% <--*
+  5m    Williams_Bounce             2.0  1.0 |   194   88.7%  +0.660% <--*
+  5m    BB_Bounce_Strict            3.0  1.5 |   196   88.3%  +0.972% <--*
+  5m    Confluence                  3.0  1.5 |   409   88.3%  +0.972% <--*
+  5m    Hammer                      2.0  1.0 |    33   87.9%  +0.636% <--*
+  5m    VWAP_Cross                  3.0  1.5 |    96   87.5%  +0.938% <--*
+  5m    Volume_Spike                3.0  1.5 |    16   87.5%  +0.938% <--*
+  5m    CCI_Bounce                  2.0  1.0 |   168   86.9%  +0.607% <--*
+  5m    EMA21_Touch_MACD            3.0  1.5 |   145   86.2%  +0.879% <--*
+  5m    EMA_Cross                   3.0  1.5 |    36   86.1%  +0.875% <--*
+  5m    EMA_Stack_Pullback          3.0  1.5 |   199   85.9%  +0.867% <--*
+  5m    MACD_Cross_Filtered         3.0  1.5 |    14   85.7%  +0.857% <--*
+  5m    Keltner_Break               2.0  1.0 |    63   85.7%  +0.571% <--*
+  5m    RSI_50_Cross                3.0  1.5 |    27   85.2%  +0.833% <--*
+  5m    MACD_BB_Combo               3.0  1.5 |    60   85.0%  +0.825% <--*
+  5m    Confluence                  2.0  1.0 |   721   84.6%  +0.538% <--*
+  5m    Hybrid                      3.0  1.5 |    77   84.4%  +0.799% <--*
+  5m    ORB                         3.0  1.5 |    70   84.3%  +0.793% <--*
+  5m    BB_Bounce_Strict            2.0  1.0 |   366   84.2%  +0.525% <--*
+  1h    EMA_Cross_Filtered          3.0  1.5 |    79   83.5%  +0.759% <--*
+  5m    BB_Bounce                   2.0  1.0 |   307   83.4%  +0.502% <--*
+  15m   Squeeze_Break               2.0  1.0 |    30   83.3%  +0.500% <--*
+  5m    MACD_BB_Combo               2.0  1.0 |   100   83.0%  +0.490% <--*
+  5m    VWAP_Cross                  2.0  1.0 |   164   82.9%  +0.488% <--*
+  5m    Triple_EMA                  3.0  1.5 |    29   82.8%  +0.724% <--*
+  5m    Engulfing                   2.0  1.0 |   272   82.7%  +0.482% <--*
+  15m   Squeeze_Break               3.0  1.5 |    23   82.6%  +0.717% <--*
+  5m    EMA_Cross                   2.0  1.0 |    74   82.4%  +0.473% <--*
+  5m    Donchian_Break              2.0  1.0 |    74   82.4%  +0.473% <--*
+  5m    RSI_Oversold_Strict         0.8  0.5 |    17   82.4%  +0.271% <--*
+  15m   Donchian_Break_Strict       3.0  1.5 |    17   82.4%  +0.706% <--*
+  5m    EMA_Cross_Filtered          3.0  1.5 |    11   81.8%  +0.682% <--*
+
+
+================================================================================
+BEST PER TIMEFRAME (by win rate, min 10 trades)
+================================================================================
+
+  [5m] Hammer | SL=3.0% TP=1.5% | WR=100.0% EV=+1.500% N=10
+    BTCUSDT: 2W/0L = 100.0%
+    ETHUSDT: 5W/0L = 100.0%
+    SOLUSDT: 3W/0L = 100.0%
+
+  [15m] ADX_Trend | SL=3.0% TP=1.5% | WR=89.1% EV=+1.011% N=46
+    BTCUSDT: 9W/2L = 81.8%
+    ETHUSDT: 14W/2L = 87.5%
+    SOLUSDT: 18W/1L = 94.7%
+
+  [1h] EMA_Cross_Filtered | SL=3.0% TP=1.5% | WR=83.5% EV=+0.759% N=79
+    BTCUSDT: 23W/3L = 88.5%
+    ETHUSDT: 21W/5L = 80.8%
+    SOLUSDT: 22W/5L = 81.5%
+
+  [4h] ORB | SL=3.0% TP=1.5% | WR=80.0% EV=+0.600% N=15
+    BTCUSDT: 11W/3L = 78.6%
+    ETHUSDT: 1W/0L = 100.0%
+    SOLUSDT: 0W/0L = 0.0%
+
+  [1d] Golden_Cross | SL=3.0% TP=1.5% | WR=75.0% EV=+0.375% N=16
+    BTCUSDT: 5W/1L = 83.3%
+    ETHUSDT: 6W/1L = 85.7%
+    SOLUSDT: 1W/2L = 33.3%
+
+
+================================================================================
+***  ABSOLUTE HIGHEST WIN RATE  ***
+================================================================================
+  Strategy:   Hammer
+  Timeframe:  5m
+  SL/TP:      3.0% / 1.5%
+  WIN RATE:   100.0%  <- 10W / 0L
+  EV/trade:   +1.500%
+  Trades:     10
+  Per pair:
+    BTCUSDT: 2W/0L = 100.0% WR
+    ETHUSDT: 5W/0L = 100.0% WR
+    SOLUSDT: 3W/0L = 100.0% WR
+
+Done in 97s | 3876 combos tested

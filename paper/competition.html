@@ -1,0 +1,536 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>openCLAUDE — AI Trading Competition</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+  :root {
+    --bg: #080808;
+    --card: #0f0f0f;
+    --border: #1a1a1a;
+    --text: #e0e0e0;
+    --muted: #555;
+    --green: #00ff88;
+    --red: #ff3355;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--bg); color: var(--text); font-family: 'Segoe UI', monospace; min-height: 100vh; }
+  .topnav { display:flex; gap:8px; padding:10px 20px; background:#0a0a0a; border-bottom:1px solid #1a1a1a; }
+  .topnav a { text-decoration:none; padding:6px 18px; border-radius:6px; font-size:11px; font-weight:700;
+    letter-spacing:1px; text-transform:uppercase; border:1px solid #222; color:#888; }
+  .topnav a.active { background:#00ff88; color:#000; border-color:#00ff88; }
+  .topnav a:not(.active):hover { border-color:#444; color:#ccc; }
+
+  /* ── HERO ── */
+  .hero {
+    text-align: center;
+    padding: 48px 24px 32px;
+    background: radial-gradient(ellipse at top, #0a1a0a 0%, #080808 70%);
+    border-bottom: 1px solid var(--border);
+  }
+  .hero h1 {
+    font-size: 52px; font-weight: 900; letter-spacing: 4px;
+    background: linear-gradient(135deg, #00ff88, #00ccff);
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  }
+  .hero .sub { color: var(--muted); font-size: 13px; letter-spacing: 3px; text-transform: uppercase; margin-top: 8px; }
+  .badges { display: flex; gap: 12px; justify-content: center; margin-top: 20px; flex-wrap: wrap; }
+  .badge {
+    padding: 6px 16px; border-radius: 20px; font-size: 12px; font-weight: 700;
+    letter-spacing: 1px; text-transform: uppercase;
+  }
+  .badge.red    { background: rgba(255,50,50,.15); border: 1px solid rgba(255,50,50,.4); color: #ff5555; }
+  .badge.green  { background: rgba(0,255,136,.10); border: 1px solid rgba(0,255,136,.4); color: var(--green); }
+  .badge.blue   { background: rgba(0,180,255,.10); border: 1px solid rgba(0,180,255,.4); color: #00ccff; }
+  .badge.purple { background: rgba(180,100,255,.10); border: 1px solid rgba(180,100,255,.4); color: #bb77ff; }
+  .controls { margin-top: 24px; display: flex; gap: 12px; justify-content: center; }
+  .btn {
+    padding: 10px 28px; border-radius: 6px; border: none; cursor: pointer;
+    font-size: 13px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; transition: all .2s;
+  }
+  .btn-start  { background: var(--green); color: #000; }
+  .btn-start:hover  { background: #00cc66; }
+  .btn-stop   { background: var(--red); color: #fff; }
+  .btn-stop:hover   { background: #cc0033; }
+  .session-status { font-size: 12px; color: var(--muted); margin-top: 12px; }
+  .dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 6px; }
+  .dot.live { background: var(--green); animation: pulse 1.5s infinite; }
+  .dot.off  { background: var(--muted); }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.3} }
+
+  /* ── LAYOUT ── */
+  .main { max-width: 1400px; margin: 0 auto; padding: 32px 20px; }
+  .section-title {
+    font-size: 11px; letter-spacing: 3px; text-transform: uppercase;
+    color: var(--green); margin-bottom: 6px;
+  }
+  .section-sub { font-size: 12px; color: var(--muted); margin-bottom: 20px; }
+
+  /* ── RACE CHART ── */
+  .race-section { margin-bottom: 40px; }
+  .race-card {
+    background: var(--card); border: 1px solid var(--border); border-radius: 12px;
+    padding: 24px; position: relative;
+  }
+  .race-card canvas { max-height: 300px; }
+  .race-phases { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; margin-top: 20px; }
+  .phase { padding: 12px; background: #111; border-radius: 8px; }
+  .phase-label { font-size: 10px; letter-spacing: 2px; color: var(--green); text-transform: uppercase; margin-bottom: 6px; }
+  .phase-text { font-size: 12px; color: #aaa; line-height: 1.5; }
+
+  /* ── AGENT CARDS ── */
+  .agents-section { margin-bottom: 40px; }
+  .agents-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px; }
+  @media (max-width: 1100px) { .agents-grid { grid-template-columns: repeat(3, 1fr); } }
+  @media (max-width: 700px)  { .agents-grid { grid-template-columns: 1fr 1fr; } }
+
+  .agent-card {
+    background: var(--card); border: 1px solid var(--border); border-radius: 12px;
+    padding: 20px; position: relative; transition: border-color .3s;
+  }
+  .agent-card.rank-1 { border-color: rgba(255,215,0,.4); }
+  .rank-badge {
+    position: absolute; top: 12px; right: 12px;
+    font-size: 11px; font-weight: 700; color: var(--muted);
+  }
+  .rank-badge.gold { color: #FFD700; }
+  .agent-emoji { font-size: 28px; margin-bottom: 8px; }
+  .agent-name { font-size: 18px; font-weight: 700; margin-bottom: 2px; }
+  .agent-meta { font-size: 10px; letter-spacing: 1px; text-transform: uppercase; color: var(--muted); margin-bottom: 8px; }
+  .agent-desc { font-size: 11px; color: #777; line-height: 1.5; margin-bottom: 14px; min-height: 60px; }
+
+  .bars { display: flex; flex-direction: column; gap: 5px; margin-bottom: 14px; }
+  .bar-row { display: flex; align-items: center; gap: 8px; }
+  .bar-label { font-size: 9px; letter-spacing: 1px; text-transform: uppercase; color: var(--muted); width: 90px; flex-shrink: 0; }
+  .bar-track { flex: 1; height: 4px; background: #1a1a1a; border-radius: 2px; overflow: hidden; }
+  .bar-fill { height: 100%; border-radius: 2px; }
+  .bar-val { font-size: 9px; color: var(--muted); width: 28px; text-align: right; }
+
+  .agent-divider { border: none; border-top: 1px solid var(--border); margin: 12px 0; }
+
+  .agent-returns { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 10px; }
+  .ret-item { }
+  .ret-label { font-size: 9px; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; }
+  .ret-val { font-size: 18px; font-weight: 700; }
+  .ret-val.pos { color: var(--green); }
+  .ret-val.neg { color: var(--red); }
+  .ret-val.neutral { color: var(--text); }
+
+  .agent-stats-row { display: flex; justify-content: space-between; font-size: 11px; color: var(--muted); }
+  .agent-footer { margin-top: 10px; font-size: 10px; color: var(--muted); }
+
+  /* ── KEY MOMENTS ── */
+  .moments-section { margin-bottom: 40px; }
+  .moments-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+  @media (max-width: 800px) { .moments-grid { grid-template-columns: 1fr 1fr; } }
+  .moment-card {
+    background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 20px;
+  }
+  .moment-icon { font-size: 24px; margin-bottom: 8px; }
+  .moment-title { font-size: 11px; letter-spacing: 2px; text-transform: uppercase; color: var(--green); margin-bottom: 4px; }
+  .moment-body  { font-size: 11px; color: #777; line-height: 1.5; margin-bottom: 10px; }
+  .moment-val   { font-size: 28px; font-weight: 700; }
+  .moment-val.pos { color: var(--green); }
+  .moment-val.neg { color: var(--red); }
+  .moment-val.neutral { color: #00ccff; }
+
+  /* ── HEATMAP ── */
+  .heatmap-section { margin-bottom: 40px; }
+  .heatmap-grid { display: grid; grid-template-columns: repeat(8, 1fr); gap: 8px; }
+  @media (max-width: 900px) { .heatmap-grid { grid-template-columns: repeat(4, 1fr); } }
+  .heat-cell {
+    border-radius: 8px; padding: 12px 8px; text-align: center; border: 1px solid transparent;
+  }
+  .heat-cell.pos { background: rgba(0,255,136,.12); border-color: rgba(0,255,136,.2); }
+  .heat-cell.neg { background: rgba(255,51,85,.12);  border-color: rgba(255,51,85,.2); }
+  .heat-cell.zero{ background: #111; border-color: var(--border); }
+  .heat-pair { font-size: 12px; font-weight: 700; }
+  .heat-pnl  { font-size: 16px; font-weight: 700; margin: 4px 0; }
+  .heat-pnl.pos { color: var(--green); }
+  .heat-pnl.neg { color: var(--red); }
+  .heat-trades { font-size: 10px; color: var(--muted); }
+
+  /* ── TRADE TABLE ── */
+  .trades-section { margin-bottom: 40px; }
+  .trade-filters { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 12px; }
+  .filter-btn {
+    padding: 5px 14px; border-radius: 20px; border: 1px solid var(--border);
+    background: none; color: var(--muted); cursor: pointer; font-size: 11px; transition: all .2s;
+  }
+  .filter-btn.active { border-color: var(--green); color: var(--green); background: rgba(0,255,136,.08); }
+  .trade-table-wrap { background: var(--card); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; }
+  table { width: 100%; border-collapse: collapse; font-size: 12px; }
+  th { background: #111; padding: 10px 14px; text-align: left; font-size: 10px; letter-spacing: 1px;
+       text-transform: uppercase; color: var(--muted); border-bottom: 1px solid var(--border); }
+  td { padding: 9px 14px; border-bottom: 1px solid #0f0f0f; }
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: rgba(255,255,255,.02); }
+  .agent-dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 6px; }
+  .tp-badge { background: rgba(0,255,136,.15); color: var(--green); padding: 2px 8px; border-radius: 4px; font-size: 10px; font-weight: 700; }
+  .sl-badge { background: rgba(255,51,85,.15); color: var(--red); padding: 2px 8px; border-radius: 4px; font-size: 10px; font-weight: 700; }
+  .pnl-pos { color: var(--green); font-weight: 700; }
+  .pnl-neg { color: var(--red); font-weight: 700; }
+
+  /* ── LOADING ── */
+  .loading { text-align: center; padding: 60px; color: var(--muted); font-size: 14px; }
+  .spinner { display: inline-block; width: 30px; height: 30px; border: 3px solid var(--border);
+             border-top-color: var(--green); border-radius: 50%; animation: spin 1s linear infinite; margin-bottom: 12px; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* ── MINI CHART ── */
+  .mini-chart { height: 40px; margin-top: 8px; }
+</style>
+</head>
+<body>
+<nav class="topnav">
+  <a href="/" class="active">🏆 Competition</a>
+  <a href="/monitor">📊 Monitor</a>
+</nav>
+
+<!-- HERO -->
+<div class="hero">
+  <h1>openCLAUDE</h1>
+  <div class="sub">AI Trading Competition — Live Paper Trading</div>
+  <div class="badges">
+    <span class="badge red">PAPER TRADING</span>
+    <span class="badge green" id="badge-capital">$10,000 EACH</span>
+    <span class="badge blue" id="badge-pairs">10 PAIRS</span>
+    <span class="badge purple" id="badge-agents">5 AGENTS</span>
+  </div>
+  <div class="controls">
+    <button class="btn btn-start" onclick="startSession()">▶ START SESSION</button>
+    <button class="btn btn-stop"  onclick="stopSession()">■ STOP</button>
+  </div>
+  <div class="session-status" id="session-status">
+    <span class="dot off" id="status-dot"></span>
+    <span id="status-text">Session not started</span>
+  </div>
+</div>
+
+<div class="main">
+
+  <!-- RACE CHART -->
+  <div class="race-section">
+    <div class="section-title">THE RACE</div>
+    <div class="section-sub">Portfolio value over time — updated every 5 seconds</div>
+    <div class="race-card">
+      <canvas id="race-chart"></canvas>
+      <div class="race-phases" id="race-phases">
+        <div class="phase"><div class="phase-label">Early Session</div><div class="phase-text" id="phase-early">Waiting for trades...</div></div>
+        <div class="phase"><div class="phase-label">Mid Session</div><div class="phase-text" id="phase-mid">—</div></div>
+        <div class="phase"><div class="phase-label">Current Status</div><div class="phase-text" id="phase-late">—</div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- AGENT CARDS -->
+  <div class="agents-section">
+    <div class="section-title">MEET THE AGENTS</div>
+    <div class="section-sub">Same market. Five very different personalities.</div>
+    <div class="agents-grid" id="agents-grid">
+      <div class="loading"><div class="spinner"></div><br>Waiting for session...</div>
+    </div>
+  </div>
+
+  <!-- KEY MOMENTS -->
+  <div class="moments-section">
+    <div class="section-title">KEY MOMENTS</div>
+    <div class="section-sub">The trades that defined the session.</div>
+    <div class="moments-grid" id="moments-grid">
+      <div class="moment-card"><div class="loading" style="padding:20px">—</div></div>
+    </div>
+  </div>
+
+  <!-- PAIR HEATMAP -->
+  <div class="heatmap-section">
+    <div class="section-title">PAIR PERFORMANCE HEATMAP</div>
+    <div class="section-sub">Which coins made money, and which ones burned the bots.</div>
+    <div class="heatmap-grid" id="heatmap-grid">
+      <div class="loading" style="grid-column:1/-1">—</div>
+    </div>
+  </div>
+
+  <!-- TRADE TABLE -->
+  <div class="trades-section">
+    <div class="section-title">EVERY SINGLE TRADE</div>
+    <div class="section-sub" id="trade-count">0 closed trades</div>
+    <div class="trade-filters" id="trade-filters">
+      <button class="filter-btn active" onclick="filterTrades('ALL', this)">ALL</button>
+    </div>
+    <div class="trade-table-wrap">
+      <table>
+        <thead><tr>
+          <th>Time</th><th>Agent</th><th>Pair</th><th>Entry</th><th>Exit</th><th>Move</th><th>PnL</th><th>Result</th>
+        </tr></thead>
+        <tbody id="trade-tbody"></tbody>
+      </table>
+    </div>
+  </div>
+
+</div><!-- /main -->
+
+<script>
+const WS_URL = `ws://${location.host}/ws`;
+let ws, raceChart;
+let currentFilter = 'ALL';
+let allTrades = [];
+let agentColors = {};
+
+// ── WebSocket ──────────────────────────────────────────────────────────────────
+function connect() {
+  ws = new WebSocket(WS_URL);
+  ws.onopen    = () => console.log('WS connected');
+  ws.onmessage = e => handleMsg(JSON.parse(e.data));
+  ws.onclose   = () => setTimeout(connect, 3000);
+  ws.onerror   = () => ws.close();
+}
+
+function handleMsg(msg) {
+  if (msg.type === 'state') updateAll(msg);
+  if (msg.type === 'session_started') updateStatus(true);
+  if (msg.type === 'session_stopped')  updateStatus(false);
+}
+
+// ── Status ────────────────────────────────────────────────────────────────────
+function updateStatus(running) {
+  const dot  = document.getElementById('status-dot');
+  const text = document.getElementById('status-text');
+  if (running) {
+    dot.className  = 'dot live';
+    text.textContent = 'Session LIVE';
+  } else {
+    dot.className  = 'dot off';
+    text.textContent = 'Session stopped';
+  }
+}
+
+// ── Main update ───────────────────────────────────────────────────────────────
+function updateAll(state) {
+  updateStatus(state.running);
+  if (state.agents && state.agents.length > 0) {
+    state.agents.forEach(a => agentColors[a.name] = a.color);
+    updateRaceChart(state.agents);
+    updateAgentCards(state.agents);
+    updateMoments(state.key_moments);
+    updateHeatmap(state.pair_heatmap);
+    allTrades = state.recent_trades || [];
+    renderTrades(allTrades);
+  }
+}
+
+// ── Race Chart ────────────────────────────────────────────────────────────────
+function initChart() {
+  const ctx = document.getElementById('race-chart').getContext('2d');
+  raceChart = new Chart(ctx, {
+    type: 'line',
+    data: { labels: [], datasets: [] },
+    options: {
+      responsive: true,
+      animation: false,
+      plugins: { legend: { display: true, labels: { color: '#aaa', boxWidth: 12, font: { size: 11 } } } },
+      scales: {
+        x: { ticks: { color: '#444', maxTicksLimit: 12 }, grid: { color: '#111' } },
+        y: { ticks: { color: '#aaa', callback: v => '$'+v.toLocaleString() }, grid: { color: '#1a1a1a' } }
+      }
+    }
+  });
+}
+
+function updateRaceChart(agents) {
+  if (!raceChart) initChart();
+  const maxLen = Math.max(...agents.map(a => a.equity_history.length));
+  const labels = Array.from({length: maxLen}, (_, i) => i === 0 ? 'START' : `T+${i*5}s`);
+
+  raceChart.data.labels = labels;
+  raceChart.data.datasets = agents.map(a => ({
+    label: `${a.emoji} ${a.name}`,
+    data:  a.equity_history,
+    borderColor: a.color,
+    backgroundColor: 'transparent',
+    borderWidth: 2,
+    pointRadius: 0,
+    tension: 0.3,
+  }));
+  raceChart.update('none');
+}
+
+// ── Agent Cards ───────────────────────────────────────────────────────────────
+function updateAgentCards(agents) {
+  const grid = document.getElementById('agents-grid');
+  grid.innerHTML = agents.map(a => agentCard(a)).join('');
+}
+
+function agentCard(a) {
+  const retClass = a.return_pct > 0 ? 'pos' : a.return_pct < 0 ? 'neg' : 'neutral';
+  const retSign  = a.return_pct > 0 ? '+' : '';
+  const rankClass = a.rank === 1 ? 'gold' : '';
+  const cardClass = a.rank === 1 ? 'agent-card rank-1' : 'agent-card';
+  const best  = a.best_trade  ? `Best: <b style="color:#00ff88">+$${a.best_trade.pnl.toFixed(0)}</b> on ${a.best_trade.pair.replace('USDT','')}` : '—';
+  const worst = a.worst_trade ? `Worst: <b style="color:#ff3355">$${a.worst_trade.pnl.toFixed(0)}</b> on ${a.worst_trade.pair.replace('USDT','')}` : '—';
+
+  const bars = Object.entries(a.personality).map(([k, v]) => `
+    <div class="bar-row">
+      <span class="bar-label">${k.replace('_',' ')}</span>
+      <div class="bar-track"><div class="bar-fill" style="width:${v}%;background:${a.color}55"></div></div>
+      <span class="bar-val">${v}%</span>
+    </div>`).join('');
+
+  return `<div class="${cardClass}" style="border-top: 2px solid ${a.color}22">
+    <div class="rank-badge ${rankClass}">#${a.rank}</div>
+    <div class="agent-emoji">${a.emoji}</div>
+    <div class="agent-name" style="color:${a.color}">${a.name}</div>
+    <div class="agent-meta">${a.strategy} · ${a.timeframe} · ${a.bias} BIAS</div>
+    <div class="agent-desc">${a.description}</div>
+    <div class="bars">${bars}</div>
+    <hr class="agent-divider">
+    <div class="agent-returns">
+      <div class="ret-item">
+        <div class="ret-label">Final</div>
+        <div class="ret-val neutral">$${a.equity.toLocaleString(undefined,{maximumFractionDigits:0})}</div>
+      </div>
+      <div class="ret-item">
+        <div class="ret-label">Return</div>
+        <div class="ret-val ${retClass}">${retSign}${a.return_pct}%</div>
+      </div>
+    </div>
+    <div class="agent-stats-row">
+      <span>Trades: ${a.trades}</span>
+      <span>WR: ${a.win_rate}%</span>
+      <span>Open: ${a.open_count}</span>
+    </div>
+    <div class="agent-footer" style="margin-top:8px">${best}<br>${worst}<br>Avg win: $${a.avg_win} / Avg loss: $${a.avg_loss}</div>
+  </div>`;
+}
+
+// ── Key Moments ───────────────────────────────────────────────────────────────
+function updateMoments(km) {
+  if (!km || !km.biggest_win) return;
+  const grid = document.getElementById('moments-grid');
+  grid.innerHTML = `
+    <div class="moment-card">
+      <div class="moment-icon">🟢</div>
+      <div class="moment-title">Biggest Win</div>
+      <div class="moment-body">${km.biggest_win.agent} nailed a ${km.biggest_win.pair.replace('USDT','')} trade.</div>
+      <div class="moment-val pos">+$${km.biggest_win.pnl.toFixed(2)}</div>
+    </div>
+    <div class="moment-card">
+      <div class="moment-icon">🔥</div>
+      <div class="moment-title">Biggest Loss</div>
+      <div class="moment-body">${km.biggest_loss.agent} took a hit on ${km.biggest_loss.pair.replace('USDT','')}.</div>
+      <div class="moment-val neg">$${km.biggest_loss.pnl.toFixed(2)}</div>
+    </div>
+    <div class="moment-card">
+      <div class="moment-icon">⚡</div>
+      <div class="moment-title">Longest Win Streak</div>
+      <div class="moment-body">${km.win_streak.agent} went on a tear — ${km.win_streak.streak} consecutive wins.</div>
+      <div class="moment-val neutral">${km.win_streak.streak} wins straight</div>
+    </div>
+    <div class="moment-card">
+      <div class="moment-icon">⚡</div>
+      <div class="moment-title">Trade Velocity</div>
+      <div class="moment-body">Across all agents, ${km.total_trades} trades executed.</div>
+      <div class="moment-val neutral">${km.velocity} trades/min</div>
+    </div>
+    <div class="moment-card">
+      <div class="moment-icon">💰</div>
+      <div class="moment-title">The Edge</div>
+      <div class="moment-body">Average win is ${km.reward_ratio}x the average loss. That asymmetry is where profit lives.</div>
+      <div class="moment-val neutral">${km.reward_ratio}:1 reward ratio</div>
+    </div>
+    <div class="moment-card">
+      <div class="moment-icon">📊</div>
+      <div class="moment-title">Total Trades</div>
+      <div class="moment-body">All agents combined across all pairs.</div>
+      <div class="moment-val neutral">${km.total_trades.toLocaleString()}</div>
+    </div>
+  `;
+}
+
+// ── Heatmap ───────────────────────────────────────────────────────────────────
+function updateHeatmap(heatmap) {
+  if (!heatmap || heatmap.length === 0) return;
+  const grid = document.getElementById('heatmap-grid');
+  grid.innerHTML = heatmap.map(h => {
+    const cls   = h.pnl > 0 ? 'pos' : h.pnl < 0 ? 'neg' : 'zero';
+    const sign  = h.pnl > 0 ? '+' : '';
+    return `<div class="heat-cell ${cls}">
+      <div class="heat-pair">${h.pair}</div>
+      <div class="heat-pnl ${cls}">${sign}$${h.pnl.toFixed(0)}</div>
+      <div class="heat-trades">${h.trades} trades</div>
+    </div>`;
+  }).join('');
+}
+
+// ── Trade Table ───────────────────────────────────────────────────────────────
+function filterTrades(agent, btn) {
+  currentFilter = agent;
+  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  renderTrades(allTrades);
+}
+
+function renderTrades(trades) {
+  const filtered = currentFilter === 'ALL' ? trades : trades.filter(t => t.agent === currentFilter);
+  document.getElementById('trade-count').textContent = `${trades.length} closed trades across all agents`;
+  const tbody = document.getElementById('trade-tbody');
+  if (filtered.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;color:#444;padding:20px">No trades yet</td></tr>';
+    return;
+  }
+  tbody.innerHTML = filtered.map(t => {
+    const pnlCls  = t.pnl >= 0 ? 'pnl-pos' : 'pnl-neg';
+    const sign    = t.pnl >= 0 ? '+' : '';
+    const badge   = t.result === 'TP' ? '<span class="tp-badge">TP</span>' : '<span class="sl-badge">SL</span>';
+    const pair    = t.pair.replace('USDT','');
+    const time    = new Date(t.close_at).toLocaleTimeString();
+    const move    = t.exit && t.entry ? ((t.exit-t.entry)/t.entry*100).toFixed(3)+'%' : '—';
+    return `<tr>
+      <td>${time}</td>
+      <td><span class="agent-dot" style="background:${t.color}"></span>${t.agent}</td>
+      <td><b>${pair}</b></td>
+      <td>$${t.entry?.toFixed(4)}</td>
+      <td>$${t.exit?.toFixed(4)}</td>
+      <td>${move}</td>
+      <td class="${pnlCls}">${sign}$${t.pnl?.toFixed(2)}</td>
+      <td>${badge}</td>
+    </tr>`;
+  }).join('');
+}
+
+// Build filter buttons dynamically
+function buildFilters(agents) {
+  const div = document.getElementById('trade-filters');
+  const names = ['ALL', ...agents.map(a => a.name)];
+  div.innerHTML = names.map(n => {
+    const cls = n === currentFilter ? 'filter-btn active' : 'filter-btn';
+    return `<button class="${cls}" onclick="filterTrades('${n}', this)">${n === 'ALL' ? 'ALL' : n}</button>`;
+  }).join('');
+}
+
+// ── API calls ─────────────────────────────────────────────────────────────────
+async function startSession() {
+  await fetch('/start', {method:'POST'});
+}
+async function stopSession() {
+  await fetch('/stop', {method:'POST'});
+}
+
+// ── Init ──────────────────────────────────────────────────────────────────────
+initChart();
+connect();
+
+// Also poll /state every 5s as fallback
+setInterval(async () => {
+  if (!ws || ws.readyState !== WebSocket.OPEN) {
+    try {
+      const r = await fetch('/state');
+      const d = await r.json();
+      updateAll(d);
+    } catch(e) {}
+  }
+}, 5000);
+</script>
+</body>
+</html>

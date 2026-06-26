@@ -1,0 +1,860 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Trading Lab v2 — Live Dashboard</title>
+<style>
+  :root {
+    --bg:#080808; --card:#0f0f0f; --card2:#111;
+    --border:#1e1e1e; --border2:#2a2a2a;
+    --green:#00ff88; --red:#ff3355; --blue:#00ccff;
+    --muted:#888; --text:#e0e0e0;
+  }
+  * { box-sizing:border-box; margin:0; padding:0; }
+  body { background:var(--bg); color:var(--text); font-family:'Segoe UI',monospace; font-size:13px; min-height:100vh; }
+
+  /* ── TABS ── */
+  .tab-bar {
+    display:flex; align-items:center; gap:0;
+    background:#050505; border-bottom:2px solid var(--border);
+    padding:0 24px; position:sticky; top:0; z-index:100;
+  }
+  .tab-bar .logo {
+    font-size:15px; font-weight:900; letter-spacing:3px;
+    background:linear-gradient(135deg,var(--green),var(--blue));
+    -webkit-background-clip:text; -webkit-text-fill-color:transparent;
+    margin-right:32px; padding:14px 0;
+  }
+  .tab-btn {
+    padding:14px 28px; border:none; background:transparent;
+    color:var(--muted); font-size:12px; font-weight:700;
+    letter-spacing:1.5px; text-transform:uppercase; cursor:pointer;
+    border-bottom:3px solid transparent; margin-bottom:-2px;
+    transition:all .2s;
+  }
+  .tab-btn:hover { color:#ccc; }
+  .tab-btn.active { color:var(--green); border-bottom-color:var(--green); }
+  .tab-content { display:none; }
+  .tab-content.active { display:block; }
+
+  /* ── SECTION HEADER ── */
+  .section-header {
+    padding:28px 28px 20px; border-bottom:1px solid var(--border);
+    background:linear-gradient(180deg,#0a0a0a,transparent);
+  }
+  .section-header h2 {
+    font-size:24px; font-weight:900; letter-spacing:2px;
+    background:linear-gradient(135deg,var(--green),var(--blue));
+    -webkit-background-clip:text; -webkit-text-fill-color:transparent;
+  }
+  .section-header .sub { font-size:11px; color:#aaa; letter-spacing:2px; text-transform:uppercase; margin-top:4px; }
+  .section-header .controls { display:flex; gap:10px; margin-top:16px; flex-wrap:wrap; }
+  .btn {
+    padding:8px 22px; border-radius:6px; border:none; cursor:pointer;
+    font-size:11px; font-weight:700; letter-spacing:1px; text-transform:uppercase; transition:opacity .2s;
+  }
+  .btn:hover { opacity:.85; }
+  .btn-resume { background:var(--green); color:#000; }
+  .btn-pause  { background:#ff3355; color:#fff; }
+  .btn-new    { background:#222; color:#666; border:1px solid #333; }
+  .status-line { display:flex; align-items:center; gap:8px; margin-top:12px; font-size:12px; color:#aaa; }
+  .dot { width:8px; height:8px; border-radius:50%; display:inline-block; }
+  .dot.live { background:var(--green); animation:pulse 1.5s infinite; }
+  .dot.off  { background:#444; }
+  @keyframes pulse { 0%,100%{opacity:1}50%{opacity:.3} }
+
+  /* ── PRICES BAR ── */
+  .prices-bar {
+    display:flex; flex-wrap:wrap; gap:6px; padding:10px 24px;
+    background:#050505; border-bottom:1px solid var(--border);
+  }
+  .price-chip {
+    background:#111; border:1px solid var(--border2); border-radius:6px;
+    padding:4px 12px; font-size:11px; display:flex; gap:8px; align-items:center;
+  }
+  .price-sym { font-weight:700; color:#ccc; }
+  .price-val { color:var(--blue); font-weight:700; }
+
+  /* ── AGENT GRID ── */
+  .agents-grid {
+    display:grid; grid-template-columns:repeat(5,1fr); gap:14px;
+    padding:20px 24px; max-width:1800px; margin:0 auto;
+  }
+  @media(max-width:1400px){ .agents-grid{grid-template-columns:repeat(3,1fr)} }
+  @media(max-width:800px) { .agents-grid{grid-template-columns:1fr 1fr} }
+
+  .agent-card {
+    background:var(--card); border:1px solid var(--border);
+    border-radius:12px; overflow:hidden;
+  }
+  .agent-card-header {
+    padding:12px 14px 10px; border-bottom:1px solid var(--border);
+  }
+  .agent-card-name { font-size:15px; font-weight:800; }
+  .agent-card-sub  { font-size:10px; color:#aaa; letter-spacing:1px; text-transform:uppercase; margin-top:2px; }
+  .agent-stats { display:grid; grid-template-columns:1fr 1fr; }
+  .stat { padding:10px 14px; border-bottom:1px solid var(--border); }
+  .stat:nth-child(odd) { border-right:1px solid var(--border); }
+  .stat-lbl { font-size:9px; color:#aaa; text-transform:uppercase; letter-spacing:1px; }
+  .stat-val { font-size:17px; font-weight:800; margin-top:2px; }
+  .pos { color:var(--green); } .neg { color:var(--red); } .neu { color:var(--blue); }
+
+  /* open trades inside agent card */
+  .open-section-title {
+    padding:6px 14px; font-size:9px; letter-spacing:2px; text-transform:uppercase;
+    color:var(--green); background:#0a0a0a; border-bottom:1px solid var(--border);
+  }
+  .open-trades { padding:8px 10px; display:flex; flex-direction:column; gap:5px; }
+  .trade-card {
+    background:#0d0d0d; border:1px solid var(--border2); border-radius:7px; padding:7px 10px;
+  }
+  .tc-top { display:flex; justify-content:space-between; align-items:center; margin-bottom:5px; }
+  .tc-pair { font-size:13px; font-weight:800; }
+  .tc-side { font-size:9px; font-weight:700; padding:2px 7px; border-radius:4px; }
+  .side-long  { background:#003322; color:var(--green); border:1px solid var(--green); }
+  .side-short { background:#330011; color:var(--red);   border:1px solid var(--red); }
+  .tc-pnl { font-size:13px; font-weight:800; }
+  .tc-grid { display:grid; grid-template-columns:1fr 1fr 1fr; gap:3px; }
+  .tc-field .lbl { font-size:9px; color:#aaa; text-transform:uppercase; }
+  .tc-field .val { font-size:10px; font-weight:700; color:#fff; }
+  .tc-field .val.now { color:var(--blue); }
+  .tc-field .val.tp  { color:var(--green); }
+  .tc-field .val.sl  { color:var(--red); }
+  .empty-msg { padding:10px 14px; font-size:11px; color:#555; font-style:italic; }
+
+  .agent-bottom {
+    display:flex; justify-content:space-between; padding:10px 14px;
+    border-top:1px solid var(--border); gap:4px;
+  }
+  .bstat { display:flex; flex-direction:column; align-items:center; flex:1; }
+  .bstat .bl { font-size:9px; color:#aaa; text-transform:uppercase; letter-spacing:1px; }
+  .bstat .bv { font-size:13px; font-weight:700; margin-top:1px; }
+
+  /* ── TRADE TABLE ── */
+  .table-section { max-width:1800px; margin:0 auto 40px; padding:0 24px; }
+  .table-header {
+    display:flex; justify-content:space-between; align-items:center;
+    padding:12px 16px; background:#0a0a0a;
+    border:1px solid var(--border); border-bottom:none;
+    border-radius:10px 10px 0 0;
+  }
+  .table-title { font-size:11px; letter-spacing:2px; text-transform:uppercase; color:var(--green); }
+  .table-filters { display:flex; gap:8px; flex-wrap:wrap; }
+  .fsel {
+    background:#111; border:1px solid #333; color:#ddd;
+    padding:5px 10px; border-radius:5px; font-size:11px; cursor:pointer;
+  }
+  .fbtn {
+    background:#111; border:1px solid #333; color:#aaa;
+    padding:5px 12px; border-radius:5px; font-size:11px;
+    font-weight:700; cursor:pointer; transition:all .15s;
+  }
+  .fbtn:hover { border-color:#555; color:#fff; }
+  .fbtn.on { background:var(--green); color:#000; border-color:var(--green); }
+
+  table.trade-table {
+    width:100%; border-collapse:collapse;
+    background:var(--card); border:1px solid var(--border); border-top:none;
+  }
+  table.trade-table th {
+    padding:9px 14px; font-size:9px; letter-spacing:1.5px; text-transform:uppercase;
+    color:#aaa; text-align:left; border-bottom:1px solid var(--border);
+    background:#0a0a0a; white-space:nowrap;
+  }
+  table.trade-table td {
+    padding:9px 14px; font-size:11px; border-bottom:1px solid #111;
+    white-space:nowrap;
+  }
+  table.trade-table tr:hover td { background:#111; }
+  table.trade-table tr:last-child td { border-bottom:none; }
+
+  /* ── PAGINATION ── */
+  .pagination {
+    display:flex; justify-content:space-between; align-items:center;
+    padding:12px 16px; background:#0a0a0a;
+    border:1px solid var(--border); border-top:none;
+    border-radius:0 0 10px 10px;
+  }
+  .page-info { font-size:11px; color:#aaa; }
+  .page-btns { display:flex; gap:4px; }
+  .page-btn {
+    background:#111; border:1px solid #333; color:#aaa;
+    padding:4px 10px; border-radius:4px; font-size:11px;
+    font-weight:700; cursor:pointer; transition:all .15s; min-width:32px; text-align:center;
+  }
+  .page-btn:hover { border-color:#555; color:#fff; }
+  .page-btn.active { background:var(--green); color:#000; border-color:var(--green); }
+  .page-btn:disabled { opacity:.3; cursor:not-allowed; }
+
+  /* ── PLACEHOLDER TAB 2 ── */
+  .placeholder {
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+    min-height:60vh; gap:16px; color:#444;
+  }
+  .placeholder .big { font-size:60px; }
+  .placeholder h3 { font-size:20px; font-weight:700; color:#666; }
+  .placeholder p { font-size:13px; color:#444; text-align:center; max-width:400px; line-height:1.7; }
+
+  /* ── TAGS ── */
+  .win-tag  { color:var(--green); font-weight:700; }
+  .loss-tag { color:var(--red);   font-weight:700; }
+  .long-tag  { background:#003322; color:var(--green); border:1px solid #004433;
+    padding:1px 6px; border-radius:3px; font-size:9px; font-weight:700; }
+  .short-tag { background:#330011; color:var(--red); border:1px solid #440022;
+    padding:1px 6px; border-radius:3px; font-size:9px; font-weight:700; }
+</style>
+</head>
+<body>
+
+<!-- TAB BAR -->
+<div class="tab-bar">
+  <div class="logo">TRADING LAB</div>
+  <button class="tab-btn active" onclick="switchTab('comp1')">🏆 Competition 1 — The 5 Agents</button>
+  <button class="tab-btn" onclick="switchTab('comp2')">🚀 Competition 2 — The 17 Agents</button>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════ -->
+<!-- TAB 1: COMPETITION 1 -->
+<!-- ══════════════════════════════════════════════════════════════ -->
+<div id="tab-comp1" class="tab-content active">
+
+  <!-- Section header -->
+  <div class="section-header">
+    <h2>COMPETITION 1 — THE 5 AGENTS</h2>
+    <div class="sub">Live paper trading · x50 leverage · $10,000 per agent · 10 pairs</div>
+    <div class="controls">
+      <button class="btn btn-resume" onclick="resumeSession(1)">▶ RESUME</button>
+      <button class="btn btn-pause"  onclick="stopSession(1)">■ PAUSE</button>
+      <button class="btn btn-new"    onclick="if(confirm('Reset ALL trades? Cannot be undone.'))newSession(1)">↺ NEW SESSION</button>
+    </div>
+    <div class="status-line">
+      <span class="dot off" id="c1-dot"></span>
+      <span id="c1-status">Connecting...</span>
+      <span style="margin-left:16px;color:#555">|</span>
+      <span style="margin-left:16px" id="c1-time"></span>
+    </div>
+  </div>
+
+  <!-- Prices -->
+  <div class="prices-bar" id="c1-prices">
+    <div class="price-chip"><span class="price-sym">BTC</span><span class="price-val" id="p1-BTCUSDT">—</span></div>
+    <div class="price-chip"><span class="price-sym">ETH</span><span class="price-val" id="p1-ETHUSDT">—</span></div>
+    <div class="price-chip"><span class="price-sym">SOL</span><span class="price-val" id="p1-SOLUSDT">—</span></div>
+    <div class="price-chip"><span class="price-sym">BNB</span><span class="price-val" id="p1-BNBUSDT">—</span></div>
+    <div class="price-chip"><span class="price-sym">XRP</span><span class="price-val" id="p1-XRPUSDT">—</span></div>
+    <div class="price-chip"><span class="price-sym">ADA</span><span class="price-val" id="p1-ADAUSDT">—</span></div>
+    <div class="price-chip"><span class="price-sym">LINK</span><span class="price-val" id="p1-LINKUSDT">—</span></div>
+    <div class="price-chip"><span class="price-sym">DOT</span><span class="price-val" id="p1-DOTUSDT">—</span></div>
+    <div class="price-chip"><span class="price-sym">AVAX</span><span class="price-val" id="p1-AVAXUSDT">—</span></div>
+    <div class="price-chip"><span class="price-sym">POL</span><span class="price-val" id="p1-POLUSDT">—</span></div>
+  </div>
+
+  <!-- Agent cards -->
+  <div class="agents-grid" id="c1-agents"></div>
+
+  <!-- Trade table -->
+  <div class="table-section">
+    <div class="table-header">
+      <div class="table-title">📋 Trade History</div>
+      <div class="table-filters">
+        <select class="fsel" id="c1-filter-agent" onchange="c1FilterAndRender()">
+          <option value="">All Agents</option>
+        </select>
+        <select class="fsel" id="c1-filter-pair" onchange="c1FilterAndRender()">
+          <option value="">All Pairs</option>
+        </select>
+        <button class="fbtn" id="c1-fbtn-long"  onclick="c1ToggleFilter('long')">LONG</button>
+        <button class="fbtn" id="c1-fbtn-short" onclick="c1ToggleFilter('short')">SHORT</button>
+        <button class="fbtn" id="c1-fbtn-win"   onclick="c1ToggleFilter('win')">WIN</button>
+        <button class="fbtn" id="c1-fbtn-loss"  onclick="c1ToggleFilter('loss')">LOSS</button>
+        <button class="fbtn" onclick="c1ClearFilters()">CLEAR</button>
+      </div>
+    </div>
+    <table class="trade-table" id="c1-table">
+      <thead>
+        <tr>
+          <th>#</th><th>Date &amp; Time</th><th>Agent</th><th>Pair</th>
+          <th>Side</th><th>Entry</th><th>Exit</th><th>TP</th><th>SL</th>
+          <th>Qty</th><th>Result</th><th>PnL</th><th>Duration</th>
+        </tr>
+      </thead>
+      <tbody id="c1-tbody"></tbody>
+    </table>
+    <div class="pagination">
+      <div class="page-info" id="c1-page-info">—</div>
+      <div class="page-btns" id="c1-page-btns"></div>
+    </div>
+  </div>
+</div><!-- /tab-comp1 -->
+
+<!-- ══════════════════════════════════════════════════════════════ -->
+<!-- TAB 2: COMPETITION 2 -->
+<!-- ══════════════════════════════════════════════════════════════ -->
+<div id="tab-comp2" class="tab-content">
+
+  <div class="section-header">
+    <h2>COMPETITION 2 — THE 17 AGENTS</h2>
+    <div class="sub">5 original + 12 new strategies · x50 leverage · $10,000 per agent · 10 pairs</div>
+    <div class="controls">
+      <button class="btn btn-resume" onclick="resumeSession(2)">▶ RESUME</button>
+      <button class="btn btn-pause"  onclick="stopSession(2)">■ PAUSE</button>
+      <button class="btn btn-new"    onclick="if(confirm('Reset ALL trades? Cannot be undone.'))newSession(2)">↺ NEW SESSION</button>
+    </div>
+    <div class="status-line">
+      <span class="dot off" id="c2-dot"></span>
+      <span id="c2-status">Not started</span>
+      <span style="margin-left:16px;color:#555">|</span>
+      <span style="margin-left:16px" id="c2-time"></span>
+    </div>
+  </div>
+
+  <!-- Prices -->
+  <div class="prices-bar">
+    <div class="price-chip"><span class="price-sym">BTC</span><span class="price-val" id="p2-BTCUSDT">—</span></div>
+    <div class="price-chip"><span class="price-sym">ETH</span><span class="price-val" id="p2-ETHUSDT">—</span></div>
+    <div class="price-chip"><span class="price-sym">SOL</span><span class="price-val" id="p2-SOLUSDT">—</span></div>
+    <div class="price-chip"><span class="price-sym">BNB</span><span class="price-val" id="p2-BNBUSDT">—</span></div>
+    <div class="price-chip"><span class="price-sym">XRP</span><span class="price-val" id="p2-XRPUSDT">—</span></div>
+    <div class="price-chip"><span class="price-sym">ADA</span><span class="price-val" id="p2-ADAUSDT">—</span></div>
+    <div class="price-chip"><span class="price-sym">LINK</span><span class="price-val" id="p2-LINKUSDT">—</span></div>
+    <div class="price-chip"><span class="price-sym">DOT</span><span class="price-val" id="p2-DOTUSDT">—</span></div>
+    <div class="price-chip"><span class="price-sym">AVAX</span><span class="price-val" id="p2-AVAXUSDT">—</span></div>
+    <div class="price-chip"><span class="price-sym">POL</span><span class="price-val" id="p2-POLUSDT">—</span></div>
+  </div>
+
+  <!-- Agent cards -->
+  <div class="agents-grid" id="c2-agents">
+    <div class="placeholder" style="grid-column:1/-1">
+      <div class="big">🚀</div>
+      <h3>Competition 2 Not Started Yet</h3>
+      <p>17 agents ready to deploy. Press RESUME when you're ready to start the competition. All agents will begin live paper trading immediately.</p>
+    </div>
+  </div>
+
+  <!-- Trade table -->
+  <div class="table-section">
+    <div class="table-header">
+      <div class="table-title">📋 Trade History</div>
+      <div class="table-filters">
+        <select class="fsel" id="c2-filter-agent" onchange="c2FilterAndRender()"><option value="">All Agents</option></select>
+        <select class="fsel" id="c2-filter-pair"  onchange="c2FilterAndRender()"><option value="">All Pairs</option></select>
+        <button class="fbtn" id="c2-fbtn-long"  onclick="c2ToggleFilter('long')">LONG</button>
+        <button class="fbtn" id="c2-fbtn-short" onclick="c2ToggleFilter('short')">SHORT</button>
+        <button class="fbtn" id="c2-fbtn-win"   onclick="c2ToggleFilter('win')">WIN</button>
+        <button class="fbtn" id="c2-fbtn-loss"  onclick="c2ToggleFilter('loss')">LOSS</button>
+        <button class="fbtn" onclick="c2ClearFilters()">CLEAR</button>
+      </div>
+    </div>
+    <table class="trade-table">
+      <thead>
+        <tr>
+          <th>#</th><th>Date &amp; Time</th><th>Agent</th><th>Pair</th>
+          <th>Side</th><th>Entry</th><th>Exit</th><th>TP</th><th>SL</th>
+          <th>Qty</th><th>Result</th><th>PnL</th><th>Duration</th>
+        </tr>
+      </thead>
+      <tbody id="c2-tbody"></tbody>
+    </table>
+    <div class="pagination">
+      <div class="page-info" id="c2-page-info">No trades yet</div>
+      <div class="page-btns" id="c2-page-btns"></div>
+    </div>
+  </div>
+</div><!-- /tab-comp2 -->
+
+<script>
+// ── TAB SWITCHING ──
+function switchTab(id) {
+  document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+  document.getElementById('tab-'+id).classList.add('active');
+  event.target.classList.add('active');
+}
+
+// ── HELPERS ──
+function fmt(n, dec=4) {
+  if (n == null) return '—';
+  return parseFloat(n).toFixed(dec);
+}
+function fmtPnl(n) {
+  if (n == null) return '—';
+  const v = parseFloat(n);
+  const cls = v >= 0 ? 'pos' : 'neg';
+  const sign = v >= 0 ? '+' : '';
+  return `<span class="${cls}">${sign}$${Math.abs(v).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2})}</span>`;
+}
+function fmtFullDate(iso) {
+  if (!iso) return '—';
+  const d = new Date(iso);
+  const pad = n => String(n).padStart(2,'0');
+  return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())} `
+       + `${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
+}
+function fmtDuration(open_iso, close_iso) {
+  if (!open_iso || !close_iso) return '—';
+  const diff = new Date(close_iso) - new Date(open_iso);
+  const h = Math.floor(diff/3600000);
+  const m = Math.floor((diff%3600000)/60000);
+  const s = Math.floor((diff%60000)/1000);
+  return h > 0 ? `${h}h ${m}m` : `${m}m ${s}s`;
+}
+
+// ── COMP 1 STATE ──
+let c1Data = { agents:{}, prices:{}, allTrades:[] };
+let c1Filters = { agent:'', pair:'', long:false, short:false, win:false, loss:false };
+let c1Page = 1;
+const C1_PER_PAGE = 25;
+
+let c1Ws = null;
+function connectC1() {
+  try {
+    c1Ws = new WebSocket('ws://localhost:8080/ws');
+    c1Ws.onopen = () => {
+      document.getElementById('c1-dot').className = 'dot live';
+      document.getElementById('c1-status').textContent = 'LIVE';
+    };
+    c1Ws.onmessage = e => {
+      const msg = JSON.parse(e.data);
+      if (msg.type === 'state') {
+        c1Data = msg;
+        renderC1Agents();
+        buildC1AllTrades();
+        c1FilterAndRender();
+        updatePrices(msg.prices || {}, 1);
+        document.getElementById('c1-time').textContent = 'Updated: ' + new Date().toLocaleTimeString();
+      }
+    };
+    c1Ws.onclose = () => {
+      document.getElementById('c1-dot').className = 'dot off';
+      document.getElementById('c1-status').textContent = 'Disconnected — retrying...';
+      setTimeout(connectC1, 3000);
+    };
+    c1Ws.onerror = () => c1Ws.close();
+  } catch(e) { setTimeout(connectC1, 3000); }
+}
+
+function updatePrices(prices, comp) {
+  const pairs = ['BTCUSDT','ETHUSDT','SOLUSDT','BNBUSDT','XRPUSDT',
+                 'ADAUSDT','LINKUSDT','DOTUSDT','AVAXUSDT','POLUSDT'];
+  pairs.forEach(p => {
+    const el = document.getElementById(`p${comp}-${p}`);
+    if (el && prices[p]) el.textContent = parseFloat(prices[p]).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:4});
+  });
+}
+
+function renderC1Agents() {
+  const agents = c1Data.agents || {};
+  const prices = c1Data.prices || {};
+  const container = document.getElementById('c1-agents');
+  container.innerHTML = '';
+
+  // populate agent filter
+  const agSel = document.getElementById('c1-filter-agent');
+  const existing = [...agSel.options].map(o=>o.value);
+  Object.keys(agents).forEach(name => {
+    if (!existing.includes(name)) {
+      const o = document.createElement('option');
+      o.value = name; o.textContent = name; agSel.appendChild(o);
+    }
+  });
+  // populate pair filter
+  const pairSel = document.getElementById('c1-filter-pair');
+  const existingPairs = [...pairSel.options].map(o=>o.value);
+  const allPairs = ['BTCUSDT','ETHUSDT','SOLUSDT','BNBUSDT','XRPUSDT','ADAUSDT','LINKUSDT','DOTUSDT','AVAXUSDT','POLUSDT'];
+  allPairs.forEach(p => {
+    if (!existingPairs.includes(p)) {
+      const o = document.createElement('option'); o.value=p; o.textContent=p; pairSel.appendChild(o);
+    }
+  });
+
+  Object.entries(agents).forEach(([name, ag]) => {
+    const balance = ag.balance ?? 10000;
+    const pnl = balance - 10000;
+    const pnlCls = pnl >= 0 ? 'pos' : 'neg';
+    const pnlStr = (pnl >= 0 ? '+' : '') + '$' + Math.abs(pnl).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
+    const closed = ag.closed_trades || [];
+    const open   = ag.open_trades   || [];
+    const wins   = closed.filter(t => t.pnl > 0).length;
+    const wr     = closed.length ? (wins/closed.length*100).toFixed(1) : '—';
+
+    // unrealized
+    let unrealized = 0;
+    open.forEach(t => {
+      const cur = prices[t.pair] || t.entry;
+      if (t.side === 'LONG') unrealized += t.qty * (cur - t.entry);
+      else unrealized += t.qty * (t.entry - cur);
+    });
+
+    // open trades html
+    let openHtml = '';
+    if (open.length === 0) {
+      openHtml = `<div class="empty-msg">No open positions</div>`;
+    } else {
+      open.forEach(t => {
+        const cur = prices[t.pair] || t.entry;
+        const upnl = t.side === 'LONG' ? t.qty*(cur-t.entry) : t.qty*(t.entry-cur);
+        const pnlCls2 = upnl >= 0 ? 'pos' : 'neg';
+        const sign2 = upnl >= 0 ? '+' : '';
+        openHtml += `
+        <div class="trade-card">
+          <div class="tc-top">
+            <span class="tc-pair">${t.pair.replace('USDT','')}</span>
+            <span class="tc-side ${t.side==='LONG'?'side-long':'side-short'}">${t.side}</span>
+            <span class="tc-pnl ${pnlCls2}">${sign2}$${Math.abs(upnl).toFixed(2)}</span>
+          </div>
+          <div class="tc-grid">
+            <div class="tc-field"><div class="lbl">Entry</div><div class="val">${fmt(t.entry,4)}</div></div>
+            <div class="tc-field"><div class="lbl">Now</div><div class="val now">${fmt(cur,4)}</div></div>
+            <div class="tc-field"><div class="lbl">TP</div><div class="val tp">${fmt(t.tp,4)}</div></div>
+            <div class="tc-field"><div class="lbl">SL</div><div class="val sl">${fmt(t.sl,4)}</div></div>
+            <div class="tc-field"><div class="lbl">Qty</div><div class="val">${parseFloat(t.qty).toFixed(2)}</div></div>
+            <div class="tc-field"><div class="lbl">Open</div><div class="val" style="font-size:8px">${fmtFullDate(t.open_at)}</div></div>
+          </div>
+        </div>`;
+      });
+    }
+
+    const card = document.createElement('div');
+    card.className = 'agent-card';
+    card.innerHTML = `
+      <div class="agent-card-header">
+        <div class="agent-card-name">${ag.emoji||'🤖'} ${name}</div>
+        <div class="agent-card-sub">${ag.strategy||''} · ${ag.timeframe||''}</div>
+      </div>
+      <div class="agent-stats">
+        <div class="stat"><div class="stat-lbl">Balance</div><div class="stat-val neu">$${balance.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2})}</div></div>
+        <div class="stat"><div class="stat-lbl">PnL</div><div class="stat-val ${pnlCls}">${pnlStr}</div></div>
+        <div class="stat"><div class="stat-lbl">Closed</div><div class="stat-val neu">${closed.length}</div></div>
+        <div class="stat"><div class="stat-lbl">Win Rate</div><div class="stat-val ${wr!=='—'&&parseFloat(wr)>=50?'pos':'neg'}">${wr}%</div></div>
+      </div>
+      <div class="open-section-title">Open Positions (${open.length})</div>
+      <div class="open-trades">${openHtml}</div>
+      <div class="agent-bottom">
+        <div class="bstat"><div class="bl">Open</div><div class="bv neu">${open.length}</div></div>
+        <div class="bstat"><div class="bl">Unrealized</div><div class="bv ${unrealized>=0?'pos':'neg'}">${unrealized>=0?'+':''}$${Math.abs(unrealized).toFixed(2)}</div></div>
+        <div class="bstat"><div class="bl">Equity</div><div class="bv neu">$${(balance+unrealized).toFixed(2)}</div></div>
+      </div>`;
+    container.appendChild(card);
+  });
+}
+
+function buildC1AllTrades() {
+  const agents = c1Data.agents || {};
+  c1Data.allTrades = [];
+  Object.entries(agents).forEach(([name, ag]) => {
+    (ag.closed_trades || []).forEach(t => {
+      c1Data.allTrades.push({...t, agent_name: name, emoji: ag.emoji||'🤖'});
+    });
+  });
+  c1Data.allTrades.sort((a,b) => new Date(b.open_at) - new Date(a.open_at));
+}
+
+function c1GetFiltered() {
+  let trades = c1Data.allTrades || [];
+  const f = c1Filters;
+  if (f.agent) trades = trades.filter(t => t.agent_name === f.agent);
+  if (f.pair)  trades = trades.filter(t => t.pair === f.pair);
+  if (f.long && !f.short) trades = trades.filter(t => t.side === 'LONG');
+  if (f.short && !f.long) trades = trades.filter(t => t.side === 'SHORT');
+  if (f.win && !f.loss)   trades = trades.filter(t => t.pnl > 0);
+  if (f.loss && !f.win)   trades = trades.filter(t => t.pnl <= 0);
+  return trades;
+}
+
+function c1FilterAndRender() {
+  c1Filters.agent = document.getElementById('c1-filter-agent').value;
+  c1Filters.pair  = document.getElementById('c1-filter-pair').value;
+  c1Page = 1;
+  c1RenderTable();
+}
+
+function c1ToggleFilter(key) {
+  c1Filters[key] = !c1Filters[key];
+  document.getElementById('c1-fbtn-'+key).classList.toggle('on', c1Filters[key]);
+  c1Page = 1; c1RenderTable();
+}
+
+function c1ClearFilters() {
+  c1Filters = {agent:'',pair:'',long:false,short:false,win:false,loss:false};
+  document.getElementById('c1-filter-agent').value = '';
+  document.getElementById('c1-filter-pair').value  = '';
+  ['long','short','win','loss'].forEach(k => document.getElementById('c1-fbtn-'+k).classList.remove('on'));
+  c1Page = 1; c1RenderTable();
+}
+
+function c1RenderTable() {
+  const trades = c1GetFiltered();
+  const total  = trades.length;
+  const pages  = Math.max(1, Math.ceil(total / C1_PER_PAGE));
+  if (c1Page > pages) c1Page = pages;
+  const start  = (c1Page - 1) * C1_PER_PAGE;
+  const slice  = trades.slice(start, start + C1_PER_PAGE);
+
+  const tbody = document.getElementById('c1-tbody');
+  tbody.innerHTML = slice.length === 0
+    ? `<tr><td colspan="13" style="text-align:center;color:#444;padding:20px">No trades found</td></tr>`
+    : slice.map((t, i) => `
+    <tr>
+      <td style="color:#555">${total - start - i}</td>
+      <td style="color:#aaa;font-size:10px">${fmtFullDate(t.open_at)}</td>
+      <td>${t.emoji} ${t.agent_name}</td>
+      <td style="font-weight:700">${t.pair}</td>
+      <td><span class="${t.side==='LONG'?'long-tag':'short-tag'}">${t.side}</span></td>
+      <td>${fmt(t.entry,4)}</td>
+      <td>${fmt(t.exit,4)}</td>
+      <td style="color:var(--green)">${fmt(t.tp,4)}</td>
+      <td style="color:var(--red)">${fmt(t.sl,4)}</td>
+      <td>${parseFloat(t.qty||0).toFixed(2)}</td>
+      <td><span class="${t.pnl>0?'win-tag':'loss-tag'}">${t.pnl>0?'WIN':'LOSS'}</span></td>
+      <td>${fmtPnl(t.pnl)}</td>
+      <td style="color:#666">${fmtDuration(t.open_at, t.close_at)}</td>
+    </tr>`).join('');
+
+  document.getElementById('c1-page-info').textContent =
+    `Showing ${start+1}–${Math.min(start+C1_PER_PAGE,total)} of ${total} trades`;
+
+  renderPagination('c1-page-btns', pages, c1Page, p => { c1Page=p; c1RenderTable(); });
+}
+
+// ── COMP 2 STATE ──
+let c2Data = { agents:{}, prices:{}, allTrades:[] };
+let c2Filters = { agent:'', pair:'', long:false, short:false, win:false, loss:false };
+let c2Page = 1;
+const C2_PER_PAGE = 25;
+
+let c2Ws = null;
+function connectC2() {
+  try {
+    c2Ws = new WebSocket('ws://localhost:8123/ws');
+    c2Ws.onopen = () => {
+      document.getElementById('c2-dot').className = 'dot live';
+      document.getElementById('c2-status').textContent = 'LIVE';
+    };
+    c2Ws.onmessage = e => {
+      const msg = JSON.parse(e.data);
+      if (msg.type === 'state') {
+        c2Data = msg;
+        renderC2Agents();
+        buildC2AllTrades();
+        c2FilterAndRender();
+        updatePrices(msg.prices || {}, 2);
+        document.getElementById('c2-time').textContent = 'Updated: ' + new Date().toLocaleTimeString();
+      }
+    };
+    c2Ws.onclose = () => {
+      document.getElementById('c2-dot').className = 'dot off';
+      document.getElementById('c2-status').textContent = 'Not started — waiting for Competition 2 server';
+      setTimeout(connectC2, 5000);
+    };
+    c2Ws.onerror = () => c2Ws.close();
+  } catch(e) { setTimeout(connectC2, 5000); }
+}
+
+function renderC2Agents() {
+  const agents = c2Data.agents || {};
+  const prices = c2Data.prices || {};
+  const container = document.getElementById('c2-agents');
+  if (Object.keys(agents).length === 0) return;
+  container.innerHTML = '';
+
+  const agSel = document.getElementById('c2-filter-agent');
+  const existing = [...agSel.options].map(o=>o.value);
+  Object.keys(agents).forEach(name => {
+    if (!existing.includes(name)) {
+      const o = document.createElement('option'); o.value=name; o.textContent=name; agSel.appendChild(o);
+    }
+  });
+
+  Object.entries(agents).forEach(([name, ag]) => {
+    const balance = ag.balance ?? 10000;
+    const pnl = balance - 10000;
+    const pnlCls = pnl >= 0 ? 'pos' : 'neg';
+    const pnlStr = (pnl >= 0 ? '+' : '') + '$' + Math.abs(pnl).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
+    const closed = ag.closed_trades || [];
+    const open   = ag.open_trades   || [];
+    const wins   = closed.filter(t => t.pnl > 0).length;
+    const wr     = closed.length ? (wins/closed.length*100).toFixed(1) : '—';
+
+    let unrealized = 0;
+    open.forEach(t => {
+      const cur = prices[t.pair] || t.entry;
+      if (t.side === 'LONG') unrealized += t.qty * (cur - t.entry);
+      else unrealized += t.qty * (t.entry - cur);
+    });
+
+    let openHtml = open.length === 0
+      ? `<div class="empty-msg">No open positions</div>`
+      : open.map(t => {
+          const cur = prices[t.pair] || t.entry;
+          const upnl = t.side==='LONG' ? t.qty*(cur-t.entry) : t.qty*(t.entry-cur);
+          const pc2 = upnl>=0?'pos':'neg';
+          const s2  = upnl>=0?'+':'';
+          return `<div class="trade-card">
+            <div class="tc-top">
+              <span class="tc-pair">${t.pair.replace('USDT','')}</span>
+              <span class="tc-side ${t.side==='LONG'?'side-long':'side-short'}">${t.side}</span>
+              <span class="tc-pnl ${pc2}">${s2}$${Math.abs(upnl).toFixed(2)}</span>
+            </div>
+            <div class="tc-grid">
+              <div class="tc-field"><div class="lbl">Entry</div><div class="val">${fmt(t.entry,4)}</div></div>
+              <div class="tc-field"><div class="lbl">Now</div><div class="val now">${fmt(cur,4)}</div></div>
+              <div class="tc-field"><div class="lbl">TP</div><div class="val tp">${fmt(t.tp,4)}</div></div>
+              <div class="tc-field"><div class="lbl">SL</div><div class="val sl">${fmt(t.sl,4)}</div></div>
+              <div class="tc-field"><div class="lbl">Qty</div><div class="val">${parseFloat(t.qty).toFixed(2)}</div></div>
+              <div class="tc-field"><div class="lbl">Open</div><div class="val" style="font-size:8px">${fmtFullDate(t.open_at)}</div></div>
+            </div>
+          </div>`;
+        }).join('');
+
+    const card = document.createElement('div');
+    card.className = 'agent-card';
+    card.innerHTML = `
+      <div class="agent-card-header">
+        <div class="agent-card-name">${ag.emoji||'🤖'} ${name}</div>
+        <div class="agent-card-sub">${ag.strategy||''} · ${ag.timeframe||''}</div>
+      </div>
+      <div class="agent-stats">
+        <div class="stat"><div class="stat-lbl">Balance</div><div class="stat-val neu">$${balance.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2})}</div></div>
+        <div class="stat"><div class="stat-lbl">PnL</div><div class="stat-val ${pnlCls}">${pnlStr}</div></div>
+        <div class="stat"><div class="stat-lbl">Closed</div><div class="stat-val neu">${closed.length}</div></div>
+        <div class="stat"><div class="stat-lbl">Win Rate</div><div class="stat-val ${wr!=='—'&&parseFloat(wr)>=50?'pos':'neg'}">${wr}%</div></div>
+      </div>
+      <div class="open-section-title">Open Positions (${open.length})</div>
+      <div class="open-trades">${openHtml}</div>
+      <div class="agent-bottom">
+        <div class="bstat"><div class="bl">Open</div><div class="bv neu">${open.length}</div></div>
+        <div class="bstat"><div class="bl">Unrealized</div><div class="bv ${unrealized>=0?'pos':'neg'}">${unrealized>=0?'+':''}$${Math.abs(unrealized).toFixed(2)}</div></div>
+        <div class="bstat"><div class="bl">Equity</div><div class="bv neu">$${(balance+unrealized).toFixed(2)}</div></div>
+      </div>`;
+    container.appendChild(card);
+  });
+}
+
+function buildC2AllTrades() {
+  const agents = c2Data.agents || {};
+  c2Data.allTrades = [];
+  Object.entries(agents).forEach(([name, ag]) => {
+    (ag.closed_trades || []).forEach(t => {
+      c2Data.allTrades.push({...t, agent_name: name, emoji: ag.emoji||'🤖'});
+    });
+  });
+  c2Data.allTrades.sort((a,b) => new Date(b.open_at) - new Date(a.open_at));
+}
+
+function c2GetFiltered() {
+  let trades = c2Data.allTrades || [];
+  const f = c2Filters;
+  if (f.agent) trades = trades.filter(t => t.agent_name === f.agent);
+  if (f.pair)  trades = trades.filter(t => t.pair === f.pair);
+  if (f.long && !f.short) trades = trades.filter(t => t.side === 'LONG');
+  if (f.short && !f.long) trades = trades.filter(t => t.side === 'SHORT');
+  if (f.win && !f.loss)   trades = trades.filter(t => t.pnl > 0);
+  if (f.loss && !f.win)   trades = trades.filter(t => t.pnl <= 0);
+  return trades;
+}
+
+function c2FilterAndRender() {
+  c2Filters.agent = document.getElementById('c2-filter-agent').value;
+  c2Filters.pair  = document.getElementById('c2-filter-pair').value;
+  c2Page = 1; c2RenderTable();
+}
+
+function c2ToggleFilter(key) {
+  c2Filters[key] = !c2Filters[key];
+  document.getElementById('c2-fbtn-'+key).classList.toggle('on', c2Filters[key]);
+  c2Page = 1; c2RenderTable();
+}
+
+function c2ClearFilters() {
+  c2Filters = {agent:'',pair:'',long:false,short:false,win:false,loss:false};
+  document.getElementById('c2-filter-agent').value = '';
+  document.getElementById('c2-filter-pair').value  = '';
+  ['long','short','win','loss'].forEach(k => document.getElementById('c2-fbtn-'+k).classList.remove('on'));
+  c2Page = 1; c2RenderTable();
+}
+
+function c2RenderTable() {
+  const trades = c2GetFiltered();
+  const total  = trades.length;
+  const pages  = Math.max(1, Math.ceil(total / C2_PER_PAGE));
+  if (c2Page > pages) c2Page = pages;
+  const start  = (c2Page-1)*C2_PER_PAGE;
+  const slice  = trades.slice(start, start+C2_PER_PAGE);
+
+  const tbody = document.getElementById('c2-tbody');
+  tbody.innerHTML = total === 0
+    ? `<tr><td colspan="13" style="text-align:center;color:#444;padding:20px">No trades yet</td></tr>`
+    : slice.map((t,i) => `
+    <tr>
+      <td style="color:#555">${total-start-i}</td>
+      <td style="color:#aaa;font-size:10px">${fmtFullDate(t.open_at)}</td>
+      <td>${t.emoji} ${t.agent_name}</td>
+      <td style="font-weight:700">${t.pair}</td>
+      <td><span class="${t.side==='LONG'?'long-tag':'short-tag'}">${t.side}</span></td>
+      <td>${fmt(t.entry,4)}</td>
+      <td>${fmt(t.exit,4)}</td>
+      <td style="color:var(--green)">${fmt(t.tp,4)}</td>
+      <td style="color:var(--red)">${fmt(t.sl,4)}</td>
+      <td>${parseFloat(t.qty||0).toFixed(2)}</td>
+      <td><span class="${t.pnl>0?'win-tag':'loss-tag'}">${t.pnl>0?'WIN':'LOSS'}</span></td>
+      <td>${fmtPnl(t.pnl)}</td>
+      <td style="color:#666">${fmtDuration(t.open_at,t.close_at)}</td>
+    </tr>`).join('');
+
+  document.getElementById('c2-page-info').textContent =
+    total===0 ? 'No trades yet'
+    : `Showing ${start+1}–${Math.min(start+C2_PER_PAGE,total)} of ${total} trades`;
+
+  renderPagination('c2-page-btns', pages, c2Page, p => { c2Page=p; c2RenderTable(); });
+}
+
+// ── PAGINATION RENDERER ──
+function renderPagination(containerId, pages, current, onClick) {
+  const container = document.getElementById(containerId);
+  container.innerHTML = '';
+  if (pages <= 1) return;
+
+  const addBtn = (label, page, disabled=false) => {
+    const btn = document.createElement('button');
+    btn.className = 'page-btn' + (page===current?' active':'');
+    btn.textContent = label;
+    btn.disabled = disabled;
+    if (!disabled) btn.onclick = () => onClick(page);
+    container.appendChild(btn);
+  };
+
+  addBtn('«', 1,    current===1);
+  addBtn('‹', current-1, current===1);
+
+  let start = Math.max(1, current-2);
+  let end   = Math.min(pages, current+2);
+  if (start > 1) { addBtn('1', 1); if (start > 2) { const d=document.createElement('span'); d.textContent='…'; d.style.cssText='padding:4px 6px;color:#444'; container.appendChild(d); } }
+  for (let p=start; p<=end; p++) addBtn(String(p), p);
+  if (end < pages) { if (end < pages-1) { const d=document.createElement('span'); d.textContent='…'; d.style.cssText='padding:4px 6px;color:#444'; container.appendChild(d); } addBtn(String(pages), pages); }
+
+  addBtn('›', current+1, current===pages);
+  addBtn('»', pages,     current===pages);
+}
+
+// ── SESSION CONTROLS ──
+async function resumeSession(comp) {
+  const port = comp===1 ? 8080 : 8123;
+  try { await fetch(`http://localhost:${port}/resume`, {method:'POST'}); } catch(e) {}
+}
+async function stopSession(comp) {
+  const port = comp===1 ? 8080 : 8123;
+  try { await fetch(`http://localhost:${port}/stop`, {method:'POST'}); } catch(e) {}
+}
+async function newSession(comp) {
+  const port = comp===1 ? 8080 : 8123;
+  try { await fetch(`http://localhost:${port}/start`, {method:'POST'}); } catch(e) {}
+}
+
+// ── INIT ──
+connectC1();
+connectC2();
+c1RenderTable();
+c2RenderTable();
+</script>
+</body>
+</html>

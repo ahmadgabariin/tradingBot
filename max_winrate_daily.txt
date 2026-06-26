@@ -1,0 +1,183 @@
+MAX WIN RATE DAILY SEARCH - 2026-06-20 20:31:44
+Strategies: 33 | TFs: ['15m', '1h', '4h'] | R/R combos: 47
+Total combinations: 13959
+Backtest: non-overlapping, max_hold=300, unresolved=LOSS (conservative)
+================================================================================
+
+Strategies: 33 | TFs: ['15m', '1h', '4h'] | R/R: 47 combos
+Fetching max historical data...
+
+  BTCUSDT 15m: 20000 candles (~208 days)
+  ETHUSDT 15m: 20000 candles (~208 days)
+  SOLUSDT 15m: 20000 candles (~208 days)
+
+  BTCUSDT 1h: 20000 candles (~833 days)
+  ETHUSDT 1h: 20000 candles (~833 days)
+  SOLUSDT 1h: 20000 candles (~833 days)
+
+  BTCUSDT 4h: 15000 candles (~2500 days)
+  ETHUSDT 4h: 15000 candles (~2500 days)
+  SOLUSDT 4h: 12838 candles (~2140 days)
+
+Running exhaustive backtest...
+
+
+Found 774 profitable daily-frequency results.
+
+====================================================================================================
+TOP 50 BY WIN RATE  (profitable, 0.3-10 trades/day, non-overlapping, unresolved=LOSS)
+====================================================================================================
+  #   TF    Strategy                      SL    TP |     N    WR%     EV%  T/day  Days    BE%
+  -----------------------------------------------------------------------------------------------
+  1   1h    ADX_Trend                    5.0   1.2 |   281  83.3% +0.163%   0.3/d   833d  80.7%
+  2   1h    Combined_Best                4.0   1.0 |   434  82.5% +0.124%   0.5/d   833d  80.0%
+  3   15m   Donchian_Break_Strict        2.5   0.6 |   261  82.0% +0.042%   1.2/d   208d  80.7%
+  4   4h    EMA_Cross                    4.0   1.0 |   737  82.0% +0.098%   0.3/d  2380d  80.0%
+  5   1h    ORB                          2.5   0.6 |   594  81.8% +0.036%   0.7/d   833d  80.7%
+  6   15m   Keltner_Break                2.5   0.6 |   547  81.7% +0.033%   2.6/d   208d  80.7%
+  7   1h    Donchian_Break_Strict        4.0   1.0 |   318  81.4% +0.072%   0.4/d   833d  80.0%
+  8   15m   Golden_Cross                 2.5   0.6 |   161  81.4% +0.022%   0.8/d   208d  80.7%
+  9   15m   Donchian_Break               2.5   0.6 |   680  81.3% +0.021%   3.3/d   208d  80.7%
+  10  15m   EMA_Cross_Filtered           2.5   0.6 |   432  81.2% +0.019%   2.1/d   208d  80.7%
+  11  15m   ADX_Trend                    2.0   0.5 |   341  81.2% +0.031%   1.6/d   208d  80.0%
+  12  4h    Donchian_Break               5.0   1.2 |   766  81.1% +0.026%   0.3/d  2380d  80.7%
+  13  1h    Keltner_Break                3.0   0.8 |   670  81.0% +0.080%   0.8/d   833d  79.0%
+  14  1h    EMA_Cross_Filtered           4.0   1.0 |   464  81.0% +0.052%   0.6/d   833d  80.0%
+  15  1h    Price_EMA200_Cross           2.5   0.6 |   440  80.9% +0.008%   0.5/d   833d  80.7%
+  16  4h    Engulfing                    5.0   1.2 |  1606  80.9% +0.015%   0.7/d  2380d  80.7%
+  17  15m   RSI_Oversold_Strict          3.0   0.8 |    73  80.8% +0.071%   0.3/d   208d  79.0%
+  18  15m   Price_EMA200_Cross           2.5   0.6 |   322  80.7% +0.003%   1.6/d   208d  80.7%
+  19  1h    MACD_Cross_Filtered          3.0   0.8 |   382  80.6% +0.064%   0.5/d   833d  79.0%
+  20  1h    Squeeze_Break                4.0   1.0 |   288  80.6% +0.028%   0.3/d   833d  80.0%
+  21  1h    Hammer                       4.0   1.0 |   257  80.5% +0.027%   0.3/d   833d  80.0%
+  22  15m   Squeeze_Break                3.0   0.8 |   231  80.5% +0.060%   1.1/d   208d  79.0%
+  23  15m   MACD_Cross_Filtered          3.0   0.8 |   276  80.1% +0.043%   1.3/d   208d  79.0%
+  24  1h    EMA_Ribbon                   3.0   0.8 |  1528  80.0% +0.039%   1.8/d   833d  79.0%
+  25  1h    Three_Green                  3.0   0.8 |  1117  79.9% +0.038%   1.3/d   833d  79.0%
+  26  15m   Volume_Spike                 1.5   0.4 |   548  79.6% +0.012%   2.6/d   208d  79.0%
+  27  1h    MACD_Cross                   3.0   0.8 |   815  79.0% +0.003%   1.0/d   833d  79.0%
+  28  4h    Three_Green                  6.0   2.0 |   836  76.7% +0.134%   0.3/d  2380d  75.0%
+  29  4h    VWAP_Cross                   6.0   2.0 |  1067  76.5% +0.118%   0.5/d  2380d  75.0%
+  30  1h    Donchian_Break               3.0   1.0 |   928  75.4% +0.017%   1.1/d   833d  75.0%
+  31  4h    Confluence                   6.0   2.0 |  1921  75.2% +0.013%   0.8/d  2380d  75.0%
+  32  1h    Triple_EMA                   3.0   1.0 |   771  75.1% +0.004%   0.9/d   833d  75.0%
+  33  4h    EMA_Ribbon                   6.0   2.0 |  1131  75.1% +0.005%   0.5/d  2380d  75.0%
+  34  1h    EMA_Cross                    3.5   1.7 |   803  68.9% +0.081%   1.0/d   833d  67.3%
+  35  4h    EMA21_Touch_MACD             3.5   1.7 |  1091  68.0% +0.037%   0.5/d  2380d  67.3%
+  36  1h    RSI_50_Cross                 2.5   1.2 |   611  67.8% +0.007%   0.7/d   833d  67.6%
+  37  1h    EMA21_Touch_MACD             3.5   1.7 |   895  67.6% +0.015%   1.1/d   833d  67.3%
+  38  1h    Hybrid                       3.5   1.7 |   741  67.3% +0.002%   0.9/d   833d  67.3%
+  39  4h    Hybrid                       3.5   1.7 |   872  67.3% +0.001%   0.4/d  2380d  67.3%
+  40  4h    BB_Bounce                    5.0   2.5 |   806  67.1% +0.034%   0.3/d  2380d  66.7%
+  41  1h    Volume_Spike                 3.0   1.5 |   498  66.9% +0.009%   0.6/d   833d  66.7%
+  42  15m   Combined_Best                1.5   1.0 |   280  61.4% +0.036%   1.3/d   208d  60.0%
+  43  15m   MACD_Cross                   1.5   1.0 |   590  60.3% +0.009%   2.8/d   208d  60.0%
+  44  1h    MACD_BB_Combo                1.8   1.2 |   638  60.2% +0.006%   0.8/d   833d  60.0%
+  45  15m   RSI_50_Cross                 1.2   1.0 |   499  55.1% +0.012%   2.4/d   208d  54.5%
+  46  1h    BB_Bounce                    1.2   1.2 |  2113  50.0% +0.001%   2.5/d   833d  50.0%
+  47  4h    MACD_Cross                   1.5   2.2 |   728  40.8% +0.009%   0.3/d  2380d  40.5%
+  48  1h    VWAP_Cross                   1.5   2.2 |  1602  40.8% +0.008%   1.9/d   833d  40.5%
+  49  4h    BB_Bounce_Strict             2.5   3.7 |  1170  40.4% +0.006%   0.5/d  2380d  40.3%
+  50  1h    EMA_Stack_Pullback           1.0   2.0 |  1764  33.7% +0.010%   2.1/d   833d  33.3%
+
+====================================================================================================
+TOP 10 DETAILED  (per-pair win rate breakdown)
+====================================================================================================
+
+  #1  ADX_Trend [1h]  SL=5.0%  TP=1.2%
+      WR=83.3%  EV=+0.163%/trade  Breakeven=80.7%  Trades=281  0.3/day  833d history
+      BTCUSDT: 69W / 13L = 84.1% WR
+      ETHUSDT: 68W / 15L = 81.9% WR
+      SOLUSDT: 97W / 19L = 83.6% WR
+
+  #2  Combined_Best [1h]  SL=4.0%  TP=1.0%
+      WR=82.5%  EV=+0.124%/trade  Breakeven=80.0%  Trades=434  0.5/day  833d history
+      BTCUSDT: 88W / 19L = 82.2% WR
+      ETHUSDT: 109W / 21L = 83.8% WR
+      SOLUSDT: 161W / 36L = 81.7% WR
+
+  #3  Donchian_Break_Strict [15m]  SL=2.5%  TP=0.6%
+      WR=82.0%  EV=+0.042%/trade  Breakeven=80.7%  Trades=261  1.2/day  208d history
+      BTCUSDT: 69W / 16L = 81.2% WR
+      ETHUSDT: 71W / 17L = 80.7% WR
+      SOLUSDT: 74W / 14L = 84.1% WR
+
+  #4  EMA_Cross [4h]  SL=4.0%  TP=1.0%
+      WR=82.0%  EV=+0.098%/trade  Breakeven=80.0%  Trades=737  0.3/day  2380d history
+      BTCUSDT: 200W / 40L = 83.3% WR
+      ETHUSDT: 223W / 45L = 83.2% WR
+      SOLUSDT: 181W / 48L = 79.0% WR
+
+  #5  ORB [1h]  SL=2.5%  TP=0.6%
+      WR=81.8%  EV=+0.036%/trade  Breakeven=80.7%  Trades=594  0.7/day  833d history
+      BTCUSDT: 240W / 56L = 81.1% WR
+      ETHUSDT: 153W / 31L = 83.2% WR
+      SOLUSDT: 93W / 21L = 81.6% WR
+
+  #6  Keltner_Break [15m]  SL=2.5%  TP=0.6%
+      WR=81.7%  EV=+0.033%/trade  Breakeven=80.7%  Trades=547  2.6/day  208d history
+      BTCUSDT: 132W / 36L = 78.6% WR
+      ETHUSDT: 143W / 40L = 78.1% WR
+      SOLUSDT: 172W / 24L = 87.8% WR
+
+  #7  Donchian_Break_Strict [1h]  SL=4.0%  TP=1.0%
+      WR=81.4%  EV=+0.072%/trade  Breakeven=80.0%  Trades=318  0.4/day  833d history
+      BTCUSDT: 71W / 22L = 76.3% WR
+      ETHUSDT: 77W / 17L = 81.9% WR
+      SOLUSDT: 111W / 20L = 84.7% WR
+
+  #8  Golden_Cross [15m]  SL=2.5%  TP=0.6%
+      WR=81.4%  EV=+0.022%/trade  Breakeven=80.7%  Trades=161  0.8/day  208d history
+      BTCUSDT: 40W / 12L = 76.9% WR
+      ETHUSDT: 42W / 7L = 85.7% WR
+      SOLUSDT: 49W / 11L = 81.7% WR
+
+  #9  Donchian_Break [15m]  SL=2.5%  TP=0.6%
+      WR=81.3%  EV=+0.021%/trade  Breakeven=80.7%  Trades=680  3.3/day  208d history
+      BTCUSDT: 165W / 39L = 80.9% WR
+      ETHUSDT: 186W / 51L = 78.5% WR
+      SOLUSDT: 202W / 37L = 84.5% WR
+
+  #10  EMA_Cross_Filtered [15m]  SL=2.5%  TP=0.6%
+      WR=81.2%  EV=+0.019%/trade  Breakeven=80.7%  Trades=432  2.1/day  208d history
+      BTCUSDT: 111W / 31L = 78.2% WR
+      ETHUSDT: 101W / 25L = 80.2% WR
+      SOLUSDT: 139W / 25L = 84.8% WR
+
+====================================================================================================
+CHAMPION PER TIMEFRAME
+====================================================================================================
+
+  [15m]  Top 3:
+    #1 Donchian_Break_Strict       WR=82.0%  EV=+0.042%  SL=2.5%/TP=0.6%  N=261  1.2/day
+    #2 Keltner_Break               WR=81.7%  EV=+0.033%  SL=2.5%/TP=0.6%  N=547  2.6/day
+    #3 Golden_Cross                WR=81.4%  EV=+0.022%  SL=2.5%/TP=0.6%  N=161  0.8/day
+
+  [1h]  Top 3:
+    #1 ADX_Trend                   WR=83.3%  EV=+0.163%  SL=5.0%/TP=1.2%  N=281  0.3/day
+    #2 Combined_Best               WR=82.5%  EV=+0.124%  SL=4.0%/TP=1.0%  N=434  0.5/day
+    #3 ORB                         WR=81.8%  EV=+0.036%  SL=2.5%/TP=0.6%  N=594  0.7/day
+
+  [4h]  Top 3:
+    #1 EMA_Cross                   WR=82.0%  EV=+0.098%  SL=4.0%/TP=1.0%  N=737  0.3/day
+    #2 Donchian_Break              WR=81.1%  EV=+0.026%  SL=5.0%/TP=1.2%  N=766  0.3/day
+    #3 Engulfing                   WR=80.9%  EV=+0.015%  SL=5.0%/TP=1.2%  N=1606  0.7/day
+
+
+********************************************************************************
+  ABSOLUTE CHAMPION
+********************************************************************************
+  Strategy:        ADX_Trend
+  Timeframe:       1h
+  SL / TP:         5.0% / 1.2%
+  Win Rate:        83.27%  (breakeven 80.7%)
+  EV per trade:    +0.1630%
+  Total trades:    281 over 833 days
+  Trades per day:  0.3  (across 3 pairs)
+  History covered: 833 days
+    BTCUSDT: 69W / 13L = 84.1% WR
+    ETHUSDT: 68W / 15L = 81.9% WR
+    SOLUSDT: 97W / 19L = 83.6% WR
+
+
+Done in 422s | 774 profitable results | Saved to max_winrate_daily.json

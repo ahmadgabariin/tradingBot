@@ -1,0 +1,18 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "paper-dashboard",
+      "runtimeExecutable": "python",
+      "runtimeArgs": ["-m", "uvicorn", "paper.competition_server:app", "--host", "0.0.0.0", "--port", "8080"],
+      "port": 8080
+    },
+    {
+      "name": "dashboard-v2",
+      "runtimeExecutable": "python",
+      "runtimeArgs": ["-m", "http.server", "9090", "--directory", "paper"],
+      "port": 9090,
+      "autoPort": false
+    }
+  ]
+}

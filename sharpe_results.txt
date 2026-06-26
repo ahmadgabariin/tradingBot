@@ -1,0 +1,136 @@
+SHARPE / SORTINO / BUY-AND-HOLD - 2026-06-20 13:50:49
+================================================================================
+
+Loaded 3888 strategy results
+
+Fetching price data for buy-and-hold...
+
+===============================================================================================
+BUY AND HOLD — MAXIMUM HISTORICAL DATA
+===============================================================================================
+  Asset          TF    History        Candles  Total Return    Sharpe   Sortino
+  ----------------------------------------------------------------------
+  BTCUSDT        5m    ~70 days         20000        -12.8%     -1.63     -1.65
+  ETHUSDT        5m    ~70 days         20000        -24.4%     -2.57     -2.60
+  SOLUSDT        5m    ~70 days         20000        -15.6%     -1.24     -1.27
+  --- AVG ---    5m    ~70 days                      -17.6%     -1.81     -1.84
+
+  BTCUSDT        15m   ~208 days        20000        -27.1%     -0.98     -0.98
+  ETHUSDT        15m   ~208 days        20000        -39.2%     -1.10     -1.11
+  SOLUSDT        15m   ~208 days        20000        -46.1%     -1.27     -1.27
+  --- AVG ---    15m   ~208 days                     -37.5%     -1.12     -1.12
+
+  BTCUSDT        1h    ~2.3 years       20000         -6.7%      0.11      0.11
+  ETHUSDT        1h    ~2.3 years       20000        -56.0%     -0.24     -0.23
+  SOLUSDT        1h    ~2.3 years       20000        -50.8%      0.01      0.01
+  --- AVG ---    1h    ~2.3 years                    -37.8%     -0.04     -0.04
+
+  BTCUSDT        4h    ~6.8 years       15000       +527.2%      0.70      0.69
+  ETHUSDT        4h    ~6.8 years       15000       +840.4%      0.77      0.76
+  SOLUSDT        4h    ~6.8 years       12836      +2350.7%      1.02      1.09
+  --- AVG ---    4h    ~6.8 years                  +1239.5%      0.83      0.85
+
+  BTCUSDT        1d    ~8-13 years       3230      +1385.6%      0.75      0.77
+  ETHUSDT        1d    ~8-13 years       3230       +472.1%      0.63      0.65
+  SOLUSDT        1d    ~8-13 years       2140      +2073.4%      1.00      1.13
+  --- AVG ---    1d    ~8-13 years                 +1310.4%      0.79      0.85
+
+
+==============================================================================================================
+STRATEGY vs BUY-AND-HOLD  (analytical Sharpe from trade distribution)
+==============================================================================================================
+  Strategy                   TF        WR     N |    Sharpe   Sortino   B&H Sh   B&H So    Edge  Beats?
+  ---------------------------------------------------------------------------------------------------------
+  Keltner_Break              5m    100.0%    41 |    323.86    323.86    -1.81    -1.84 +325.67 YES ***
+                                                                         (100% WR conservative est., 95%CI WR>=92.7%)
+  MACD_Cross                 5m    100.0%    47 |    357.40    357.40    -1.81    -1.84 +359.21 YES ***
+                                                                         (100% WR conservative est., 95%CI WR>=93.6%)
+  ADX_Trend                  5m    100.0%    30 |    252.12    252.12    -1.81    -1.84 +253.93 YES ***
+                                                                         (100% WR conservative est., 95%CI WR>=90.0%)
+  Combined_Best              5m    100.0%    33 |    273.35    273.35    -1.81    -1.84 +275.17 YES ***
+                                                                         (100% WR conservative est., 95%CI WR>=90.9%)
+  EMA_Ribbon                 5m     99.0%   191 |   1028.24   1534.18    -1.81    -1.84 +1030.06 YES ***
+  Squeeze_Break              15m    88.0%    75 |    122.82    172.80    -1.12    -1.12 +123.94 YES ***
+  ADX_Trend                  15m    87.9%   174 |    122.12    171.74    -1.12    -1.12 +123.24 YES ***
+  Price_EMA200_Cross         15m    86.6%   134 |    109.18    152.35    -1.12    -1.12 +110.30 YES ***
+  Donchian_Break             15m    85.5%   282 |     99.75    138.29    -1.12    -1.12 +100.86 YES ***
+  Three_Green                15m    85.3%   360 |     98.26    136.09    -1.12    -1.12  +99.38 YES ***
+  ADX_Trend                  1h     78.7%   356 |     27.27     36.25    -0.04    -0.04  +27.31 YES ***
+  RSI_Oversold_Strict        1h     74.7%    79 |     17.16     22.23    -0.04    -0.04  +17.19 YES ***
+  EMA_Ribbon                 1h     74.2%  4281 |      5.64      6.79    -0.04    -0.04   +5.68 YES ***
+  Donchian_Break_Strict      1h     73.9%   306 |     15.22     19.60    -0.04    -0.04  +15.25 YES ***
+  EMA21_Touch_MACD           1h     73.7%  3923 |      4.55      5.46    -0.04    -0.04   +4.59 YES ***
+  ORB                        4h     78.3%    46 |     12.95     17.13     0.83     0.85  +12.12 YES ***
+  Price_EMA200_Cross         4h     72.7%   311 |      0.89      1.06     0.83     0.85   +0.06 YES ***
+  Keltner_Break              4h     72.0%   675 |      0.19      0.22     0.83     0.85   -0.64      no
+  Donchian_Break_Strict      4h     71.6%   306 |     -0.26     -0.31     0.83     0.85   -1.09      no
+  Golden_Cross               4h     71.6%   109 |     -0.27     -0.32     0.83     0.85   -1.10      no
+  Price_EMA200_Cross         1d     76.2%    42 |      3.78      4.87     0.79     0.85   +2.99 YES ***
+  Triple_EMA                 1d     71.4%   126 |      1.55      1.93     0.79     0.85   +0.76 YES ***
+  MACD_Cross_Filtered        1d     71.2%    66 |      1.46      1.81     0.79     0.85   +0.66 YES ***
+  Williams_Bounce            1d     69.7%    76 |     -1.68     -1.90     0.79     0.85   -2.47      no
+  EMA_Cross_Filtered         1d     69.5%    82 |      0.73      0.89     0.79     0.85   -0.07      no
+
+
+================================================================================
+RANKINGS
+================================================================================
+
+  Top 5 by Sharpe Ratio (annualized):
+    #1 EMA_Ribbon                 [5m]  Sharpe=1028.24  N=191  WR=99.0%
+    #2 MACD_Cross                 [5m]  Sharpe=357.40  N=47  WR=100.0%
+    #3 Keltner_Break              [5m]  Sharpe=323.86  N=41  WR=100.0%
+    #4 Combined_Best              [5m]  Sharpe=273.35  N=33  WR=100.0%
+    #5 ADX_Trend                  [5m]  Sharpe=252.12  N=30  WR=100.0%
+
+  Top 5 by Sortino Ratio (annualized):
+    #1 EMA_Ribbon                 [5m]  Sortino=1534.18  N=191  WR=99.0%
+    #2 MACD_Cross                 [5m]  Sortino=357.40  N=47  WR=100.0%
+    #3 Keltner_Break              [5m]  Sortino=323.86  N=41  WR=100.0%
+    #4 Combined_Best              [5m]  Sortino=273.35  N=33  WR=100.0%
+    #5 ADX_Trend                  [5m]  Sortino=252.12  N=30  WR=100.0%
+
+  Top 5 by Edge over Buy-and-Hold:
+    #1 EMA_Ribbon                 [5m]  Edge=+1030.06  Strategy Sharpe=1028.24  B&H=-1.81
+    #2 MACD_Cross                 [5m]  Edge=+359.21  Strategy Sharpe=357.40  B&H=-1.81
+    #3 Keltner_Break              [5m]  Edge=+325.67  Strategy Sharpe=323.86  B&H=-1.81
+    #4 Combined_Best              [5m]  Edge=+275.17  Strategy Sharpe=273.35  B&H=-1.81
+    #5 ADX_Trend                  [5m]  Edge=+253.93  Strategy Sharpe=252.12  B&H=-1.81
+
+  Top 5 by mean return per trade (as % of account):
+    #1 Keltner_Break              [5m]  Mean=+0.2500%/trade  WR=100.0%
+    #2 MACD_Cross                 [5m]  Mean=+0.2500%/trade  WR=100.0%
+    #3 EMA_Ribbon                 [5m]  Mean=+0.2421%/trade  WR=99.0%
+    #4 ADX_Trend                  [5m]  Mean=+0.2000%/trade  WR=100.0%
+    #5 Combined_Best              [5m]  Mean=+0.2000%/trade  WR=100.0%
+
+
+********************************************************************************
+  VERDICT
+********************************************************************************
+
+  All 25 strategies tested BEAT buy-and-hold: 20/25
+
+  Buy-and-Hold Sharpe by timeframe (longer = more reliable):
+    [5m] ~70 days        Sharpe=-1.81  Sortino=-1.84  Return=-17.6%
+    [15m] ~208 days       Sharpe=-1.12  Sortino=-1.12  Return=-37.5%
+    [1h] ~2.3 years      Sharpe=-0.04  Sortino=-0.04  Return=-37.8%
+    [4h] ~6.8 years      Sharpe=0.83  Sortino=0.85  Return=+1239.5%
+    [1d] ~8-13 years     Sharpe=0.79  Sortino=0.85  Return=+1310.4%
+
+  BEST SHARPE STRATEGY:
+    EMA_Ribbon [5m]
+    WR=99.0%  SL=5.0%  TP=2.5%  N=191 trades
+    Sharpe=1028.24  vs B&H=-1.81
+    Mean return per trade: +0.2421% of account
+
+  MOST STATISTICALLY TRUSTWORTHY (largest sample + high Sharpe):
+    EMA_Ribbon [5m]
+    WR=99.0%  N=191 trades  Sharpe=1028.24  Sortino=1534.18
+    vs B&H Sharpe=-1.81  Edge=+1030.06
+
+  Sharpe interpretation:
+    > 1.0 = good  |  > 2.0 = very good  |  > 3.0 = excellent  |  > 5.0 = exceptional
+    Buy-and-hold crypto typically: -1.0 to +1.5 (very volatile, bear phases drag it down)
+
+Done in 207s | Saved to sharpe_results.txt

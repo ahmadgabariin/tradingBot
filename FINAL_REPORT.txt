@@ -1,0 +1,122 @@
+================================================================================
+FINAL BACKTEST SUMMARY - 2026-06-20 12:12
+================================================================================
+
+[ GLOBAL TOP 30 BY WIN RATE (min 10 trades) ]
+  Rank  TF    Strategy                     SL   TP |     N    WR%     EV%
+  ------------------------------------------------------------------------
+  *** #1   5m    ADX_Trend                   3.0  1.5 |    18  100.0%  +1.500%
+  **  #2   5m    Hammer                      3.0  1.5 |    10  100.0%  +1.500%
+  **  #3   5m    Donchian_Break              3.0  1.5 |    38   94.7%  +1.263%
+      #4   5m    Keltner_Break               3.0  1.5 |    34   94.1%  +1.235%
+      #5   5m    Donchian_Break_Strict       3.0  1.5 |    14   92.9%  +1.179%
+      #6   5m    RSI_Oversold                0.5  0.3 |    14   92.9%  +0.243%
+      #7   5m    Williams_Bounce             3.0  1.5 |    83   92.8%  +1.175%
+      #8   5m    Three_Green                 3.0  1.5 |    40   92.5%  +1.163%
+      #9   5m    Combined_Best               3.0  1.5 |    12   91.7%  +1.125%
+      #10  5m    CCI_Bounce                  3.0  1.5 |    81   91.4%  +1.111%
+      #11  5m    Engulfing                   3.0  1.5 |   157   90.4%  +1.070%
+      #12  5m    BB_Bounce                   3.0  1.5 |   168   89.3%  +1.018%
+      #13  15m   ADX_Trend                   3.0  1.5 |    46   89.1%  +1.011%
+      #14  5m    EMA_Ribbon                  3.0  1.5 |   126   88.9%  +1.000%
+      #15  5m    RSI_Oversold_Strict         0.5  0.3 |    18   88.9%  +0.211%
+      #16  5m    BB_Bounce_Strict            3.0  1.5 |   196   88.3%  +0.972%
+      #17  5m    Confluence                  3.0  1.5 |   409   88.3%  +0.972%
+      #18  5m    VWAP_Cross                  3.0  1.5 |    96   87.5%  +0.938%
+      #19  5m    Volume_Spike                3.0  1.5 |    16   87.5%  +0.938%
+      #20  5m    EMA21_Touch_MACD            3.0  1.5 |   145   86.2%  +0.879%
+      #21  5m    EMA_Cross                   3.0  1.5 |    36   86.1%  +0.875%
+      #22  5m    EMA_Stack_Pullback          3.0  1.5 |   199   85.9%  +0.867%
+      #23  5m    MACD_Cross_Filtered         3.0  1.5 |    14   85.7%  +0.857%
+      #24  5m    RSI_50_Cross                3.0  1.5 |    27   85.2%  +0.833%
+      #25  5m    MACD_BB_Combo               3.0  1.5 |    60   85.0%  +0.825%
+      #26  5m    Hybrid                      3.0  1.5 |    77   84.4%  +0.799%
+      #27  5m    ORB                         3.0  1.5 |    70   84.3%  +0.793%
+      #28  1h    EMA_Cross_Filtered          3.0  1.5 |    79   83.5%  +0.759%
+      #29  15m   Squeeze_Break               2.0  1.0 |    30   83.3%  +0.500%
+      #30  5m    Triple_EMA                  3.0  1.5 |    29   82.8%  +0.724%
+
+
+[ BEST STRATEGY PER TIMEFRAME ]
+--------------------------------------------------------------------------------
+
+  +-- [5m] BEST WIN RATE: ADX_Trend
+  |   SL=3.0%  TP=1.5%  WIN RATE=100.0%  EV=+1.500%  N=18
+  |   BTCUSDT: 3W/0L (100%) | ETHUSDT: 7W/0L (100%) | SOLUSDT: 8W/0L (100%)
+  +-- Top 5 by win rate:
+       #1 ADX_Trend                  WR=100.0% EV=+1.500% SL=3.0% TP=1.5% N=18
+       #2 Hammer                     WR=100.0% EV=+1.500% SL=3.0% TP=1.5% N=10
+       #3 Donchian_Break             WR=94.7% EV=+1.263% SL=3.0% TP=1.5% N=38
+       #4 Keltner_Break              WR=94.1% EV=+1.235% SL=3.0% TP=1.5% N=34
+       #5 Donchian_Break_Strict      WR=92.9% EV=+1.179% SL=3.0% TP=1.5% N=14
+
+  +-- [15m] BEST WIN RATE: ADX_Trend
+  |   SL=3.0%  TP=1.5%  WIN RATE=89.1%  EV=+1.011%  N=46
+  |   BTCUSDT: 9W/2L (82%) | ETHUSDT: 14W/2L (88%) | SOLUSDT: 18W/1L (95%)
+  +-- Top 5 by win rate:
+       #1 ADX_Trend                  WR=89.1% EV=+1.011% SL=3.0% TP=1.5% N=46
+       #2 Squeeze_Break              WR=83.3% EV=+0.500% SL=2.0% TP=1.0% N=30
+       #3 Donchian_Break_Strict      WR=82.4% EV=+0.706% SL=3.0% TP=1.5% N=17
+       #4 Hammer                     WR=80.8% EV=+0.635% SL=3.0% TP=1.5% N=26
+       #5 Golden_Cross               WR=80.0% EV=+0.280% SL=1.0% TP=0.6% N=20
+
+  +-- [1h] BEST WIN RATE: EMA_Cross_Filtered
+  |   SL=3.0%  TP=1.5%  WIN RATE=83.5%  EV=+0.759%  N=79
+  |   BTCUSDT: 23W/3L (88%) | ETHUSDT: 21W/5L (81%) | SOLUSDT: 22W/5L (81%)
+  +-- Top 5 by win rate:
+       #1 EMA_Cross_Filtered         WR=83.5% EV=+0.759% SL=3.0% TP=1.5% N=79
+       #2 Price_EMA200_Cross         WR=81.4% EV=+0.664% SL=3.0% TP=1.5% N=70
+       #3 ADX_Trend                  WR=76.2% EV=+0.429% SL=3.0% TP=1.5% N=84
+       #4 MACD_Cross_Filtered        WR=73.8% EV=+0.323% SL=3.0% TP=1.5% N=65
+       #5 Volume_Spike               WR=72.6% EV=+0.179% SL=2.0% TP=1.0% N=95
+
+  +-- [4h] BEST WIN RATE: ORB
+  |   SL=3.0%  TP=1.5%  WIN RATE=80.0%  EV=+0.600%  N=15
+  |   BTCUSDT: 11W/3L (79%) | ETHUSDT: 1W/0L (100%) | SOLUSDT: 0W/0L (0%)
+  +-- [4h] BEST PROFIT: Momentum_Burst
+  |   SL=1.5%  TP=3.0%  WIN RATE=51.7%  EV=+0.825%  N=60
+  +-- Top 5 by win rate:
+       #1 ORB                        WR=80.0% EV=+0.600% SL=3.0% TP=1.5% N=15
+       #2 RSI_Oversold_Strict        WR=78.6% EV=+0.536% SL=3.0% TP=1.5% N=14
+       #3 Triple_EMA                 WR=77.1% EV=+0.469% SL=3.0% TP=1.5% N=131
+       #4 Trend_Continuation         WR=74.3% EV=+0.229% SL=2.0% TP=1.0% N=35
+       #5 RSI_50_Cross               WR=74.1% EV=+0.335% SL=3.0% TP=1.5% N=112
+
+  +-- [1d] BEST WIN RATE: Golden_Cross
+  |   SL=3.0%  TP=1.5%  WIN RATE=75.0%  EV=+0.375%  N=16
+  |   BTCUSDT: 5W/1L (83%) | ETHUSDT: 6W/1L (86%) | SOLUSDT: 1W/2L (33%)
+  +-- Top 5 by win rate:
+       #1 Golden_Cross               WR=75.0% EV=+0.375% SL=3.0% TP=1.5% N=16
+       #2 Williams_Bounce            WR=64.5% EV=-0.099% SL=3.0% TP=1.5% N=76
+       #3 EMA_Cross_Filtered         WR=63.3% EV=-0.152% SL=3.0% TP=1.5% N=79
+       #4 Triple_EMA                 WR=63.0% EV=-0.164% SL=3.0% TP=1.5% N=119
+       #5 MACD_Cross_Filtered        WR=62.9% EV=-0.169% SL=3.0% TP=1.5% N=62
+
+
+********************************************************************************
+  ABSOLUTE CHAMPION
+********************************************************************************
+  Strategy:   ADX_Trend
+  Timeframe:  5m
+  SL:         3.0%
+  TP:         1.5%
+  WIN RATE:   100.0%
+  EV/trade:   +1.500%
+  Trades:     18 (18W / 0L)
+  Per pair:
+    BTCUSDT: 3W/0L = 100.0% WR
+    ETHUSDT: 7W/0L = 100.0% WR
+    SOLUSDT: 8W/0L = 100.0% WR
+
+
+[ ANALYSIS ]
+  Strategies with WR >= 65%: 298
+  Strategies with WR >= 60%: 460
+  Strategies with WR >= 55%: 625
+  Strategies with WR >= 50%: 740
+  Strategies with WR >= 45%: 794
+  Strategies with WR >= 40%: 893
+  Strategies with WR >= 35%: 1130
+
+  Profitable strategies (EV > 0): 1132
+  Best EV: ADX_Trend [5m] EV=+1.500% WR=100.0%

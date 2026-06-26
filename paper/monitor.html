@@ -1,0 +1,517 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Agent Monitor — Live Paper Trading</title>
+<style>
+  :root { --bg:#080808; --card:#0f0f0f; --border:#222; --green:#00ff88; --red:#ff3355; --muted:#aaa; }
+  * { box-sizing:border-box; margin:0; padding:0; }
+  body { background:var(--bg); color:#e0e0e0; font-family:'Segoe UI',monospace; font-size:13px; }
+  .topnav { display:flex; gap:8px; padding:10px 20px; background:#0a0a0a; border-bottom:1px solid #222; }
+  .topnav a { text-decoration:none; padding:6px 18px; border-radius:6px; font-size:12px; font-weight:700;
+    letter-spacing:1px; text-transform:uppercase; border:1px solid #333; color:#bbb; }
+  .topnav a.active { background:#00ff88; color:#000; border-color:#00ff88; }
+  .topnav a:not(.active):hover { border-color:#555; color:#fff; }
+
+  .header { text-align:center; padding:28px 20px 20px; border-bottom:1px solid var(--border); }
+  .header h1 { font-size:28px; font-weight:900; letter-spacing:3px;
+    background:linear-gradient(135deg,#00ff88,#00ccff);
+    -webkit-background-clip:text; -webkit-text-fill-color:transparent; }
+  .header .sub { font-size:12px; letter-spacing:2px; color:#ccc; margin-top:6px; text-transform:uppercase; }
+  .controls { display:flex; gap:10px; justify-content:center; margin-top:16px; }
+  .btn { padding:8px 24px; border-radius:6px; border:none; cursor:pointer;
+    font-size:12px; font-weight:700; letter-spacing:1px; text-transform:uppercase; }
+  .btn-start { background:#00ff88; color:#000; }
+  .btn-stop  { background:#ff3355; color:#fff; }
+  .status-bar { text-align:center; margin-top:10px; font-size:12px; color:#ccc; }
+  .dot { display:inline-block; width:7px; height:7px; border-radius:50%; margin-right:5px; }
+  .dot.live { background:#00ff88; animation:pulse 1.5s infinite; }
+  .dot.off  { background:#555; }
+  @keyframes pulse { 0%,100%{opacity:1}50%{opacity:.3} }
+
+  .grid { display:grid; grid-template-columns:repeat(5,1fr); gap:12px; padding:20px; max-width:1600px; margin:0 auto; }
+  @media(max-width:1200px){ .grid{grid-template-columns:repeat(3,1fr)} }
+  @media(max-width:700px){ .grid{grid-template-columns:1fr 1fr} }
+
+  .agent-panel { background:var(--card); border:1px solid var(--border); border-radius:12px; overflow:hidden; }
+  .agent-header { padding:14px 16px 10px; border-bottom:1px solid var(--border); }
+  .agent-name { font-size:16px; font-weight:800; }
+  .agent-sub  { font-size:11px; color:#ccc; letter-spacing:1px; text-transform:uppercase; margin-top:2px; }
+
+  .agent-stats { display:grid; grid-template-columns:1fr 1fr; gap:0; }
+  .stat { padding:10px 16px; border-bottom:1px solid var(--border); }
+  .stat:nth-child(odd) { border-right:1px solid var(--border); }
+  .stat-label { font-size:10px; color:#ccc; text-transform:uppercase; letter-spacing:1px; }
+  .stat-val   { font-size:18px; font-weight:700; margin-top:2px; }
+  .stat-val.pos { color:#00ff88; }
+  .stat-val.neg { color:#ff3355; }
+  .stat-val.neu { color:#00ccff; }
+
+  .section-title { padding:8px 16px; font-size:10px; letter-spacing:2px; text-transform:uppercase;
+    color:#00ff88; background:#0a0a0a; border-bottom:1px solid var(--border); }
+
+  .open-trades { padding:8px 12px; display:flex; flex-direction:column; gap:6px; }
+  .trade-card { background:#111; border:1px solid #2a2a2a; border-radius:8px; padding:8px 12px; }
+  .trade-card-top { display:flex; justify-content:space-between; align-items:center; margin-bottom:6px; }
+  .trade-card-pair { font-size:14px; font-weight:800; color:#fff; }
+  .trade-card-side { font-size:10px; font-weight:700; padding:2px 8px; border-radius:4px; }
+  .side-long  { background:#003322; color:#00ff88; border:1px solid #00ff88; }
+  .side-short { background:#330011; color:#ff3355; border:1px solid #ff3355; }
+  .trade-card-pnl { font-size:14px; font-weight:800; }
+  .trade-card-grid { display:grid; grid-template-columns:1fr 1fr 1fr; gap:4px; }
+  .trade-card-field { font-size:10px; }
+  .trade-card-field .lbl { color:#aaa; text-transform:uppercase; letter-spacing:1px; }
+  .trade-card-field .val { color:#fff; font-weight:700; margin-top:1px; }
+  .trade-card-field .val.now { color:#00ccff; }
+  .trade-card-field .val.tp  { color:#00ff88; }
+  .trade-card-field .val.sl  { color:#ff3355; }
+  .empty-msg { padding:12px 16px; font-size:12px; color:#aaa; font-style:italic; }
+
+  .closed-list { max-height:180px; overflow-y:auto; }
+  .closed-row { padding:7px 16px; border-bottom:1px solid #181818; font-size:11px;
+    display:flex; justify-content:space-between; color:#ddd; }
+  .closed-row:last-child { border-bottom:none; }
+  .win-tag  { color:#00ff88; font-weight:700; }
+  .loss-tag { color:#ff3355; font-weight:700; }
+
+  .bottom-bar { padding:12px 16px; display:flex; justify-content:space-between; border-top:1px solid var(--border); gap:4px; }
+  .bottom-stat { display:flex; flex-direction:column; align-items:center; flex:1; }
+  .bottom-stat .blbl { font-size:10px; color:#ccc; text-transform:uppercase; letter-spacing:1px; }
+  .bottom-stat .bval { font-size:14px; font-weight:700; margin-top:2px; }
+  .dir-bar { display:flex; gap:6px; padding:10px 16px; border-top:1px solid var(--border); background:#0a0a0a; }
+  .dir-btn { flex:1; padding:6px 0; border-radius:5px; border:1px solid #333; background:transparent;
+    color:#aaa; font-size:11px; font-weight:700; letter-spacing:1px; cursor:pointer; text-transform:uppercase; }
+  .dir-btn.active-long  { background:#00ff88; color:#000; border-color:#00ff88; }
+  .dir-btn.active-short { background:#ff3355; color:#fff; border-color:#ff3355; }
+  .dir-btn.active-both  { background:#00ccff; color:#000; border-color:#00ccff; }
+
+  .prices-bar { display:flex; flex-wrap:wrap; gap:6px; justify-content:center; padding:10px 20px;
+    background:#0a0a0a; border-bottom:1px solid var(--border); }
+
+  .feed-section { max-width:1600px; margin:20px auto; padding:0 20px 40px; }
+  .feed-title { font-size:12px; letter-spacing:2px; text-transform:uppercase; color:#00ff88;
+    padding:10px 16px; background:#0a0a0a; border:1px solid var(--border); border-bottom:none; border-radius:8px 8px 0 0;
+    display:flex; justify-content:space-between; align-items:center; }
+  .feed-filters { display:flex; gap:8px; flex-wrap:wrap; padding:10px 16px; background:#0d0d0d;
+    border:1px solid var(--border); border-top:none; border-bottom:none; }
+  .filter-select { background:#111; border:1px solid #333; color:#ddd; padding:5px 10px;
+    border-radius:5px; font-size:12px; cursor:pointer; }
+  .filter-btn { background:#111; border:1px solid #333; color:#ccc; padding:5px 14px;
+    border-radius:5px; font-size:12px; font-weight:700; cursor:pointer; }
+  .filter-btn:hover { border-color:#555; color:#fff; }
+  .filter-btn.f-active { background:#00ff88; color:#000; border-color:#00ff88; }
+  .feed-table { width:100%; border-collapse:collapse; background:var(--card);
+    border:1px solid var(--border); border-radius:0 0 8px 8px; overflow:hidden; }
+  .feed-table th { padding:9px 14px; font-size:10px; letter-spacing:1px; text-transform:uppercase;
+    color:#ccc; text-align:left; border-bottom:1px solid var(--border); background:#0a0a0a; }
+  .feed-table td { padding:9px 14px; font-size:12px; border-bottom:1px solid #181818; }
+  .feed-table tr:last-child td { border-bottom:none; }
+  .feed-table tr:hover td { background:#111; }
+
+  /* Modal */
+  .modal-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.85); z-index:999; align-items:center; justify-content:center; }
+  .modal-overlay.open { display:flex; }
+  .modal { background:#0f0f0f; border:1px solid #222; border-radius:12px; width:90%; max-width:860px;
+    max-height:85vh; display:flex; flex-direction:column; overflow:hidden; }
+  .modal-header { padding:16px 20px; border-bottom:1px solid #1a1a1a; display:flex; justify-content:space-between; align-items:center; }
+  .modal-header h2 { font-size:16px; font-weight:800; }
+  .modal-close { background:none; border:none; color:#888; font-size:22px; cursor:pointer; line-height:1; }
+  .modal-close:hover { color:#fff; }
+  .modal-filters { display:flex; gap:8px; padding:12px 20px; background:#0a0a0a; border-bottom:1px solid #1a1a1a; flex-wrap:wrap; }
+  .modal-body { overflow-y:auto; flex:1; }
+  .modal-table { width:100%; border-collapse:collapse; }
+  .modal-table th { padding:8px 16px; font-size:9px; letter-spacing:1px; text-transform:uppercase;
+    color:#555; text-align:left; border-bottom:1px solid #1a1a1a; background:#0a0a0a; position:sticky; top:0; }
+  .modal-table td { padding:8px 16px; font-size:11px; border-bottom:1px solid #0d0d0d; }
+  .modal-table tr:hover td { background:#111; }
+  .modal-count { font-size:10px; color:#555; }
+  .price-chip { background:#111; border:1px solid #1e1e1e; border-radius:6px;
+    padding:5px 12px; font-size:11px; display:flex; gap:8px; align-items:center; }
+  .price-sym  { font-weight:700; color:#ccc; }
+  .price-val  { color:#00ccff; font-weight:700; }
+</style>
+</head>
+<body>
+<nav class="topnav">
+  <a href="/">🏆 Competition</a>
+  <a href="/monitor" class="active">📊 Monitor</a>
+</nav>
+
+<div class="header">
+  <h1>AGENT MONITOR</h1>
+  <div class="sub">5 strategies running live — paper trading — <span id="leverage-badge" style="color:#00ff88">x50 leverage</span></div>
+  <div class="controls">
+    <button class="btn btn-start" onclick="resumeSession()">▶ RESUME</button>
+    <button class="btn btn-stop"  onclick="stopSession()">■ PAUSE</button>
+    <button class="btn" style="background:#222;color:#666;border:1px solid #333" onclick="if(confirm('Reset ALL trades and balances? This cannot be undone.'))startSession()">↺ NEW SESSION</button>
+  </div>
+  <div class="status-bar">
+    <span class="dot off" id="status-dot"></span>
+    <span id="status-text">Not started</span>
+    <span style="margin-left:16px" id="tick-info"></span>
+  </div>
+</div>
+
+<div class="prices-bar" id="prices-bar"><!-- filled by JS --></div>
+
+<div class="grid" id="grid"></div>
+
+<div class="feed-section">
+  <div class="feed-title">
+    <span>ALL AGENTS — GLOBAL TRADE FEED</span>
+    <span class="modal-count" id="feed-count"></span>
+  </div>
+  <div class="feed-filters">
+    <select class="filter-select" id="f-agent" onchange="applyFilters()">
+      <option value="">All Agents</option>
+      <option>The Maniac</option>
+      <option>The Oracle</option>
+      <option>The Surgeon</option>
+      <option>The Comet</option>
+      <option>The Hound</option>
+    </select>
+    <select class="filter-select" id="f-pair" onchange="applyFilters()">
+      <option value="">All Pairs</option>
+      <option>BTC</option><option>ETH</option><option>SOL</option><option>BNB</option>
+      <option>XRP</option><option>ADA</option><option>LINK</option><option>DOT</option>
+      <option>AVAX</option><option>MATIC</option>
+    </select>
+    <button class="filter-btn" id="f-long"  onclick="toggleFilter('f-long')">▲ Long</button>
+    <button class="filter-btn" id="f-short" onclick="toggleFilter('f-short')">▼ Short</button>
+    <button class="filter-btn" id="f-win"   onclick="toggleFilter('f-win')">WIN</button>
+    <button class="filter-btn" id="f-loss"  onclick="toggleFilter('f-loss')">LOSS</button>
+    <button class="filter-btn" onclick="clearFilters()" style="margin-left:auto;color:#555">✕ Clear</button>
+  </div>
+  <table class="feed-table">
+    <thead>
+      <tr>
+        <th>Time</th><th>Agent</th><th>Pair</th><th>Side</th><th>Result</th><th>PnL</th>
+      </tr>
+    </thead>
+    <tbody id="feed-body">
+      <tr><td colspan="6" style="color:#333;font-style:italic;text-align:center;padding:20px">No trades yet</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<!-- Agent history modal -->
+<div class="modal-overlay" id="modal" onclick="if(event.target===this)closeModal()">
+  <div class="modal">
+    <div class="modal-header">
+      <h2 id="modal-title">Trade History</h2>
+      <button class="modal-close" onclick="closeModal()">×</button>
+    </div>
+    <div class="modal-filters">
+      <button class="filter-btn" id="mf-long"  onclick="toggleModalFilter('mf-long')">▲ Long</button>
+      <button class="filter-btn" id="mf-short" onclick="toggleModalFilter('mf-short')">▼ Short</button>
+      <button class="filter-btn" id="mf-win"   onclick="toggleModalFilter('mf-win')">WIN</button>
+      <button class="filter-btn" id="mf-loss"  onclick="toggleModalFilter('mf-loss')">LOSS</button>
+      <span class="modal-count" id="modal-count" style="margin-left:auto;line-height:2"></span>
+    </div>
+    <div class="modal-body">
+      <table class="modal-table">
+        <thead><tr><th>Time</th><th>Pair</th><th>Side</th><th>Result</th><th>PnL</th></tr></thead>
+        <tbody id="modal-body"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+  <!-- filled by JS -->
+</div>
+
+<script>
+const WS = `ws://${location.host}/ws`;
+let ws, state = {};
+
+function connect() {
+  ws = new WebSocket(WS);
+  ws.onopen    = () => {};
+  ws.onmessage = e => render(JSON.parse(e.data));
+  ws.onclose   = () => setTimeout(connect, 3000);
+}
+
+function render(msg) {
+  if (msg.type === 'session_started') setStatus(true);
+  if (msg.type === 'session_stopped')  setStatus(false);
+  if (msg.type !== 'state') return;
+  setStatus(msg.running);
+  if (msg.leverage) document.getElementById('leverage-badge').textContent = `x${msg.leverage} leverage`;
+  if (!msg.agents || msg.agents.length === 0) return;
+
+  const prices = msg.live_prices || {};
+
+  // Update prices bar
+  const pairs = ['BTCUSDT','ETHUSDT','SOLUSDT','BNBUSDT','XRPUSDT','ADAUSDT','LINKUSDT','DOTUSDT','AVAXUSDT','POLUSDT'];
+  document.getElementById('prices-bar').innerHTML = pairs.map(p => {
+    const sym = p.replace('USDT','');
+    const val = prices[p];
+    const fmt = val >= 1000 ? val.toLocaleString(undefined,{maximumFractionDigits:2})
+              : val >= 1    ? val.toFixed(4)
+              : val         ? val.toFixed(5) : '—';
+    return `<div class="price-chip"><span class="price-sym">${sym}</span><span class="price-val">$${fmt}</span></div>`;
+  }).join('');
+  const grid = document.getElementById('grid');
+  const lev = msg.leverage || 50;
+  grid.innerHTML = msg.agents.map(a => agentPanel(a, prices, msg.recent_trades || [], lev)).join('');
+
+  // Store trades globally for filters
+  window._allTrades  = msg.recent_trades || [];
+  window._allAgents  = msg.agents || [];
+  applyFilters();
+
+  const ts = new Date(msg.tick_ts * 1000).toLocaleTimeString();
+  document.getElementById('tick-info').textContent = `Last update: ${ts}`;
+}
+
+function setStatus(running) {
+  document.getElementById('status-dot').className = running ? 'dot live' : 'dot off';
+  document.getElementById('status-text').textContent = running ? 'LIVE — updating every 5s' : 'Stopped';
+}
+
+function agentPanel(a, prices, allTrades, lev) {
+  const retCls = a.return_pct > 0 ? 'pos' : a.return_pct < 0 ? 'neg' : 'neu';
+  const retSign = a.return_pct > 0 ? '+' : '';
+  const pnlCls  = a.pnl >= 0 ? 'pos' : 'neg';
+  const pnlSign = a.pnl >= 0 ? '+' : '';
+
+  // Open trades
+  const openRows = a.open_count > 0
+    ? `<div class="section-title">OPEN POSITIONS (${a.open_count})</div><div class="open-trades">${openTradesHtml(a, prices)}</div>`
+    : `<div class="section-title">OPEN POSITIONS</div><div class="empty-msg">No open positions</div>`;
+
+  // Closed trades for this agent
+  const closed = allTrades.filter(t => t.agent === a.name).slice(0, 15);
+  const closedHtml = closed.length > 0
+    ? closed.map(t => `
+      <div class="closed-row">
+        <span>${t.pair.replace('USDT','')}</span>
+        <span style="color:${t.side==='SHORT'?'#ff3355':'#00ff88'};font-size:9px;font-weight:700">${t.side||'LONG'}</span>
+        <span class="${t.result==='TP'?'win-tag':'loss-tag'}">${t.result==='TP'?'WIN':'LOSS'}</span>
+        <span class="${t.pnl>=0?'win-tag':'loss-tag'}">${t.pnl>=0?'+':''}$${t.pnl.toFixed(2)}</span>
+        <span>${new Date(t.close_at).toLocaleTimeString()}</span>
+      </div>`).join('')
+    : '<div class="empty-msg">No closed trades yet</div>';
+
+  return `
+  <div class="agent-panel" style="border-top:3px solid ${a.color}">
+    <div class="agent-header">
+      <div class="agent-name" style="color:${a.color}">${a.emoji} ${a.name}</div>
+      <div class="agent-sub">${a.strategy} · ${a.timeframe} · SL=${a.sl_pct.toFixed(1)}% TP=${a.tp_pct.toFixed(1)}% · <span style="color:#00ff88">x${lev}</span></div>
+    </div>
+    <div class="agent-stats">
+      <div class="stat">
+        <div class="stat-label">Balance</div>
+        <div class="stat-val neu">$${a.equity.toLocaleString(undefined,{maximumFractionDigits:0})}</div>
+      </div>
+      <div class="stat">
+        <div class="stat-label">Return</div>
+        <div class="stat-val ${retCls}">${retSign}${a.return_pct}%</div>
+      </div>
+      <div class="stat">
+        <div class="stat-label">Total PnL</div>
+        <div class="stat-val ${pnlCls}">${pnlSign}$${a.pnl.toFixed(0)}</div>
+      </div>
+      <div class="stat">
+        <div class="stat-label">Win Rate</div>
+        <div class="stat-val neu">${a.win_rate}%</div>
+      </div>
+      <div class="stat">
+        <div class="stat-label">Trades</div>
+        <div class="stat-val neu">${a.trades}</div>
+      </div>
+      <div class="stat">
+        <div class="stat-label">W / L</div>
+        <div class="stat-val neu">${a.wins}W / ${a.losses}L</div>
+      </div>
+    </div>
+    ${openRows}
+    <div class="section-title">RECENT TRADES</div>
+    <div class="closed-list">${closedHtml}</div>
+    <div class="bottom-bar">
+      <div class="bottom-stat">
+        <span class="blbl">Avg Win</span>
+        <span class="bval" style="color:#00ff88">+$${a.avg_win}</span>
+      </div>
+      <div class="bottom-stat">
+        <span class="blbl">Avg Loss</span>
+        <span class="bval" style="color:#ff3355">$${a.avg_loss}</span>
+      </div>
+      <div class="bottom-stat">
+        <span class="blbl">Open</span>
+        <span class="bval" style="color:#00ccff">${a.open_count}</span>
+      </div>
+    </div>
+    <div class="dir-bar">
+      <button class="dir-btn ${a.direction==='LONG' ?'active-long':''}"  onclick="setDir('${a.name}','LONG')">▲ Long</button>
+      <button class="dir-btn ${a.direction==='SHORT'?'active-short':''}" onclick="setDir('${a.name}','SHORT')">▼ Short</button>
+      <button class="dir-btn ${a.direction==='BOTH' ?'active-both':''}"  onclick="setDir('${a.name}','BOTH')">⇅ Both</button>
+    </div>
+    <div style="padding:8px 16px; background:#0a0a0a; border-top:1px solid var(--border);">
+      <button onclick="openModal('${a.name}')" style="width:100%;padding:6px;background:#111;border:1px solid #222;color:#888;border-radius:5px;font-size:10px;font-weight:700;cursor:pointer;letter-spacing:1px;text-transform:uppercase;">
+        📋 View Full History
+      </button>
+    </div>
+  </div>`;
+}
+
+function openTradesHtml(a, prices) {
+  if (!a.open_trades || a.open_trades.length === 0) {
+    return `<div class="empty-msg">No open positions</div>`;
+  }
+  return `<div class="open-trades">` + a.open_trades.map(t => {
+    const upnl = t.unrealized;
+    const upnlCls = upnl >= 0 ? 'pos' : 'neg';
+    const upnlStr = (upnl >= 0 ? '+' : '') + '$' + upnl.toFixed(2);
+    const sideCls = t.side === 'SHORT' ? 'side-short' : 'side-long';
+    const p = n => n >= 1000 ? n.toLocaleString(undefined,{maximumFractionDigits:2}) : n >= 1 ? n.toFixed(4) : n.toFixed(5);
+    const openTime = new Date(t.open_at).toLocaleTimeString();
+    return `<div class="trade-card">
+      <div class="trade-card-top">
+        <span class="trade-card-pair">${t.pair.replace('USDT','')}</span>
+        <span class="trade-card-side ${sideCls}">${t.side}</span>
+        <span class="trade-card-pnl ${upnlCls}">${upnlStr}</span>
+      </div>
+      <div class="trade-card-grid">
+        <div class="trade-card-field"><div class="lbl">Entry</div><div class="val">$${p(t.entry)}</div></div>
+        <div class="trade-card-field"><div class="lbl">Now</div><div class="val now">$${p(t.cur_price)}</div></div>
+        <div class="trade-card-field"><div class="lbl">Opened</div><div class="val">${openTime}</div></div>
+        <div class="trade-card-field"><div class="lbl">Take Profit</div><div class="val tp">$${p(t.tp)}</div></div>
+        <div class="trade-card-field"><div class="lbl">Stop Loss</div><div class="val sl">$${p(t.sl)}</div></div>
+        <div class="trade-card-field"><div class="lbl">Qty</div><div class="val">${t.qty.toFixed(2)}</div></div>
+      </div>
+    </div>`;
+  }).join('') + `</div>`;
+}
+
+async function startSession()  { await fetch('/start',  {method:'POST'}); }
+async function resumeSession() { await fetch('/resume', {method:'POST'}); }
+async function stopSession()   { await fetch('/stop',   {method:'POST'}); }
+async function setDir(agent, direction) {
+  await fetch('/set-direction', {
+    method: 'POST',
+    headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({agent, direction})
+  });
+}
+
+// ── Feed filters ──────────────────────────────────────────────────────────────
+function tradeRow(t, showAgent) {
+  const side     = t.side || 'LONG';
+  const sideColor = side === 'SHORT' ? '#ff3355' : '#00ff88';
+  const resColor  = t.result === 'TP' ? '#00ff88' : '#ff3355';
+  const pnlColor  = t.pnl >= 0 ? '#00ff88' : '#ff3355';
+  const agentCfg  = (window._allAgents||[]).find(a => a.name === t.agent);
+  const emoji     = agentCfg ? agentCfg.emoji : '';
+  const color     = agentCfg ? agentCfg.color : '#fff';
+  const agentCol  = showAgent ? `<td style="color:${color};font-weight:700">${emoji} ${t.agent}</td>` : '';
+  return `<tr>
+    <td style="color:#555">${new Date(t.close_at).toLocaleTimeString()}</td>
+    ${agentCol}
+    <td style="font-weight:700;color:#ddd">${t.pair.replace('USDT','')}</td>
+    <td style="color:${sideColor};font-weight:700">${side}</td>
+    <td style="color:${resColor};font-weight:700">${t.result==='TP'?'WIN':'LOSS'}</td>
+    <td style="color:${pnlColor};font-weight:700">${t.pnl>=0?'+':''}$${t.pnl.toFixed(2)}</td>
+  </tr>`;
+}
+
+function filterTrades(trades, agentFilter, pairFilter, sideActive, resultActive) {
+  return trades.filter(t => {
+    if (agentFilter && t.agent !== agentFilter) return false;
+    if (pairFilter  && !t.pair.startsWith(pairFilter)) return false;
+    if (sideActive  && (t.side||'LONG') !== sideActive) return false;
+    if (resultActive && (t.result==='TP'?'WIN':'LOSS') !== resultActive) return false;
+    return true;
+  });
+}
+
+function applyFilters() {
+  const trades  = window._allTrades || [];
+  const agent   = document.getElementById('f-agent')?.value || '';
+  const pair    = document.getElementById('f-pair')?.value  || '';
+  const longOn  = document.getElementById('f-long')?.classList.contains('f-active');
+  const shortOn = document.getElementById('f-short')?.classList.contains('f-active');
+  const winOn   = document.getElementById('f-win')?.classList.contains('f-active');
+  const lossOn  = document.getElementById('f-loss')?.classList.contains('f-active');
+  const sideF   = longOn ? 'LONG' : shortOn ? 'SHORT' : '';
+  const resF    = winOn  ? 'WIN'  : lossOn  ? 'LOSS'  : '';
+  const filtered = filterTrades(trades, agent, pair, sideF, resF).slice(0, 100);
+  const feedBody = document.getElementById('feed-body');
+  document.getElementById('feed-count').textContent = `${filtered.length} trades`;
+  feedBody.innerHTML = filtered.length
+    ? filtered.map(t => tradeRow(t, true)).join('')
+    : '<tr><td colspan="6" style="color:#333;font-style:italic;text-align:center;padding:20px">No trades match filters</td></tr>';
+}
+
+function toggleFilter(id) {
+  const el = document.getElementById(id);
+  const pairs = {f_long:'f-short', 'f-short':'f-long', 'f-win':'f-loss', 'f-loss':'f-win'};
+  const opp   = {'f-long':'f-short','f-short':'f-long','f-win':'f-loss','f-loss':'f-win'};
+  const was = el.classList.contains('f-active');
+  if (opp[id]) document.getElementById(opp[id])?.classList.remove('f-active');
+  el.classList.toggle('f-active', !was);
+  applyFilters();
+}
+
+function clearFilters() {
+  document.getElementById('f-agent').value = '';
+  document.getElementById('f-pair').value  = '';
+  ['f-long','f-short','f-win','f-loss'].forEach(id => document.getElementById(id)?.classList.remove('f-active'));
+  applyFilters();
+}
+
+// ── Modal ─────────────────────────────────────────────────────────────────────
+let _modalAgent = '';
+let _modalFilters = { side: '', result: '' };
+
+function openModal(agentName) {
+  _modalAgent = agentName;
+  _modalFilters = { side: '', result: '' };
+  ['mf-long','mf-short','mf-win','mf-loss'].forEach(id => document.getElementById(id)?.classList.remove('f-active'));
+  const agentCfg = (window._allAgents||[]).find(a => a.name === agentName);
+  const emoji    = agentCfg ? agentCfg.emoji : '';
+  document.getElementById('modal-title').textContent = `${emoji} ${agentName} — Full Trade History`;
+  document.getElementById('modal').classList.add('open');
+  renderModal();
+}
+
+function closeModal() {
+  document.getElementById('modal').classList.remove('open');
+}
+
+function toggleModalFilter(id) {
+  const opp = {'mf-long':'mf-short','mf-short':'mf-long','mf-win':'mf-loss','mf-loss':'mf-win'};
+  const el  = document.getElementById(id);
+  const was = el.classList.contains('f-active');
+  if (opp[id]) document.getElementById(opp[id])?.classList.remove('f-active');
+  el.classList.toggle('f-active', !was);
+  _modalFilters.side   = document.getElementById('mf-long')?.classList.contains('f-active')  ? 'LONG'
+                       : document.getElementById('mf-short')?.classList.contains('f-active') ? 'SHORT' : '';
+  _modalFilters.result = document.getElementById('mf-win')?.classList.contains('f-active')   ? 'WIN'
+                       : document.getElementById('mf-loss')?.classList.contains('f-active')  ? 'LOSS'  : '';
+  renderModal();
+}
+
+function renderModal() {
+  const trades   = window._allTrades || [];
+  const filtered = filterTrades(trades, _modalAgent, '', _modalFilters.side, _modalFilters.result);
+  document.getElementById('modal-count').textContent = `${filtered.length} trades`;
+  document.getElementById('modal-body').innerHTML = filtered.length
+    ? filtered.map(t => tradeRow(t, false)).join('')
+    : '<tr><td colspan="5" style="color:#333;font-style:italic;text-align:center;padding:20px">No trades match</td></tr>';
+}
+
+// Fallback poll
+setInterval(async () => {
+  if (!ws || ws.readyState !== WebSocket.OPEN) {
+    try { const r=await fetch('/state'); render(await r.json()); } catch(e){}
+  }
+}, 5000);
+
+connect();
+
+// Load initial state
+fetch('/state').then(r=>r.json()).then(render).catch(()=>{});
+</script>
+</body>
+</html>

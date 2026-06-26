@@ -1,0 +1,124 @@
+DAILY STRATEGY BACKTEST - 2026-06-20 14:44:52
+================================================================================
+
+Goal: 1-5 trades/day, high win rate, max history
+Logic: non-overlapping, max_hold=200 candles
+
+Fetching data (max history)...
+  BTCUSDT 15m: 20000 candles (~208 days)
+  ETHUSDT 15m: 20000 candles (~208 days)
+  SOLUSDT 15m: 20000 candles (~208 days)
+  BTCUSDT 1h: 20000 candles (~833 days)
+  ETHUSDT 1h: 20000 candles (~833 days)
+  SOLUSDT 1h: 20000 candles (~833 days)
+
+Running backtests...
+
+
+================================================================================
+TIMEFRAME: 15m  (96 candles/day)
+================================================================================
+
+  PROFITABLE strategies with 1-7 trades/day:
+  Strategy                     SL   TP |     N    WR%     EV%  T/day  Days
+  ---------------------------------------------------------------------------
+  Price_EMA200_Cross          3.0  2.0 |   206  62.6% +0.131%   1.0/d   208d
+  Golden_Cross                3.0  2.0 |   122  61.5% +0.074%   0.6/d   208d
+  ORB                         3.0  2.0 |   404  60.1% +0.007%   1.9/d   208d
+  Hammer                      3.0  2.0 |   208  60.1% +0.005%   1.0/d   208d
+  Price_EMA200_Cross          2.0  1.5 |   269  59.1% +0.069%   1.3/d   208d
+  Golden_Cross                2.5  2.0 |   131  58.8% +0.145%   0.6/d   208d
+  ADX_Trend                   2.0  1.5 |   226  58.0% +0.029%   1.1/d   208d
+  RSI_50_Cross                2.0  1.5 |   388  57.7% +0.021%   1.9/d   208d
+  Price_EMA200_Cross          2.5  2.0 |   227  56.8% +0.057%   1.1/d   208d
+  Golden_Cross                1.0  1.0 |   161  54.7% +0.093%   0.8/d   208d
+  Price_EMA200_Cross          1.5  1.5 |   292  53.8% +0.113%   1.4/d   208d
+  ADX_Trend                   1.5  1.5 |   233  53.6% +0.109%   1.1/d   208d
+  Price_EMA200_Cross          1.0  1.0 |   350  53.1% +0.063%   1.7/d   208d
+  EMA_Cross_Filtered          1.0  1.0 |   478  52.5% +0.050%   2.3/d   208d
+  Price_EMA200_Cross          2.0  2.0 |   250  52.4% +0.096%   1.2/d   208d
+  MACD_Cross_Filtered         1.0  1.0 |   305  52.1% +0.043%   1.5/d   208d
+  MACD_Cross                  1.0  1.0 |   677  51.4% +0.028%   3.2/d   208d
+  ADX_Trend                   1.0  1.0 |   279  50.5% +0.011%   1.3/d   208d
+  ADX_Trend                   2.0  2.0 |   198  50.5% +0.020%   1.0/d   208d
+  Volume_Spike                1.0  1.0 |   505  50.5% +0.010%   2.4/d   208d
+
+================================================================================
+TIMEFRAME: 1h  (24 candles/day)
+================================================================================
+
+  PROFITABLE strategies with 1-7 trades/day:
+  Strategy                     SL   TP |     N    WR%     EV%  T/day  Days
+  ---------------------------------------------------------------------------
+  EMA_Cross_Filtered          3.0  2.0 |   448  62.9% +0.147%   0.5/d   833d
+  EMA21_Touch_MACD            3.0  2.0 |   861  62.0% +0.101%   1.0/d   833d
+  Three_Green                 3.0  2.0 |   854  61.1% +0.056%   1.0/d   833d
+  EMA_Cross                   3.0  2.0 |   809  60.8% +0.041%   1.0/d   833d
+  EMA_Ribbon                  3.0  2.0 |   948  60.7% +0.033%   1.1/d   833d
+  Combined_Best               2.0  1.5 |   444  60.6% +0.120%   0.5/d   833d
+  MACD_Cross                  3.0  2.0 |   657  60.4% +0.021%   0.8/d   833d
+  Triple_EMA                  3.0  2.0 |   656  60.4% +0.018%   0.8/d   833d
+  Price_EMA200_Cross          2.0  1.5 |   421  60.3% +0.112%   0.5/d   833d
+  Hybrid                      3.0  2.0 |   724  60.2% +0.011%   0.9/d   833d
+  EMA_Cross_Filtered          2.0  1.5 |   493  60.0% +0.101%   0.6/d   833d
+  EMA_Cross_Filtered          2.5  2.0 |   472  58.5% +0.131%   0.6/d   833d
+  Triple_EMA                  2.0  1.5 |   760  58.3% +0.040%   0.9/d   833d
+  EMA_Cross                   2.0  1.5 |   944  58.1% +0.032%   1.1/d   833d
+  MACD_Cross                  2.0  1.5 |   791  57.9% +0.027%   0.9/d   833d
+  ORB                         2.0  1.5 |   497  57.7% +0.021%   0.6/d   833d
+  Three_Green                 2.0  1.5 |  1050  57.7% +0.020%   1.3/d   833d
+  ORB                         2.5  2.0 |   435  57.7% +0.097%   0.5/d   833d
+  Volume_Spike                2.0  1.5 |   521  57.6% +0.015%   0.6/d   833d
+  Hybrid                      2.0  1.5 |   917  57.6% +0.015%   1.1/d   833d
+
+
+================================================================================
+GLOBAL TOP 30 — PROFITABLE + DAILY FREQUENCY
+================================================================================
+(profitable = positive EV per trade, frequency = 0.5-7 trades/day across 3 pairs)
+
+  TF    Strategy                     SL   TP |     N    WR%     EV%  T/day  Days
+  --------------------------------------------------------------------------------
+  1h    EMA_Cross_Filtered          3.0  2.0 |   448  62.9% +0.147%   0.5/d   833d
+  15m   Price_EMA200_Cross          3.0  2.0 |   206  62.6% +0.131%   1.0/d   208d
+  1h    EMA21_Touch_MACD            3.0  2.0 |   861  62.0% +0.101%   1.0/d   833d
+  15m   Golden_Cross                3.0  2.0 |   122  61.5% +0.074%   0.6/d   208d
+  1h    Three_Green                 3.0  2.0 |   854  61.1% +0.056%   1.0/d   833d
+  1h    EMA_Cross                   3.0  2.0 |   809  60.8% +0.041%   1.0/d   833d
+  1h    EMA_Ribbon                  3.0  2.0 |   948  60.7% +0.033%   1.1/d   833d
+  1h    Combined_Best               2.0  1.5 |   444  60.6% +0.120%   0.5/d   833d
+  1h    MACD_Cross                  3.0  2.0 |   657  60.4% +0.021%   0.8/d   833d
+  1h    Triple_EMA                  3.0  2.0 |   656  60.4% +0.018%   0.8/d   833d
+  1h    Price_EMA200_Cross          2.0  1.5 |   421  60.3% +0.112%   0.5/d   833d
+  1h    Hybrid                      3.0  2.0 |   724  60.2% +0.011%   0.9/d   833d
+  15m   ORB                         3.0  2.0 |   404  60.1% +0.007%   1.9/d   208d
+  15m   Hammer                      3.0  2.0 |   208  60.1% +0.005%   1.0/d   208d
+  15m   ADX_Trend                   2.0  1.5 |   226  58.0% +0.029%   1.1/d   208d
+  1h    ORB                         2.0  1.5 |   497  57.7% +0.021%   0.6/d   833d
+  15m   RSI_50_Cross                2.0  1.5 |   388  57.7% +0.021%   1.9/d   208d
+  1h    Volume_Spike                2.0  1.5 |   521  57.6% +0.015%   0.6/d   833d
+  1h    MACD_BB_Combo               2.0  1.5 |   613  57.4% +0.010%   0.7/d   833d
+  1h    RSI_50_Cross                2.0  1.5 |   607  57.3% +0.007%   0.7/d   833d
+  15m   EMA_Cross_Filtered          1.0  1.0 |   478  52.5% +0.050%   2.3/d   208d
+  15m   MACD_Cross_Filtered         1.0  1.0 |   305  52.1% +0.043%   1.5/d   208d
+  15m   MACD_Cross                  1.0  1.0 |   677  51.4% +0.028%   3.2/d   208d
+  1h    Donchian_Break              1.0  1.0 |  1056  50.9% +0.017%   1.3/d   833d
+  15m   Volume_Spike                1.0  1.0 |   505  50.5% +0.010%   2.4/d   208d
+  1h    MACD_Cross_Filtered         1.0  1.0 |   423  50.1% +0.002%   0.5/d   833d
+  1h    VWAP_Cross                  1.5  2.0 |  1626  43.1% +0.009%   2.0/d   833d
+  1h    BB_Bounce                   2.0  3.0 |  1380  40.2% +0.011%   1.7/d   833d
+  1h    EMA_Stack_Pullback          1.0  2.0 |  1761  33.7% +0.012%   2.1/d   833d
+
+********************************************************************************
+  BEST DAILY STRATEGY
+********************************************************************************
+  Strategy:        EMA_Cross_Filtered
+  Timeframe:       1h
+  SL / TP:         3.0% / 2.0%
+  Win Rate:        62.9%  (breakeven: 60.0%)
+  EV per trade:    +0.147%
+  Trades per day:  0.5  (across 3 pairs)
+  Backtest trades: 448 over 833 days
+  Expected daily:  +0.079% per day on position
+
+Done in 155s | 792 results | Saved to daily_results.json
