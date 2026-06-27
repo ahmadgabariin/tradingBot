@@ -1,0 +1,13 @@
+﻿[Unit]
+Description=Competition 5 — MAX_OPEN 5
+After=network.target candle.service
+
+[Service]
+User=mrpolo
+WorkingDirectory=/home/mrpolo/binanceBot
+ExecStart=/usr/bin/python3 paper5/comp5_server.py
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,13 @@
+﻿[Unit]
+Description=Competition 4 — MAX_OPEN 2
+After=network.target candle.service
+
+[Service]
+User=mrpolo
+WorkingDirectory=/home/mrpolo/binanceBot
+ExecStart=/usr/bin/python3 paper4/comp4_server.py
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

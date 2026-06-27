@@ -1,0 +1,13 @@
+[Unit]
+Description=Shared Candle Cache Server
+After=network.target
+
+[Service]
+User=mrpolo
+WorkingDirectory=/home/mrpolo/binanceBot
+ExecStart=/usr/bin/python3 candle_server.py
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

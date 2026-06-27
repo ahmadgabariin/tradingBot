@@ -1,0 +1,13 @@
+﻿[Unit]
+Description=Competition 6 — MAX_OPEN Unlimited
+After=network.target candle.service
+
+[Service]
+User=mrpolo
+WorkingDirectory=/home/mrpolo/binanceBot
+ExecStart=/usr/bin/python3 paper6/comp6_server.py
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

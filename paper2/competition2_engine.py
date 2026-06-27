@@ -39,9 +39,16 @@ lock       = threading.Lock()
 # ── CANDLE FETCH ──────────────────────────────────────────────────────────────
 
 def fetch_candles(pair, tf, n=200):
-    url = f"https://api.binance.com/api/v3/klines?symbol={pair}&interval={tf}&limit={n}"
+    # prefer shared candle server, fallback to Binance direct
     try:
-        r = requests.get(url, timeout=10); r.raise_for_status()
+        r = requests.get(f"http://localhost:8200/candles?pair={pair}&tf={tf}", timeout=3)
+        r.raise_for_status()
+        return r.json()
+    except Exception:
+        pass
+    try:
+        r = requests.get(f"https://api.binance.com/api/v3/klines?symbol={pair}&interval={tf}&limit={n}", timeout=10)
+        r.raise_for_status()
         raw = r.json()
         return {
             "open":  [float(c[1]) for c in raw],
@@ -640,38 +647,38 @@ def get_key_moments():
     worst = min(all_trades, key=lambda t: t["pnl"])
 
     # win streak per agent
-    best_streak = {"agent": "—", "streak": 0}
+    best_streak = {"agent": "—", "count": 0}
     for name in AGENTS:
         streak = cur = 0
         for t in agent_closed[name]:
             if t["result"] == "TP": cur += 1
             else: cur = 0
             if cur > streak: streak = cur
-        if streak > best_streak["streak"]:
-            best_streak = {"agent": name, "streak": streak}
+        if streak > best_streak["count"]:
+            best_streak = {"agent": name, "count": streak}
 
     # loss streak
-    worst_streak = {"agent": "—", "streak": 0}
+    worst_streak = {"agent": "—", "count": 0}
     for name in AGENTS:
         streak = cur = 0
         for t in agent_closed[name]:
             if t["result"] == "SL": cur += 1
             else: cur = 0
             if cur > streak: streak = cur
-        if streak > worst_streak["streak"]:
-            worst_streak = {"agent": name, "streak": streak}
+        if streak > worst_streak["count"]:
+            worst_streak = {"agent": name, "count": streak}
 
     # most active agent
     most_active = max(AGENTS, key=lambda n: len(agent_closed[n]))
 
     return {
-        "biggest_win":   {"agent": best["agent"],  "pair": best["pair"],  "pnl": best["pnl"]},
-        "biggest_loss":  {"agent": worst["agent"], "pair": worst["pair"], "pnl": worst["pnl"]},
-        "win_streak":    best_streak,
-        "loss_streak":   worst_streak,
-        "most_active":   {"agent": most_active, "trades": len(agent_closed[most_active])},
-        "total_pnl":     round(sum(t["pnl"] for t in all_trades), 2),
-        "total_trades":  len(all_trades),
+        "biggest_win":         {"agent": best["agent"],  "pair": best["pair"],  "pnl": best["pnl"]},
+        "biggest_loss":        {"agent": worst["agent"], "pair": worst["pair"], "pnl": worst["pnl"]},
+        "longest_win_streak":  best_streak,
+        "longest_loss_streak": worst_streak,
+        "most_active":         {"agent": most_active, "trades": len(agent_closed[most_active])},
+        "total_pnl":           round(sum(t["pnl"] for t in all_trades), 2),
+        "total_trades":        len(all_trades),
     }
 
 load_state()

@@ -117,9 +117,10 @@ async def ws_endpoint(ws: WebSocket):
 
 @app.get("/", response_class=HTMLResponse)
 async def index():
-    html_path = os.path.join(os.path.dirname(__file__), "competition2.html")
-    with open(html_path, "r", encoding="utf-8") as f:
-        return f.read()
+    html_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), "paper_shared", "competition.html")
+    with open(html_path, encoding="utf-8") as f:
+        html = f.read()
+    return html.replace("__PORT__", "8123").replace("__COMP_NAME__", "Competition 2").replace("__MAX_OPEN__", "3")
 
 @app.get("/monitor", response_class=HTMLResponse)
 async def monitor():
