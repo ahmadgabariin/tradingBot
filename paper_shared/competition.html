@@ -515,7 +515,7 @@ async function openAgentModal(name) {
   const ddColor=(a.max_drawdown_pct||0)>20?'#ff3355':(a.max_drawdown_pct||0)>10?'#ffaa00':'#00ff88';
   const dur=a.avg_duration_min>=60?(a.avg_duration_min/60).toFixed(1)+'h':(a.avg_duration_min||0)+'m';
   document.getElementById('modal-stats').innerHTML=[
-    ['Equity',       `$${(a.equity||0).toLocaleString(undefined,{maximumFractionDigits:0})}`, a.equity>=10000?'#00ff88':'#ff3355'],
+    ['Equity',       `$${(a.equity||0).toLocaleString(undefined,{maximumFractionDigits:0})}`, a.equity>=1000?'#00ff88':'#ff3355'],
     ['Return',       `${a.return_pct>=0?'+':''}${a.return_pct}%`,                             a.return_pct>=0?'#00ff88':'#ff3355'],
     ['Total PnL',    `${a.pnl>=0?'+':''}$${(a.pnl||0).toFixed(0)}`,                           a.pnl>=0?'#00ff88':'#ff3355'],
     ['Win Rate',     `${a.win_rate}%`,                                                          '#00ccff'],
