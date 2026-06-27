@@ -1,5 +1,5 @@
 [Unit]
-Description=Competition 8 — The Surgeon v2 Max Profit 20 pairs (port 8129)
+Description=Competition 8 — All 5 Agents Max Profit 20 pairs no limit (port 8129)
 After=network.target candle.service
 Wants=candle.service
 

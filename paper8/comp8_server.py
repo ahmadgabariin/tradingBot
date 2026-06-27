@@ -1,25 +1,25 @@
 """
-Competition 8 — The Surgeon v2 (max profit mode) on port 8129.
-20 pairs, MAX_OPEN=10 — maximizes trade frequency and compounding.
-Proven: 38% WR, every month profitable, MaxDD 19%, 5/5 years.
+Competition 8 — All 5 Smart Agents, max profit mode (port 8129).
+20 pairs, MAX_OPEN=20 (no limit) — every agent can trade every pair simultaneously.
 """
 import sys, os
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from paper_shared.base_engine import CompEngine
 from paper_shared.base_server import create_app
-from paper8.surgeon_agent import SURGEON_AGENTS, LONG_SIGNALS, SHORT_SIGNALS, SURGEON_PAIRS
+from paper7.smart_agents import SMART_AGENTS, LONG_SIGNALS, SHORT_SIGNALS
+from paper8.surgeon_agent import SURGEON_PAIRS
 
 PORT      = 8129
-MAX_OPEN  = 10
-COMP_NAME = "Competition 8 — The Surgeon v2 (Max Profit)"
+MAX_OPEN  = 20
+COMP_NAME = "Competition 8 — All Agents Max Profit"
 SAVE_FILE = os.path.join(os.path.dirname(__file__), "comp8_state.json")
 
 engine = CompEngine(
     save_file     = SAVE_FILE,
     max_open      = MAX_OPEN,
     comp_name     = COMP_NAME,
-    agents        = SURGEON_AGENTS,
+    agents        = SMART_AGENTS,
     long_signals  = LONG_SIGNALS,
     short_signals = SHORT_SIGNALS,
     pairs_list    = SURGEON_PAIRS,
