@@ -1,0 +1,880 @@
+{
+  "The Structure": {
+    "sl": 0.012,
+    "tp": 0.036,
+    "tf": "1h",
+    "overall": {
+      "trades": 5110,
+      "wins": 1483,
+      "losses": 3627,
+      "wr": 29.0,
+      "pnl_pct": 577936.54,
+      "max_dd_pct": 37.76,
+      "ev": 0.193
+    },
+    "by_year": {
+      "2021": {
+        "trades": 605,
+        "wins": 176,
+        "losses": 429,
+        "wr": 29.1,
+        "pnl_pct": 184.48,
+        "max_dd_pct": 22.66,
+        "ev": 0.196
+      },
+      "2022": {
+        "trades": 1095,
+        "wins": 296,
+        "losses": 799,
+        "wr": 27.0,
+        "pnl_pct": 127.66,
+        "max_dd_pct": 37.76,
+        "ev": 0.098
+      },
+      "2023": {
+        "trades": 821,
+        "wins": 238,
+        "losses": 583,
+        "wr": 29.0,
+        "pnl_pct": 297.12,
+        "max_dd_pct": 27.16,
+        "ev": 0.191
+      },
+      "2024": {
+        "trades": 1071,
+        "wins": 308,
+        "losses": 763,
+        "wr": 28.8,
+        "pnl_pct": 437.47,
+        "max_dd_pct": 27.0,
+        "ev": 0.18
+      },
+      "2025": {
+        "trades": 1053,
+        "wins": 318,
+        "losses": 735,
+        "wr": 30.2,
+        "pnl_pct": 973.39,
+        "max_dd_pct": 20.56,
+        "ev": 0.25
+      },
+      "2026": {
+        "trades": 465,
+        "wins": 147,
+        "losses": 318,
+        "wr": 31.6,
+        "pnl_pct": 289.58,
+        "max_dd_pct": 24.69,
+        "ev": 0.317
+      }
+    },
+    "by_month": {
+      "1": {
+        "trades": 433,
+        "wins": 126,
+        "losses": 307,
+        "wr": 29.1,
+        "pnl_pct": 111.7,
+        "max_dd_pct": 24.5,
+        "ev": 0.197
+      },
+      "2": {
+        "trades": 433,
+        "wins": 154,
+        "losses": 279,
+        "wr": 35.6,
+        "pnl_pct": 699.08,
+        "max_dd_pct": 14.96,
+        "ev": 0.507
+      },
+      "3": {
+        "trades": 452,
+        "wins": 124,
+        "losses": 328,
+        "wr": 27.4,
+        "pnl_pct": 53.07,
+        "max_dd_pct": 22.79,
+        "ev": 0.117
+      },
+      "4": {
+        "trades": 414,
+        "wins": 97,
+        "losses": 317,
+        "wr": 23.4,
+        "pnl_pct": -32.73,
+        "max_dd_pct": 40.55,
+        "ev": -0.075
+      },
+      "5": {
+        "trades": 398,
+        "wins": 109,
+        "losses": 289,
+        "wr": 27.4,
+        "pnl_pct": 44.2,
+        "max_dd_pct": 25.22,
+        "ev": 0.115
+      },
+      "6": {
+        "trades": 411,
+        "wins": 135,
+        "losses": 276,
+        "wr": 32.8,
+        "pnl_pct": 323.14,
+        "max_dd_pct": 15.91,
+        "ev": 0.377
+      },
+      "7": {
+        "trades": 452,
+        "wins": 124,
+        "losses": 328,
+        "wr": 27.4,
+        "pnl_pct": 53.07,
+        "max_dd_pct": 24.37,
+        "ev": 0.117
+      },
+      "8": {
+        "trades": 440,
+        "wins": 124,
+        "losses": 316,
+        "wr": 28.2,
+        "pnl_pct": 76.93,
+        "max_dd_pct": 32.44,
+        "ev": 0.153
+      },
+      "9": {
+        "trades": 398,
+        "wins": 115,
+        "losses": 283,
+        "wr": 28.9,
+        "pnl_pct": 91.68,
+        "max_dd_pct": 25.85,
+        "ev": 0.187
+      },
+      "10": {
+        "trades": 372,
+        "wins": 110,
+        "losses": 262,
+        "wr": 29.6,
+        "pnl_pct": 106.96,
+        "max_dd_pct": 21.85,
+        "ev": 0.219
+      },
+      "11": {
+        "trades": 484,
+        "wins": 147,
+        "losses": 337,
+        "wr": 30.4,
+        "pnl_pct": 209.72,
+        "max_dd_pct": 16.62,
+        "ev": 0.258
+      },
+      "12": {
+        "trades": 423,
+        "wins": 118,
+        "losses": 305,
+        "wr": 27.9,
+        "pnl_pct": 63.43,
+        "max_dd_pct": 29.58,
+        "ev": 0.139
+      }
+    },
+    "total_trades": 5110
+  },
+  "The EMA Rider": {
+    "sl": 0.01,
+    "tp": 0.03,
+    "tf": "1h",
+    "overall": {
+      "trades": 5486,
+      "wins": 1595,
+      "losses": 3891,
+      "wr": 29.1,
+      "pnl_pct": 310295.62,
+      "max_dd_pct": 37.02,
+      "ev": 0.163
+    },
+    "by_year": {
+      "2021": {
+        "trades": 659,
+        "wins": 192,
+        "losses": 467,
+        "wr": 29.1,
+        "pnl_pct": 166.92,
+        "max_dd_pct": 18.84,
+        "ev": 0.165
+      },
+      "2022": {
+        "trades": 1175,
+        "wins": 347,
+        "losses": 828,
+        "wr": 29.5,
+        "pnl_pct": 592.56,
+        "max_dd_pct": 22.59,
+        "ev": 0.181
+      },
+      "2023": {
+        "trades": 980,
+        "wins": 268,
+        "losses": 712,
+        "wr": 27.3,
+        "pnl_pct": 115.1,
+        "max_dd_pct": 33.81,
+        "ev": 0.094
+      },
+      "2024": {
+        "trades": 1119,
+        "wins": 330,
+        "losses": 789,
+        "wr": 29.5,
+        "pnl_pct": 520.09,
+        "max_dd_pct": 24.75,
+        "ev": 0.18
+      },
+      "2025": {
+        "trades": 1078,
+        "wins": 306,
+        "losses": 772,
+        "wr": 28.4,
+        "pnl_pct": 261.88,
+        "max_dd_pct": 33.11,
+        "ev": 0.135
+      },
+      "2026": {
+        "trades": 475,
+        "wins": 152,
+        "losses": 323,
+        "wr": 32.0,
+        "pnl_pct": 247.88,
+        "max_dd_pct": 20.31,
+        "ev": 0.28
+      }
+    },
+    "by_month": {
+      "1": {
+        "trades": 455,
+        "wins": 147,
+        "losses": 308,
+        "wr": 32.3,
+        "pnl_pct": 248.91,
+        "max_dd_pct": 22.68,
+        "ev": 0.292
+      },
+      "2": {
+        "trades": 421,
+        "wins": 132,
+        "losses": 289,
+        "wr": 31.4,
+        "pnl_pct": 171.07,
+        "max_dd_pct": 14.45,
+        "ev": 0.254
+      },
+      "3": {
+        "trades": 480,
+        "wins": 135,
+        "losses": 345,
+        "wr": 28.1,
+        "pnl_pct": 68.72,
+        "max_dd_pct": 18.26,
+        "ev": 0.125
+      },
+      "4": {
+        "trades": 439,
+        "wins": 100,
+        "losses": 339,
+        "wr": 22.8,
+        "pnl_pct": -36.31,
+        "max_dd_pct": 40.0,
+        "ev": -0.089
+      },
+      "5": {
+        "trades": 449,
+        "wins": 117,
+        "losses": 332,
+        "wr": 26.1,
+        "pnl_pct": 12.94,
+        "max_dd_pct": 41.75,
+        "ev": 0.042
+      },
+      "6": {
+        "trades": 457,
+        "wins": 160,
+        "losses": 297,
+        "wr": 35.0,
+        "pnl_pct": 472.28,
+        "max_dd_pct": 12.66,
+        "ev": 0.4
+      },
+      "7": {
+        "trades": 496,
+        "wins": 154,
+        "losses": 342,
+        "wr": 31.0,
+        "pnl_pct": 204.91,
+        "max_dd_pct": 12.46,
+        "ev": 0.242
+      },
+      "8": {
+        "trades": 478,
+        "wins": 131,
+        "losses": 347,
+        "wr": 27.4,
+        "pnl_pct": 46.92,
+        "max_dd_pct": 23.81,
+        "ev": 0.096
+      },
+      "9": {
+        "trades": 412,
+        "wins": 116,
+        "losses": 296,
+        "wr": 28.2,
+        "pnl_pct": 57.45,
+        "max_dd_pct": 19.98,
+        "ev": 0.126
+      },
+      "10": {
+        "trades": 452,
+        "wins": 158,
+        "losses": 294,
+        "wr": 35.0,
+        "pnl_pct": 455.94,
+        "max_dd_pct": 11.36,
+        "ev": 0.398
+      },
+      "11": {
+        "trades": 504,
+        "wins": 143,
+        "losses": 361,
+        "wr": 28.4,
+        "pnl_pct": 81.98,
+        "max_dd_pct": 21.48,
+        "ev": 0.135
+      },
+      "12": {
+        "trades": 443,
+        "wins": 102,
+        "losses": 341,
+        "wr": 23.0,
+        "pnl_pct": -33.78,
+        "max_dd_pct": 51.33,
+        "ev": -0.079
+      }
+    },
+    "total_trades": 5486
+  },
+  "The Regime Lord": {
+    "sl": 0.008,
+    "tp": 0.032,
+    "tf": "1h",
+    "overall": {
+      "trades": 1897,
+      "wins": 478,
+      "losses": 1419,
+      "wr": 25.2,
+      "pnl_pct": 3781.13,
+      "max_dd_pct": 27.93,
+      "ev": 0.208
+    },
+    "by_year": {
+      "2021": {
+        "trades": 212,
+        "wins": 52,
+        "losses": 160,
+        "wr": 24.5,
+        "pnl_pct": 42.3,
+        "max_dd_pct": 13.79,
+        "ev": 0.181
+      },
+      "2022": {
+        "trades": 359,
+        "wins": 100,
+        "losses": 259,
+        "wr": 27.9,
+        "pnl_pct": 191.4,
+        "max_dd_pct": 12.17,
+        "ev": 0.314
+      },
+      "2023": {
+        "trades": 346,
+        "wins": 92,
+        "losses": 254,
+        "wr": 26.6,
+        "pnl_pct": 135.77,
+        "max_dd_pct": 13.62,
+        "ev": 0.264
+      },
+      "2024": {
+        "trades": 428,
+        "wins": 113,
+        "losses": 315,
+        "wr": 26.4,
+        "pnl_pct": 179.89,
+        "max_dd_pct": 12.87,
+        "ev": 0.256
+      },
+      "2025": {
+        "trades": 377,
+        "wins": 82,
+        "losses": 295,
+        "wr": 21.8,
+        "pnl_pct": 23.79,
+        "max_dd_pct": 19.36,
+        "ev": 0.07
+      },
+      "2026": {
+        "trades": 175,
+        "wins": 39,
+        "losses": 136,
+        "wr": 22.3,
+        "pnl_pct": 14.58,
+        "max_dd_pct": 18.4,
+        "ev": 0.091
+      }
+    },
+    "by_month": {
+      "1": {
+        "trades": 173,
+        "wins": 37,
+        "losses": 136,
+        "wr": 21.4,
+        "pnl_pct": 7.58,
+        "max_dd_pct": 21.71,
+        "ev": 0.055
+      },
+      "2": {
+        "trades": 159,
+        "wins": 54,
+        "losses": 105,
+        "wr": 34.0,
+        "pnl_pct": 135.74,
+        "max_dd_pct": 8.46,
+        "ev": 0.558
+      },
+      "3": {
+        "trades": 155,
+        "wins": 33,
+        "losses": 122,
+        "wr": 21.3,
+        "pnl_pct": 6.13,
+        "max_dd_pct": 13.09,
+        "ev": 0.052
+      },
+      "4": {
+        "trades": 133,
+        "wins": 26,
+        "losses": 107,
+        "wr": 19.5,
+        "pnl_pct": -3.97,
+        "max_dd_pct": 13.68,
+        "ev": -0.018
+      },
+      "5": {
+        "trades": 167,
+        "wins": 30,
+        "losses": 137,
+        "wr": 18.0,
+        "pnl_pct": -14.4,
+        "max_dd_pct": 16.11,
+        "ev": -0.081
+      },
+      "6": {
+        "trades": 130,
+        "wins": 42,
+        "losses": 88,
+        "wr": 32.3,
+        "pnl_pct": 85.17,
+        "max_dd_pct": 13.62,
+        "ev": 0.492
+      },
+      "7": {
+        "trades": 177,
+        "wins": 33,
+        "losses": 144,
+        "wr": 18.6,
+        "pnl_pct": -11.06,
+        "max_dd_pct": 24.93,
+        "ev": -0.054
+      },
+      "8": {
+        "trades": 158,
+        "wins": 41,
+        "losses": 117,
+        "wr": 25.9,
+        "pnl_pct": 42.15,
+        "max_dd_pct": 10.03,
+        "ev": 0.238
+      },
+      "9": {
+        "trades": 153,
+        "wins": 44,
+        "losses": 109,
+        "wr": 28.8,
+        "pnl_pct": 66.6,
+        "max_dd_pct": 7.72,
+        "ev": 0.35
+      },
+      "10": {
+        "trades": 184,
+        "wins": 46,
+        "losses": 138,
+        "wr": 25.0,
+        "pnl_pct": 40.56,
+        "max_dd_pct": 20.24,
+        "ev": 0.2
+      },
+      "11": {
+        "trades": 152,
+        "wins": 39,
+        "losses": 113,
+        "wr": 25.7,
+        "pnl_pct": 37.82,
+        "max_dd_pct": 12.06,
+        "ev": 0.226
+      },
+      "12": {
+        "trades": 156,
+        "wins": 53,
+        "losses": 103,
+        "wr": 34.0,
+        "pnl_pct": 132.13,
+        "max_dd_pct": 8.07,
+        "ev": 0.559
+      }
+    },
+    "total_trades": 1897
+  },
+  "The Surgeon v2": {
+    "sl": 0.005,
+    "tp": 0.01,
+    "tf": "15m",
+    "overall": {
+      "trades": 13621,
+      "wins": 5192,
+      "losses": 8429,
+      "wr": 38.1,
+      "pnl_pct": 1222601.05,
+      "max_dd_pct": 19.26,
+      "ev": 0.072
+    },
+    "by_year": {
+      "2022": {
+        "trades": 1655,
+        "wins": 658,
+        "losses": 997,
+        "wr": 39.8,
+        "pnl_pct": 371.06,
+        "max_dd_pct": 12.8,
+        "ev": 0.096
+      },
+      "2023": {
+        "trades": 3125,
+        "wins": 1202,
+        "losses": 1923,
+        "wr": 38.5,
+        "pnl_pct": 918.77,
+        "max_dd_pct": 11.42,
+        "ev": 0.077
+      },
+      "2024": {
+        "trades": 3645,
+        "wins": 1380,
+        "losses": 2265,
+        "wr": 37.9,
+        "pnl_pct": 978.38,
+        "max_dd_pct": 19.26,
+        "ev": 0.068
+      },
+      "2025": {
+        "trades": 3530,
+        "wins": 1348,
+        "losses": 2182,
+        "wr": 38.2,
+        "pnl_pct": 1088.98,
+        "max_dd_pct": 13.34,
+        "ev": 0.073
+      },
+      "2026": {
+        "trades": 1666,
+        "wins": 604,
+        "losses": 1062,
+        "wr": 36.3,
+        "pnl_pct": 98.71,
+        "max_dd_pct": 12.44,
+        "ev": 0.044
+      }
+    },
+    "by_month": {
+      "1": {
+        "trades": 1234,
+        "wins": 471,
+        "losses": 763,
+        "wr": 38.2,
+        "pnl_pct": 136.8,
+        "max_dd_pct": 10.16,
+        "ev": 0.073
+      },
+      "2": {
+        "trades": 1101,
+        "wins": 406,
+        "losses": 695,
+        "wr": 36.9,
+        "pnl_pct": 74.39,
+        "max_dd_pct": 11.67,
+        "ev": 0.053
+      },
+      "3": {
+        "trades": 1265,
+        "wins": 491,
+        "losses": 774,
+        "wr": 38.8,
+        "pnl_pct": 173.44,
+        "max_dd_pct": 9.12,
+        "ev": 0.082
+      },
+      "4": {
+        "trades": 1130,
+        "wins": 458,
+        "losses": 672,
+        "wr": 40.5,
+        "pnl_pct": 228.32,
+        "max_dd_pct": 8.67,
+        "ev": 0.108
+      },
+      "5": {
+        "trades": 1078,
+        "wins": 410,
+        "losses": 668,
+        "wr": 38.0,
+        "pnl_pct": 107.77,
+        "max_dd_pct": 11.45,
+        "ev": 0.071
+      },
+      "6": {
+        "trades": 1157,
+        "wins": 453,
+        "losses": 704,
+        "wr": 39.2,
+        "pnl_pct": 166.09,
+        "max_dd_pct": 12.08,
+        "ev": 0.087
+      },
+      "7": {
+        "trades": 1191,
+        "wins": 419,
+        "losses": 772,
+        "wr": 35.2,
+        "pnl_pct": 34.92,
+        "max_dd_pct": 21.47,
+        "ev": 0.028
+      },
+      "8": {
+        "trades": 1095,
+        "wins": 410,
+        "losses": 685,
+        "wr": 37.4,
+        "pnl_pct": 90.8,
+        "max_dd_pct": 9.62,
+        "ev": 0.062
+      },
+      "9": {
+        "trades": 990,
+        "wins": 374,
+        "losses": 616,
+        "wr": 37.8,
+        "pnl_pct": 88.46,
+        "max_dd_pct": 12.79,
+        "ev": 0.067
+      },
+      "10": {
+        "trades": 1033,
+        "wins": 399,
+        "losses": 634,
+        "wr": 38.6,
+        "pnl_pct": 120.83,
+        "max_dd_pct": 10.94,
+        "ev": 0.079
+      },
+      "11": {
+        "trades": 1201,
+        "wins": 454,
+        "losses": 747,
+        "wr": 37.8,
+        "pnl_pct": 116.64,
+        "max_dd_pct": 9.13,
+        "ev": 0.067
+      },
+      "12": {
+        "trades": 1146,
+        "wins": 447,
+        "losses": 699,
+        "wr": 39.0,
+        "pnl_pct": 157.03,
+        "max_dd_pct": 10.12,
+        "ev": 0.085
+      }
+    },
+    "total_trades": 13621
+  },
+  "The Squeeze": {
+    "sl": 0.01,
+    "tp": 0.02,
+    "tf": "5m",
+    "overall": {
+      "trades": 8044,
+      "wins": 2769,
+      "losses": 5275,
+      "wr": 34.4,
+      "pnl_pct": 515.92,
+      "max_dd_pct": 60.47,
+      "ev": 0.033
+    },
+    "by_year": {
+      "2023": {
+        "trades": 1140,
+        "wins": 391,
+        "losses": 749,
+        "wr": 34.3,
+        "pnl_pct": 24.0,
+        "max_dd_pct": 30.42,
+        "ev": 0.029
+      },
+      "2024": {
+        "trades": 2817,
+        "wins": 942,
+        "losses": 1875,
+        "wr": 33.4,
+        "pnl_pct": -17.33,
+        "max_dd_pct": 59.62,
+        "ev": 0.003
+      },
+      "2025": {
+        "trades": 2790,
+        "wins": 1005,
+        "losses": 1785,
+        "wr": 36.0,
+        "pnl_pct": 611.21,
+        "max_dd_pct": 29.23,
+        "ev": 0.081
+      },
+      "2026": {
+        "trades": 1297,
+        "wins": 431,
+        "losses": 866,
+        "wr": 33.2,
+        "pnl_pct": -15.52,
+        "max_dd_pct": 30.63,
+        "ev": -0.003
+      }
+    },
+    "by_month": {
+      "1": {
+        "trades": 749,
+        "wins": 264,
+        "losses": 485,
+        "wr": 35.2,
+        "pnl_pct": 42.4,
+        "max_dd_pct": 26.67,
+        "ev": 0.057
+      },
+      "2": {
+        "trades": 713,
+        "wins": 240,
+        "losses": 473,
+        "wr": 33.7,
+        "pnl_pct": -0.12,
+        "max_dd_pct": 34.98,
+        "ev": 0.01
+      },
+      "3": {
+        "trades": 756,
+        "wins": 256,
+        "losses": 500,
+        "wr": 33.9,
+        "pnl_pct": 4.53,
+        "max_dd_pct": 33.94,
+        "ev": 0.016
+      },
+      "4": {
+        "trades": 657,
+        "wins": 235,
+        "losses": 422,
+        "wr": 35.8,
+        "pnl_pct": 51.04,
+        "max_dd_pct": 14.33,
+        "ev": 0.073
+      },
+      "5": {
+        "trades": 611,
+        "wins": 195,
+        "losses": 416,
+        "wr": 31.9,
+        "pnl_pct": -27.34,
+        "max_dd_pct": 46.66,
+        "ev": -0.043
+      },
+      "6": {
+        "trades": 638,
+        "wins": 234,
+        "losses": 404,
+        "wr": 36.7,
+        "pnl_pct": 77.44,
+        "max_dd_pct": 17.97,
+        "ev": 0.1
+      },
+      "7": {
+        "trades": 646,
+        "wins": 228,
+        "losses": 418,
+        "wr": 35.3,
+        "pnl_pct": 36.88,
+        "max_dd_pct": 24.6,
+        "ev": 0.059
+      },
+      "8": {
+        "trades": 656,
+        "wins": 209,
+        "losses": 447,
+        "wr": 31.9,
+        "pnl_pct": -29.8,
+        "max_dd_pct": 38.79,
+        "ev": -0.044
+      },
+      "9": {
+        "trades": 498,
+        "wins": 192,
+        "losses": 306,
+        "wr": 38.6,
+        "pnl_pct": 106.82,
+        "max_dd_pct": 12.3,
+        "ev": 0.157
+      },
+      "10": {
+        "trades": 639,
+        "wins": 230,
+        "losses": 409,
+        "wr": 36.0,
+        "pnl_pct": 55.9,
+        "max_dd_pct": 26.19,
+        "ev": 0.08
+      },
+      "11": {
+        "trades": 748,
+        "wins": 252,
+        "losses": 496,
+        "wr": 33.7,
+        "pnl_pct": 0.53,
+        "max_dd_pct": 28.93,
+        "ev": 0.011
+      },
+      "12": {
+        "trades": 733,
+        "wins": 234,
+        "losses": 499,
+        "wr": 31.9,
+        "pnl_pct": -31.7,
+        "max_dd_pct": 38.94,
+        "ev": -0.042
+      }
+    },
+    "total_trades": 8044
+  }
+}
