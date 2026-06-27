@@ -1,0 +1,554 @@
+{
+  "Surgeon v2 (15m)": {
+    "pairs": {
+      "BTCUSDT": {
+        "trades": 0,
+        "wr": 0,
+        "pnl_pct": 0,
+        "avg_bars": 0,
+        "max_dd_pct": 0,
+        "trades_per_day": 0
+      },
+      "ETHUSDT": {
+        "trades": 0,
+        "wr": 0,
+        "pnl_pct": 0,
+        "avg_bars": 0,
+        "max_dd_pct": 0,
+        "trades_per_day": 0
+      },
+      "SOLUSDT": {
+        "trades": 0,
+        "wr": 0,
+        "pnl_pct": 0,
+        "avg_bars": 0,
+        "max_dd_pct": 0,
+        "trades_per_day": 0
+      },
+      "BNBUSDT": {
+        "trades": 0,
+        "wr": 0,
+        "pnl_pct": 0,
+        "avg_bars": 0,
+        "max_dd_pct": 0,
+        "trades_per_day": 0
+      },
+      "XRPUSDT": {
+        "trades": 0,
+        "wr": 0,
+        "pnl_pct": 0,
+        "avg_bars": 0,
+        "max_dd_pct": 0,
+        "trades_per_day": 0
+      },
+      "ADAUSDT": {
+        "trades": 0,
+        "wr": 0,
+        "pnl_pct": 0,
+        "avg_bars": 0,
+        "max_dd_pct": 0,
+        "trades_per_day": 0
+      },
+      "LINKUSDT": {
+        "trades": 0,
+        "wr": 0,
+        "pnl_pct": 0,
+        "avg_bars": 0,
+        "max_dd_pct": 0,
+        "trades_per_day": 0
+      },
+      "DOTUSDT": {
+        "trades": 0,
+        "wr": 0,
+        "pnl_pct": 0,
+        "avg_bars": 0,
+        "max_dd_pct": 0,
+        "trades_per_day": 0
+      },
+      "AVAXUSDT": {
+        "trades": 0,
+        "wr": 0,
+        "pnl_pct": 0,
+        "avg_bars": 0,
+        "max_dd_pct": 0,
+        "trades_per_day": 0
+      },
+      "POLUSDT": {
+        "trades": 1,
+        "wins": 0,
+        "losses": 1,
+        "wr": 0.0,
+        "pnl_pct": -0.5,
+        "avg_bars": 11.0,
+        "max_dd_pct": 0.5,
+        "trades_per_day": 0.1
+      }
+    },
+    "aggregate": {
+      "trades": 1,
+      "wins": 0,
+      "losses": 1,
+      "wr": 0.0,
+      "pnl_pct": -0.5,
+      "avg_bars": 11.0,
+      "max_dd_pct": 0.5,
+      "trades_per_day": 0.01
+    }
+  },
+  "Regime Lord (1h)": {
+    "pairs": {
+      "BTCUSDT": {
+        "trades": 13,
+        "wins": 3,
+        "losses": 10,
+        "wr": 23.1,
+        "pnl_pct": -0.91,
+        "avg_bars": 5.9,
+        "max_dd_pct": 2.38,
+        "trades_per_day": 0.31
+      },
+      "ETHUSDT": {
+        "trades": 10,
+        "wins": 1,
+        "losses": 9,
+        "wr": 10.0,
+        "pnl_pct": -4.74,
+        "avg_bars": 6.3,
+        "max_dd_pct": 4.74,
+        "trades_per_day": 0.24
+      },
+      "SOLUSDT": {
+        "trades": 6,
+        "wins": 1,
+        "losses": 5,
+        "wr": 16.7,
+        "pnl_pct": -1.63,
+        "avg_bars": 5.8,
+        "max_dd_pct": 3.94,
+        "trades_per_day": 0.14
+      },
+      "BNBUSDT": {
+        "trades": 6,
+        "wins": 1,
+        "losses": 5,
+        "wr": 16.7,
+        "pnl_pct": -1.63,
+        "avg_bars": 10.3,
+        "max_dd_pct": 2.38,
+        "trades_per_day": 0.14
+      },
+      "XRPUSDT": {
+        "trades": 10,
+        "wins": 4,
+        "losses": 6,
+        "wr": 40.0,
+        "pnl_pct": 4.78,
+        "avg_bars": 7.7,
+        "max_dd_pct": 2.38,
+        "trades_per_day": 0.24
+      },
+      "ADAUSDT": {
+        "trades": 8,
+        "wins": 3,
+        "losses": 5,
+        "wr": 37.5,
+        "pnl_pct": 3.15,
+        "avg_bars": 6.0,
+        "max_dd_pct": 2.38,
+        "trades_per_day": 0.19
+      },
+      "LINKUSDT": {
+        "trades": 13,
+        "wins": 4,
+        "losses": 9,
+        "wr": 30.8,
+        "pnl_pct": 2.28,
+        "avg_bars": 8.8,
+        "max_dd_pct": 5.47,
+        "trades_per_day": 0.31
+      },
+      "DOTUSDT": {
+        "trades": 9,
+        "wins": 2,
+        "losses": 7,
+        "wr": 22.2,
+        "pnl_pct": -0.88,
+        "avg_bars": 3.6,
+        "max_dd_pct": 3.16,
+        "trades_per_day": 0.22
+      },
+      "AVAXUSDT": {
+        "trades": 5,
+        "wins": 1,
+        "losses": 4,
+        "wr": 20.0,
+        "pnl_pct": -0.84,
+        "avg_bars": 1.6,
+        "max_dd_pct": 2.38,
+        "trades_per_day": 0.12
+      },
+      "POLUSDT": {
+        "trades": 7,
+        "wins": 2,
+        "losses": 5,
+        "wr": 28.6,
+        "pnl_pct": 0.73,
+        "avg_bars": 12.9,
+        "max_dd_pct": 3.16,
+        "trades_per_day": 0.17
+      }
+    },
+    "aggregate": {
+      "trades": 87,
+      "wins": 22,
+      "losses": 65,
+      "wr": 25.3,
+      "pnl_pct": -0.03,
+      "avg_bars": 7.0,
+      "max_dd_pct": 10.05,
+      "trades_per_day": 0.21
+    }
+  },
+  "Squeeze (15m)": {
+    "pairs": {
+      "BTCUSDT": {
+        "trades": 5,
+        "wins": 2,
+        "losses": 3,
+        "wr": 40.0,
+        "pnl_pct": 0.77,
+        "avg_bars": 37.4,
+        "max_dd_pct": 1.59,
+        "trades_per_day": 0.48
+      },
+      "ETHUSDT": {
+        "trades": 6,
+        "wins": 4,
+        "losses": 2,
+        "wr": 66.7,
+        "pnl_pct": 4.86,
+        "avg_bars": 34.2,
+        "max_dd_pct": 0.8,
+        "trades_per_day": 0.58
+      },
+      "SOLUSDT": {
+        "trades": 6,
+        "wins": 4,
+        "losses": 2,
+        "wr": 66.7,
+        "pnl_pct": 4.86,
+        "avg_bars": 9.7,
+        "max_dd_pct": 0.8,
+        "trades_per_day": 0.58
+      },
+      "BNBUSDT": {
+        "trades": 6,
+        "wins": 0,
+        "losses": 6,
+        "wr": 0.0,
+        "pnl_pct": -4.71,
+        "avg_bars": 30.5,
+        "max_dd_pct": 4.71,
+        "trades_per_day": 0.58
+      },
+      "XRPUSDT": {
+        "trades": 6,
+        "wins": 4,
+        "losses": 2,
+        "wr": 66.7,
+        "pnl_pct": 4.86,
+        "avg_bars": 34.2,
+        "max_dd_pct": 0.8,
+        "trades_per_day": 0.58
+      },
+      "ADAUSDT": {
+        "trades": 10,
+        "wins": 1,
+        "losses": 9,
+        "wr": 10.0,
+        "pnl_pct": -5.49,
+        "avg_bars": 10.4,
+        "max_dd_pct": 5.49,
+        "trades_per_day": 0.96
+      },
+      "LINKUSDT": {
+        "trades": 10,
+        "wins": 5,
+        "losses": 5,
+        "wr": 50.0,
+        "pnl_pct": 4.0,
+        "avg_bars": 28.1,
+        "max_dd_pct": 1.59,
+        "trades_per_day": 0.96
+      },
+      "DOTUSDT": {
+        "trades": 10,
+        "wins": 2,
+        "losses": 8,
+        "wr": 20.0,
+        "pnl_pct": -3.2,
+        "avg_bars": 13.6,
+        "max_dd_pct": 4.72,
+        "trades_per_day": 0.96
+      },
+      "AVAXUSDT": {
+        "trades": 8,
+        "wins": 5,
+        "losses": 3,
+        "wr": 62.5,
+        "pnl_pct": 5.68,
+        "avg_bars": 7.0,
+        "max_dd_pct": 2.38,
+        "trades_per_day": 0.77
+      },
+      "POLUSDT": {
+        "trades": 8,
+        "wins": 3,
+        "losses": 5,
+        "wr": 37.5,
+        "pnl_pct": 0.75,
+        "avg_bars": 22.6,
+        "max_dd_pct": 2.38,
+        "trades_per_day": 0.77
+      }
+    },
+    "aggregate": {
+      "trades": 75,
+      "wins": 30,
+      "losses": 45,
+      "wr": 40.0,
+      "pnl_pct": 12.16,
+      "avg_bars": 21.3,
+      "max_dd_pct": 5.56,
+      "trades_per_day": 0.72
+    }
+  },
+  "Structure BOS (1h)": {
+    "pairs": {
+      "BTCUSDT": {
+        "trades": 22,
+        "wins": 8,
+        "losses": 14,
+        "wr": 36.4,
+        "pnl_pct": 12.07,
+        "avg_bars": 22.0,
+        "max_dd_pct": 4.71,
+        "trades_per_day": 0.53
+      },
+      "ETHUSDT": {
+        "trades": 14,
+        "wins": 4,
+        "losses": 10,
+        "wr": 28.6,
+        "pnl_pct": 2.1,
+        "avg_bars": 18.8,
+        "max_dd_pct": 6.99,
+        "trades_per_day": 0.34
+      },
+      "SOLUSDT": {
+        "trades": 32,
+        "wins": 10,
+        "losses": 22,
+        "wr": 31.2,
+        "pnl_pct": 9.21,
+        "avg_bars": 12.8,
+        "max_dd_pct": 8.26,
+        "trades_per_day": 0.77
+      },
+      "BNBUSDT": {
+        "trades": 21,
+        "wins": 6,
+        "losses": 15,
+        "wr": 28.6,
+        "pnl_pct": 3.16,
+        "avg_bars": 22.8,
+        "max_dd_pct": 6.99,
+        "trades_per_day": 0.5
+      },
+      "XRPUSDT": {
+        "trades": 24,
+        "wins": 9,
+        "losses": 15,
+        "wr": 37.5,
+        "pnl_pct": 14.71,
+        "avg_bars": 16.3,
+        "max_dd_pct": 5.86,
+        "trades_per_day": 0.58
+      },
+      "ADAUSDT": {
+        "trades": 24,
+        "wins": 10,
+        "losses": 14,
+        "wr": 41.7,
+        "pnl_pct": 20.28,
+        "avg_bars": 12.5,
+        "max_dd_pct": 8.1,
+        "trades_per_day": 0.58
+      },
+      "LINKUSDT": {
+        "trades": 25,
+        "wins": 8,
+        "losses": 17,
+        "wr": 32.0,
+        "pnl_pct": 8.08,
+        "avg_bars": 10.8,
+        "max_dd_pct": 8.1,
+        "trades_per_day": 0.6
+      },
+      "DOTUSDT": {
+        "trades": 28,
+        "wins": 12,
+        "losses": 16,
+        "wr": 42.9,
+        "pnl_pct": 26.02,
+        "avg_bars": 12.1,
+        "max_dd_pct": 5.86,
+        "trades_per_day": 0.67
+      },
+      "AVAXUSDT": {
+        "trades": 25,
+        "wins": 9,
+        "losses": 16,
+        "wr": 36.0,
+        "pnl_pct": 13.33,
+        "avg_bars": 8.2,
+        "max_dd_pct": 9.21,
+        "trades_per_day": 0.6
+      },
+      "POLUSDT": {
+        "trades": 25,
+        "wins": 8,
+        "losses": 17,
+        "wr": 32.0,
+        "pnl_pct": 8.08,
+        "avg_bars": 14.8,
+        "max_dd_pct": 3.64,
+        "trades_per_day": 0.6
+      }
+    },
+    "aggregate": {
+      "trades": 240,
+      "wins": 84,
+      "losses": 156,
+      "wr": 35.0,
+      "pnl_pct": 196.69,
+      "avg_bars": 14.6,
+      "max_dd_pct": 11.6,
+      "trades_per_day": 0.58
+    }
+  },
+  "Divergence (1h)": {
+    "pairs": {
+      "BTCUSDT": {
+        "trades": 8,
+        "wins": 2,
+        "losses": 6,
+        "wr": 25.0,
+        "pnl_pct": -3.11,
+        "avg_bars": 31.5,
+        "max_dd_pct": 8.67,
+        "trades_per_day": 0.19
+      },
+      "ETHUSDT": {
+        "trades": 5,
+        "wins": 2,
+        "losses": 3,
+        "wr": 40.0,
+        "pnl_pct": 1.39,
+        "avg_bars": 40.2,
+        "max_dd_pct": 4.43,
+        "trades_per_day": 0.12
+      },
+      "SOLUSDT": {
+        "trades": 3,
+        "wins": 1,
+        "losses": 2,
+        "wr": 33.3,
+        "pnl_pct": -0.07,
+        "avg_bars": 17.7,
+        "max_dd_pct": 2.98,
+        "trades_per_day": 0.07
+      },
+      "BNBUSDT": {
+        "trades": 9,
+        "wins": 4,
+        "losses": 5,
+        "wr": 44.4,
+        "pnl_pct": 4.36,
+        "avg_bars": 28.7,
+        "max_dd_pct": 4.43,
+        "trades_per_day": 0.22
+      },
+      "XRPUSDT": {
+        "trades": 5,
+        "wins": 0,
+        "losses": 5,
+        "wr": 0.0,
+        "pnl_pct": -7.28,
+        "avg_bars": 21.2,
+        "max_dd_pct": 7.28,
+        "trades_per_day": 0.12
+      },
+      "ADAUSDT": {
+        "trades": 2,
+        "wins": 0,
+        "losses": 2,
+        "wr": 0.0,
+        "pnl_pct": -2.98,
+        "avg_bars": 27.5,
+        "max_dd_pct": 2.98,
+        "trades_per_day": 0.05
+      },
+      "LINKUSDT": {
+        "trades": 2,
+        "wins": 1,
+        "losses": 1,
+        "wr": 50.0,
+        "pnl_pct": 1.46,
+        "avg_bars": 40.5,
+        "max_dd_pct": 1.5,
+        "trades_per_day": 0.05
+      },
+      "DOTUSDT": {
+        "trades": 4,
+        "wins": 0,
+        "losses": 4,
+        "wr": 0.0,
+        "pnl_pct": -5.87,
+        "avg_bars": 6.2,
+        "max_dd_pct": 5.87,
+        "trades_per_day": 0.1
+      },
+      "AVAXUSDT": {
+        "trades": 3,
+        "wins": 1,
+        "losses": 2,
+        "wr": 33.3,
+        "pnl_pct": -0.07,
+        "avg_bars": 14.7,
+        "max_dd_pct": 1.5,
+        "trades_per_day": 0.07
+      },
+      "POLUSDT": {
+        "trades": 4,
+        "wins": 0,
+        "losses": 4,
+        "wr": 0.0,
+        "pnl_pct": -5.87,
+        "avg_bars": 23.0,
+        "max_dd_pct": 5.87,
+        "trades_per_day": 0.1
+      }
+    },
+    "aggregate": {
+      "trades": 45,
+      "wins": 11,
+      "losses": 34,
+      "wr": 24.4,
+      "pnl_pct": -17.2,
+      "avg_bars": 25.9,
+      "max_dd_pct": 22.76,
+      "trades_per_day": 0.11
+    }
+  }
+}

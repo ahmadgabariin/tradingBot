@@ -1,6 +1,6 @@
 """
 Competition 7 — 5 Smart Agents on port 8128.
-Strategies: RSI Oversold, Regime-Adaptive, BB Squeeze, Market Structure, RSI Divergence.
+Strategies: RSI Oversold, Regime-Adaptive, BB Squeeze, Market Structure, EMA Pullback.
 """
 import sys, os
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
