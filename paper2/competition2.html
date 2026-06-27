@@ -294,6 +294,11 @@
         <option value="">WIN + LOSS</option>
         <option value="TP">WIN</option><option value="SL">LOSS</option>
       </select>
+      <select id="per-page" onchange="PER_PAGE=+this.value;currentPage=1;renderTable()">
+        <option value="10">10 rows</option>
+        <option value="25" selected>25 rows</option>
+        <option value="50">50 rows</option>
+      </select>
     </div>
     <div class="trades-tbl-wrap">
       <table>
@@ -315,7 +320,7 @@
 <script>
 const WS_URL   = `ws://${location.hostname}:8123/ws`;
 const API      = `http://${location.hostname}:8123`;
-const PER_PAGE = 25;
+let PER_PAGE = 25;
 
 let ws, raceChart;
 let allTrades = [], filteredTrades = [], currentPage = 1;
