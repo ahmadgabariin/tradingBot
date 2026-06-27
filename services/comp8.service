@@ -1,0 +1,17 @@
+[Unit]
+Description=Competition 8 — The Surgeon v2 Solo (port 8129)
+After=network.target candle.service
+Wants=candle.service
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=/root/binanceBot
+ExecStart=/root/binanceBot/venv/bin/python -m paper8.comp8_server
+Restart=always
+RestartSec=5
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target
