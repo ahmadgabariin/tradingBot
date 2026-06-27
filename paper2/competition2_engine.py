@@ -20,6 +20,8 @@ CANDLE_REFRESH = 60
 session_start    = None
 session_start_ts = None
 session_running  = False
+restart_count    = 0
+restart_log      = []
 live_prices      = {}
 candle_cache     = {}
 candle_ts        = {}
@@ -316,6 +318,8 @@ def save_state():
             "agent_closed":     {n: agent_closed[n] for n in agent_closed},
             "agent_equity":     {n: agent_equity[n] for n in agent_equity},
             "all_trades":       all_trades,
+            "restart_count":    restart_count,
+            "restart_log":      restart_log,
             "saved_at":         time.time(),
         }
         tmp = SAVE_FILE + ".tmp"
@@ -345,6 +349,10 @@ def load_state():
             agent_equity[name]    = data.get("agent_equity",  {}).get(name, [CAPITAL])
         all_trades.clear()
         all_trades.extend(data.get("all_trades", []))
+        restart_log.clear()
+        restart_log.extend(data.get("restart_log", []))
+        global restart_count
+        restart_count = data.get("restart_count", 0)
         print(f"[Competition2] State restored — {len(all_trades)} trades")
     except Exception as e:
         print(f"[Load2 error] {e}")
@@ -489,11 +497,14 @@ def stop_session():
     print("[Competition2] Session stopped")
 
 def resume_session():
-    global session_running, session_start_ts
+    global session_running, session_start_ts, restart_count
     session_running = True
     if not session_start_ts:
         session_start_ts = time.time()
-    print(f"[Competition2] Resumed — {sum(len(agent_open[n]) for n in AGENTS)} open positions")
+    restart_count += 1
+    restart_log.append(datetime.now(timezone.utc).isoformat())
+    save_state()
+    print(f"[Competition2] Resumed (restart #{restart_count}) — {sum(len(agent_open[n]) for n in AGENTS)} open positions")
 
 def set_agent_direction(agent_name, direction):
     if agent_name in agent_direction and direction in ("LONG","SHORT","BOTH"):
@@ -536,6 +547,34 @@ def get_agent_stats(agent_name):
             "cur_price": cur, "unrealized": round(upnl,2),
         })
 
+    # ── Drawdown ──
+    eq_hist = agent_equity[agent_name]
+    peak = CAPITAL
+    max_dd = 0.0
+    max_dd_pct = 0.0
+    for eq in eq_hist:
+        if eq > peak: peak = eq
+        dd = peak - eq
+        dd_pct = dd / peak * 100 if peak > 0 else 0
+        if dd > max_dd:
+            max_dd = dd
+            max_dd_pct = dd_pct
+
+    # ── Daily PnL ──
+    daily_pnl = {}
+    for t in closed:
+        day = (t.get("close_at") or "")[:10]
+        if day:
+            daily_pnl[day] = round(daily_pnl.get(day, 0) + t["pnl"], 2)
+    daily_pnl_list = [{"date": d, "pnl": v} for d, v in sorted(daily_pnl.items())]
+
+    # ── Avg trade duration ──
+    durations = []
+    for t in closed:
+        if t.get("open_ts") and t.get("close_ts"):
+            durations.append(t["close_ts"] - t["open_ts"])
+    avg_duration_min = round(sum(durations) / len(durations) / 60, 1) if durations else 0
+
     cfg = AGENTS[agent_name]
     return {
         "name":        agent_name,
@@ -564,7 +603,13 @@ def get_agent_stats(agent_name):
         "direction":   agent_direction.get(agent_name,"BOTH"),
         "best_trade":  {"pair":best["pair"],"pnl":best["pnl"]}  if best  else None,
         "worst_trade": {"pair":worst["pair"],"pnl":worst["pnl"]} if worst else None,
-        "equity_history": agent_equity[agent_name][-200:],
+        "equity_history": eq_hist[-500:],
+        "max_drawdown":     round(max_dd, 2),
+        "max_drawdown_pct": round(max_dd_pct, 2),
+        "daily_pnl":        daily_pnl_list,
+        "avg_duration_min": avg_duration_min,
+        "personality":  cfg.get("personality", {}),
+        "bias":         cfg.get("bias", "BOTH"),
     }
 
 def get_pair_heatmap():
@@ -576,4 +621,47 @@ def get_pair_heatmap():
         pair_trades[sym] += 1
     return [{"pair":p,"pnl":round(v,2),"trades":pair_trades[p]} for p,v in sorted(heatmap.items(),key=lambda x:-x[1])]
 
+def get_key_moments():
+    if not all_trades:
+        return {}
+    best  = max(all_trades, key=lambda t: t["pnl"])
+    worst = min(all_trades, key=lambda t: t["pnl"])
+
+    # win streak per agent
+    best_streak = {"agent": "—", "streak": 0}
+    for name in AGENTS:
+        streak = cur = 0
+        for t in agent_closed[name]:
+            if t["result"] == "TP": cur += 1
+            else: cur = 0
+            if cur > streak: streak = cur
+        if streak > best_streak["streak"]:
+            best_streak = {"agent": name, "streak": streak}
+
+    # loss streak
+    worst_streak = {"agent": "—", "streak": 0}
+    for name in AGENTS:
+        streak = cur = 0
+        for t in agent_closed[name]:
+            if t["result"] == "SL": cur += 1
+            else: cur = 0
+            if cur > streak: streak = cur
+        if streak > worst_streak["streak"]:
+            worst_streak = {"agent": name, "streak": streak}
+
+    # most active agent
+    most_active = max(AGENTS, key=lambda n: len(agent_closed[n]))
+
+    return {
+        "biggest_win":   {"agent": best["agent"],  "pair": best["pair"],  "pnl": best["pnl"]},
+        "biggest_loss":  {"agent": worst["agent"], "pair": worst["pair"], "pnl": worst["pnl"]},
+        "win_streak":    best_streak,
+        "loss_streak":   worst_streak,
+        "most_active":   {"agent": most_active, "trades": len(agent_closed[most_active])},
+        "total_pnl":     round(sum(t["pnl"] for t in all_trades), 2),
+        "total_trades":  len(all_trades),
+    }
+
 load_state()
+if session_start:
+    resume_session()

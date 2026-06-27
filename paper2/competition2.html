@@ -164,9 +164,38 @@
   .price-sym  { color: var(--muted); }
   .price-val  { color: var(--text); font-weight: 700; }
 
+  /* ── AGENT MODAL ── */
+  .modal-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,.88); z-index:999; align-items:center; justify-content:center; }
+  .modal-overlay.open { display:flex; }
+  .modal { background:#0f0f0f; border:1px solid #222; border-radius:14px; width:95%; max-width:900px; max-height:90vh; display:flex; flex-direction:column; overflow:hidden; }
+  .modal-hdr { padding:18px 22px; border-bottom:1px solid #1a1a1a; display:flex; justify-content:space-between; align-items:center; }
+  .modal-hdr h2 { font-size:18px; font-weight:800; }
+  .modal-close { background:none; border:none; color:#888; font-size:24px; cursor:pointer; }
+  .modal-close:hover { color:#fff; }
+  .modal-body { overflow-y:auto; flex:1; padding:20px; }
+  .modal-stats-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(140px,1fr)); gap:10px; margin-bottom:20px; }
+  .modal-stat { background:#111; border-radius:8px; padding:12px 14px; }
+  .modal-stat .lbl { font-size:9px; letter-spacing:1px; text-transform:uppercase; color:var(--muted); }
+  .modal-stat .val { font-size:20px; font-weight:800; margin-top:4px; }
+  .modal-chart-wrap { background:#111; border-radius:8px; padding:16px; margin-bottom:16px; }
+  .modal-chart-title { font-size:10px; letter-spacing:2px; text-transform:uppercase; color:#bb77ff; margin-bottom:10px; }
+  .modal-chart-wrap canvas { max-height:200px; }
+  .modal-trades-tbl { width:100%; border-collapse:collapse; font-size:11px; margin-top:10px; }
+  .modal-trades-tbl th { padding:8px 10px; text-align:left; font-size:9px; letter-spacing:1px; text-transform:uppercase; color:var(--muted); border-bottom:1px solid #1a1a1a; background:#0a0a0a; }
+  .modal-trades-tbl td { padding:8px 10px; border-bottom:1px solid #111; }
+  .modal-trades-tbl tr:hover td { background:#111; }
+
+  /* ── BEST/WORST HIGHLIGHTS ── */
+  .leader-card.is-best  { border-color: rgba(0,255,136,.4); }
+  .leader-card.is-worst { border-color: rgba(255,50,50,.3); }
+  .highlight-tag { position:absolute; top:12px; left:44px; font-size:9px; font-weight:800; letter-spacing:1px; padding:2px 8px; border-radius:10px; text-transform:uppercase; }
+  .tag-best  { background:rgba(0,255,136,.15); color:#00ff88; border:1px solid rgba(0,255,136,.3); }
+  .tag-worst { background:rgba(255,50,50,.15);  color:#ff3355; border:1px solid rgba(255,50,50,.3); }
+
   /* ── MISC ── */
   .no-data { text-align: center; color: var(--muted); padding: 48px; font-size: 13px; }
   #conn-status { font-size: 11px; color: var(--muted); margin-top: 8px; }
+  .leader-card { cursor: pointer; }
 </style>
 </head>
 <body>
@@ -197,6 +226,8 @@
     <span class="badge blue" id="badge-trades">0 TRADES</span>
     <span class="badge green" id="badge-running">OFFLINE</span>
     <span class="badge blue" id="badge-since">—</span>
+    <span class="badge purple" id="badge-uptime">—</span>
+    <span class="badge red"    id="badge-restarts" style="display:none">0 RESTARTS</span>
   </div>
   <div class="controls">
     <button class="btn btn-start"  onclick="startSession()">NEW SESSION</button>
@@ -226,10 +257,17 @@
     </div>
   </div>
 
+  <!-- KEY MOMENTS -->
+  <div style="margin-bottom:40px">
+    <div class="section-title">Key Moments</div>
+    <div class="section-sub">The trades that defined the competition</div>
+    <div id="moments-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px"></div>
+  </div>
+
   <!-- PAIR HEATMAP -->
   <div class="heatmap-section">
-    <div class="section-title">Pair PnL Heatmap</div>
-    <div class="section-sub">Total PnL across all agents per coin</div>
+    <div class="section-title">Pair Performance Heatmap</div>
+    <div class="section-sub">Which coins made money, and which ones burned the agents</div>
     <div class="heatmap-grid" id="heatmap-grid"></div>
   </div>
 
@@ -318,12 +356,25 @@ function applyState(s) {
   if (s.session_start) {
     const d = new Date(s.session_start);
     document.getElementById('badge-since').textContent = 'Since ' + d.toLocaleDateString() + ' ' + d.toLocaleTimeString();
+    const elapsed = Math.floor((Date.now() - d.getTime()) / 1000);
+    const days  = Math.floor(elapsed / 86400);
+    const hours = Math.floor((elapsed % 86400) / 3600);
+    const mins  = Math.floor((elapsed % 3600) / 60);
+    const parts = [];
+    if (days)  parts.push(days  + 'd');
+    if (hours) parts.push(hours + 'h');
+    parts.push(mins + 'm');
+    document.getElementById('badge-uptime').textContent = 'Running ' + parts.join(' ');
   }
 
   const agents = s.agents || [];
   const total  = agents.reduce((a,ag) => a + ag.trades, 0);
   document.getElementById('badge-trades').textContent = total + ' TRADES';
   document.getElementById('badge-agents').textContent = agents.length + ' AGENTS';
+  const restarts = s.restart_count || 0;
+  const rbadge = document.getElementById('badge-restarts');
+  rbadge.textContent = restarts + (restarts === 1 ? ' RESTART' : ' RESTARTS');
+  rbadge.style.display = restarts > 0 ? 'inline-block' : 'none';
 
   // agent filter
   const sel = document.getElementById('filter-agent');
@@ -339,6 +390,7 @@ function applyState(s) {
   renderLeaderboard(agents, prices);
   renderRaceChart(agents);
   renderHeatmap(s.pair_heatmap || []);
+  renderMoments(s.key_moments || {});
 
   // trades
   allTrades = (s.recent_trades || []).slice().sort((a,b) => (b.close_ts||0)-(a.close_ts||0));
@@ -350,12 +402,22 @@ function renderLeaderboard(agents, prices) {
   const grid = document.getElementById('leader-grid');
   if (!agents.length) { grid.innerHTML = '<div class="no-data">No agents yet</div>'; return; }
 
+  const bestIdx  = 0;
+  const worstIdx = agents.length - 1;
+
   grid.innerHTML = agents.map((a, idx) => {
-    const ret    = a.return_pct || 0;
-    const cls    = ret >= 0 ? 'up' : 'down';
+    const ret     = a.return_pct || 0;
+    const cls     = ret >= 0 ? 'up' : 'down';
     const rankCls = idx === 0 ? 'rank-1' : idx === 1 ? 'rank-2' : idx === 2 ? 'rank-3' : '';
+    const hlCls   = idx === bestIdx ? 'is-best' : idx === worstIdx ? 'is-worst' : '';
+    const hlTag   = idx === bestIdx
+      ? '<span class="highlight-tag tag-best">👑 Leader</span>'
+      : idx === worstIdx
+      ? '<span class="highlight-tag tag-worst">⚠️ Last</span>'
+      : '';
+
     const openHTML = (a.open_trades || []).map(t => {
-      const pnlCls = t.unrealized >= 0 ? 'pos' : 'neg';
+      const pnlCls  = t.unrealized >= 0 ? 'pos' : 'neg';
       const sideCls = t.side === 'LONG' ? 'side-long' : 'side-short';
       return `<div class="open-pos-item">
         <span class="${sideCls}">${t.side}</span>
@@ -364,14 +426,20 @@ function renderLeaderboard(agents, prices) {
       </div>`;
     }).join('');
 
-    return `<div class="leader-card ${rankCls}">
+    const ddColor = (a.max_drawdown_pct||0) > 20 ? 'var(--red)' : (a.max_drawdown_pct||0) > 10 ? '#ffaa00' : 'var(--muted)';
+    const durTxt  = a.avg_duration_min >= 60
+      ? (a.avg_duration_min/60).toFixed(1)+'h'
+      : (a.avg_duration_min||0)+'m';
+
+    return `<div class="leader-card ${rankCls} ${hlCls}" onclick="openAgentModal('${a.name}')">
       <div class="color-bar" style="background:${a.color}"></div>
       <div class="rank-badge">${a.rank}</div>
+      ${hlTag}
       <div class="agent-head">
         <span class="agent-emoji">${a.emoji}</span>
         <div>
           <div class="agent-name">${a.name}</div>
-          <div class="agent-strat">${a.strategy} · ${a.timeframe}</div>
+          <div class="agent-strat">${a.strategy} · ${a.timeframe} · SL ${a.sl_pct.toFixed(1)}% · TP ${a.tp_pct.toFixed(1)}%</div>
         </div>
       </div>
       <div class="agent-equity ${cls}">$${(a.equity||0).toLocaleString(undefined,{minimumFractionDigits:0,maximumFractionDigits:0})}</div>
@@ -380,9 +448,24 @@ function renderLeaderboard(agents, prices) {
         <div class="stat-item"><div class="stat-label">Trades</div><div class="stat-val">${a.trades}</div></div>
         <div class="stat-item"><div class="stat-label">Win Rate</div><div class="stat-val">${a.win_rate}%</div></div>
         <div class="stat-item"><div class="stat-label">PnL</div><div class="stat-val" style="color:${a.pnl>=0?'var(--green)':'var(--red)'}">${a.pnl>=0?'+':''}$${(a.pnl||0).toFixed(0)}</div></div>
+        <div class="stat-item"><div class="stat-label">Max DD</div><div class="stat-val" style="color:${ddColor}">-${(a.max_drawdown_pct||0).toFixed(1)}%</div></div>
+        <div class="stat-item"><div class="stat-label">Avg Duration</div><div class="stat-val">${durTxt}</div></div>
         <div class="stat-item"><div class="stat-label">Open</div><div class="stat-val">${a.open_count}/3</div></div>
       </div>
       ${openHTML ? '<div class="open-positions">' + openHTML + '</div>' : ''}
+      ${a.description ? `<div style="margin-top:10px;font-size:11px;color:#666;line-height:1.5;border-top:1px solid #1a1a1a;padding-top:10px">${a.description}</div>` : ''}
+      ${a.personality ? `<div style="margin-top:10px">
+        ${Object.entries(a.personality).map(([k,v]) => `
+          <div style="margin-bottom:5px">
+            <div style="display:flex;justify-content:space-between;font-size:9px;color:#555;text-transform:uppercase;letter-spacing:.5px;margin-bottom:2px">
+              <span>${k.replace(/_/g,' ')}</span><span>${v}</span>
+            </div>
+            <div style="background:#111;border-radius:3px;height:4px">
+              <div style="width:${v}%;height:4px;border-radius:3px;background:${v>=75?'#00ff88':v>=50?'#ffaa00':'#ff3355'}"></div>
+            </div>
+          </div>`).join('')}
+      </div>` : ''}
+      <div style="margin-top:10px;font-size:10px;color:#444;text-align:center;letter-spacing:1px">CLICK FOR DETAILS</div>
     </div>`;
   }).join('');
 }
@@ -427,6 +510,69 @@ function renderRaceChart(agents) {
       },
     });
   }
+}
+
+// ── Key Moments ────────────────────────────────────────────────────────────
+function renderMoments(km) {
+  const el = document.getElementById('moments-grid');
+  if (!km || !Object.keys(km).length) { el.innerHTML = ''; return; }
+  const cards = [];
+
+  if (km.biggest_win) {
+    const t = km.biggest_win;
+    cards.push(`<div class="hm-cell hm-pos" style="text-align:center;padding:16px">
+      <div style="font-size:22px">🏆</div>
+      <div style="color:#00ff88;font-weight:700;font-size:16px">+$${(t.pnl||0).toFixed(0)}</div>
+      <div style="color:#888;font-size:11px;margin-top:4px">Biggest Win</div>
+      <div style="color:#ccc;font-size:12px;margin-top:4px">${t.agent} · ${(t.pair||'').replace('USDT','')}</div>
+    </div>`);
+  }
+  if (km.biggest_loss) {
+    const t = km.biggest_loss;
+    cards.push(`<div class="hm-cell hm-neg" style="text-align:center;padding:16px">
+      <div style="font-size:22px">💥</div>
+      <div style="color:#ff3355;font-weight:700;font-size:16px">$${(t.pnl||0).toFixed(0)}</div>
+      <div style="color:#888;font-size:11px;margin-top:4px">Biggest Loss</div>
+      <div style="color:#ccc;font-size:12px;margin-top:4px">${t.agent} · ${(t.pair||'').replace('USDT','')}</div>
+    </div>`);
+  }
+  if (km.longest_win_streak) {
+    const s = km.longest_win_streak;
+    cards.push(`<div class="hm-cell hm-pos" style="text-align:center;padding:16px">
+      <div style="font-size:22px">🔥</div>
+      <div style="color:#00ff88;font-weight:700;font-size:16px">${s.count} Wins</div>
+      <div style="color:#888;font-size:11px;margin-top:4px">Longest Win Streak</div>
+      <div style="color:#ccc;font-size:12px;margin-top:4px">${s.agent}</div>
+    </div>`);
+  }
+  if (km.longest_loss_streak) {
+    const s = km.longest_loss_streak;
+    cards.push(`<div class="hm-cell hm-neg" style="text-align:center;padding:16px">
+      <div style="font-size:22px">❄️</div>
+      <div style="color:#ff3355;font-weight:700;font-size:16px">${s.count} Losses</div>
+      <div style="color:#888;font-size:11px;margin-top:4px">Longest Loss Streak</div>
+      <div style="color:#ccc;font-size:12px;margin-top:4px">${s.agent}</div>
+    </div>`);
+  }
+  if (km.most_active) {
+    const a = km.most_active;
+    cards.push(`<div class="hm-cell" style="text-align:center;padding:16px;background:#0a0a1a;border:1px solid #222">
+      <div style="font-size:22px">⚡</div>
+      <div style="color:#bb77ff;font-weight:700;font-size:16px">${a.trades} Trades</div>
+      <div style="color:#888;font-size:11px;margin-top:4px">Most Active</div>
+      <div style="color:#ccc;font-size:12px;margin-top:4px">${a.agent}</div>
+    </div>`);
+  }
+  if (km.total_pnl !== undefined) {
+    const pnl = km.total_pnl;
+    cards.push(`<div class="hm-cell" style="text-align:center;padding:16px;background:#0a0a1a;border:1px solid #222">
+      <div style="font-size:22px">💰</div>
+      <div style="color:${pnl>=0?'#00ff88':'#ff3355'};font-weight:700;font-size:16px">${pnl>=0?'+':''}$${pnl.toFixed(0)}</div>
+      <div style="color:#888;font-size:11px;margin-top:4px">Total PnL All Agents</div>
+    </div>`);
+  }
+
+  el.innerHTML = cards.join('');
 }
 
 // ── Heatmap ────────────────────────────────────────────────────────────────
@@ -518,6 +664,119 @@ async function resumeSession() {
 async function stopSession() {
   await fetch(API + '/stop', { method: 'POST' });
 }
+
+// ── Agent Modal ────────────────────────────────────────────────────────────
+let modalCharts = {};
+
+function openAgentModal(name) {
+  const a = (lastState?.agents || []).find(x => x.name === name);
+  if (!a) return;
+
+  document.getElementById('modal-agent-title').textContent = `${a.emoji} ${a.name}`;
+  document.getElementById('modal-agent-title').style.color = a.color;
+
+  // Stats
+  const ddColor = (a.max_drawdown_pct||0) > 20 ? '#ff3355' : (a.max_drawdown_pct||0) > 10 ? '#ffaa00' : '#00ff88';
+  const dur = a.avg_duration_min >= 60 ? (a.avg_duration_min/60).toFixed(1)+'h' : (a.avg_duration_min||0)+'m';
+  document.getElementById('modal-stats').innerHTML = [
+    ['Equity',       `$${(a.equity||0).toLocaleString(undefined,{maximumFractionDigits:0})}`, a.equity>=10000?'#00ff88':'#ff3355'],
+    ['Return',       `${a.return_pct>=0?'+':''}${a.return_pct}%`,                            a.return_pct>=0?'#00ff88':'#ff3355'],
+    ['Total PnL',    `${a.pnl>=0?'+':''}$${(a.pnl||0).toFixed(0)}`,                          a.pnl>=0?'#00ff88':'#ff3355'],
+    ['Win Rate',     `${a.win_rate}%`,                                                         '#00ccff'],
+    ['Trades',       `${a.wins}W / ${a.losses}L`,                                             '#e0e0e0'],
+    ['Avg Win',      `+$${a.avg_win}`,                                                         '#00ff88'],
+    ['Avg Loss',     `$${a.avg_loss}`,                                                         '#ff3355'],
+    ['Max Drawdown', `-${(a.max_drawdown_pct||0).toFixed(1)}%`,                               ddColor],
+    ['Avg Duration', dur,                                                                       '#bb77ff'],
+    ['Strategy',     a.strategy,                                                                '#e0e0e0'],
+    ['Timeframe',    a.timeframe,                                                               '#e0e0e0'],
+    ['SL / TP',      `${a.sl_pct.toFixed(1)}% / ${a.tp_pct.toFixed(1)}%`,                    '#e0e0e0'],
+  ].map(([l,v,c]) => `<div class="modal-stat"><div class="lbl">${l}</div><div class="val" style="color:${c}">${v}</div></div>`).join('');
+
+  // Equity chart
+  renderModalChart('modal-equity-chart', 'Equity Curve', {
+    labels: (a.equity_history||[]).map((_,i) => i+1),
+    datasets: [{ label:'Equity', data: a.equity_history||[], borderColor: a.color, backgroundColor:'transparent', borderWidth:2, pointRadius:0, tension:0.3 }]
+  }, 'line', { yCallback: v => '$'+v.toLocaleString() });
+
+  // Daily PnL chart
+  const daily = a.daily_pnl || [];
+  renderModalChart('modal-daily-chart', 'Daily PnL', {
+    labels: daily.map(d => d.date),
+    datasets: [{ label:'Daily PnL', data: daily.map(d => d.pnl),
+      backgroundColor: daily.map(d => d.pnl >= 0 ? 'rgba(0,255,136,.5)' : 'rgba(255,50,50,.5)'),
+      borderColor:     daily.map(d => d.pnl >= 0 ? '#00ff88' : '#ff3355'),
+      borderWidth: 1 }]
+  }, 'bar', { yCallback: v => '$'+v.toLocaleString() });
+
+  // Recent trades
+  const trades = [...(a.closed_trades||[])].reverse().slice(0,100);
+  document.getElementById('modal-trades-body').innerHTML = trades.length
+    ? trades.map((t,i) => {
+        const pc = t.result==='TP'?'#00ff88':'#ff3355';
+        const sc = (t.side||'LONG')==='LONG'?'#00ff88':'#ff3355';
+        const dur = t.open_ts && t.close_ts ? Math.round((t.close_ts-t.open_ts)/60)+'m' : '—';
+        return `<tr>
+          <td style="color:#555">${i+1}</td>
+          <td style="font-weight:700">${t.pair.replace('USDT','')}</td>
+          <td style="color:${sc};font-weight:700">${t.side||'LONG'}</td>
+          <td style="color:${pc};font-weight:700">${t.result==='TP'?'WIN':'LOSS'}</td>
+          <td style="color:${pc};font-weight:700">${t.pnl>=0?'+':''}$${t.pnl.toFixed(2)}</td>
+          <td style="color:#555">${dur}</td>
+          <td style="color:#555;font-size:10px">${t.close_at?new Date(t.close_at).toLocaleString():'—'}</td>
+        </tr>`;
+      }).join('')
+    : '<tr><td colspan="7" style="color:#333;text-align:center;padding:20px">No closed trades yet</td></tr>';
+
+  document.getElementById('agent-modal').classList.add('open');
+}
+
+function renderModalChart(id, title, data, type, opts={}) {
+  if (modalCharts[id]) { modalCharts[id].destroy(); delete modalCharts[id]; }
+  const ctx = document.getElementById(id).getContext('2d');
+  modalCharts[id] = new Chart(ctx, {
+    type,
+    data,
+    options: {
+      responsive:true, animation:false,
+      plugins:{ legend:{display:false} },
+      scales:{
+        x:{ ticks:{color:'#555',maxTicksLimit:8}, grid:{color:'#111'} },
+        y:{ ticks:{color:'#555', callback: opts.yCallback||undefined}, grid:{color:'#111'} }
+      }
+    }
+  });
+}
+
+function closeAgentModal() {
+  document.getElementById('agent-modal').classList.remove('open');
+}
 </script>
+
+<!-- Agent Detail Modal -->
+<div class="modal-overlay" id="agent-modal" onclick="if(event.target===this)closeAgentModal()">
+  <div class="modal">
+    <div class="modal-hdr">
+      <h2 id="modal-agent-title">Agent</h2>
+      <button class="modal-close" onclick="closeAgentModal()">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="modal-stats-grid" id="modal-stats"></div>
+      <div class="modal-chart-wrap">
+        <div class="modal-chart-title">Equity Curve</div>
+        <canvas id="modal-equity-chart"></canvas>
+      </div>
+      <div class="modal-chart-wrap">
+        <div class="modal-chart-title">Daily PnL</div>
+        <canvas id="modal-daily-chart"></canvas>
+      </div>
+      <div class="modal-chart-title" style="margin-top:16px;margin-bottom:8px">Trade History</div>
+      <table class="modal-trades-tbl">
+        <thead><tr><th>#</th><th>Pair</th><th>Side</th><th>Result</th><th>PnL</th><th>Duration</th><th>Closed</th></tr></thead>
+        <tbody id="modal-trades-body"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
 </body>
 </html>

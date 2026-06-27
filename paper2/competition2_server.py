@@ -63,6 +63,9 @@ def build_state():
         "live_prices":   engine.live_prices,
         "tick_ts":       time.time(),
         "leverage":      engine.LEVERAGE,
+        "restart_count": engine.restart_count,
+        "restart_log":   engine.restart_log,
+        "key_moments":   engine.get_key_moments(),
     }
 
 @app.on_event("startup")
