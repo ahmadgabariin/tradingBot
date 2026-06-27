@@ -227,7 +227,7 @@ class CompEngine:
         self.agent_open     = {n: []      for n in AGENTS}
         self.agent_closed   = {n: []      for n in AGENTS}
         self.agent_equity   = {n: [CAPITAL] for n in AGENTS}
-        self.agent_direction= {n: ("SHORT" if n in ORIGINAL_5 else "BOTH") for n in AGENTS}
+        self.agent_direction= {n: "BOTH" for n in AGENTS}
         self.all_trades     = []
 
         self._candle_cache  = {}
@@ -295,7 +295,7 @@ class CompEngine:
             self.session_running  = False
             self.LEVERAGE         = data.get("leverage", LEVERAGE)
             for name in AGENTS:
-                _def = "SHORT" if name in ORIGINAL_5 else "BOTH"
+                _def = "BOTH"
                 self.agent_direction[name] = data.get("agent_direction", {}).get(name, _def)
                 self.agent_balances[name]  = data.get("agent_balances",  {}).get(name, CAPITAL)
                 self.agent_open[name]      = data.get("agent_open",      {}).get(name, [])
@@ -437,7 +437,7 @@ class CompEngine:
             self.agent_open[name]      = []
             self.agent_closed[name]    = []
             self.agent_equity[name]    = [CAPITAL]
-            self.agent_direction[name] = "SHORT" if name in ORIGINAL_5 else "BOTH"
+            self.agent_direction[name] = "BOTH"
         self.all_trades.clear()
         self.restart_count = 0
         self.restart_log.clear()

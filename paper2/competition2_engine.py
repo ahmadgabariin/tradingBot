@@ -31,7 +31,7 @@ agent_open      = {name: [] for name in AGENTS}
 agent_closed    = {name: [] for name in AGENTS}
 agent_equity    = {name: [CAPITAL] for name in AGENTS}
 _ORIGINAL_5 = {"The Surgeon","The Maniac","The Hound","The Oracle","The Comet"}
-agent_direction = {name: ("SHORT" if name in _ORIGINAL_5 else "BOTH") for name in AGENTS}
+agent_direction = {name: ("BOTH") for name in AGENTS}
 
 all_trades = []
 lock       = threading.Lock()
@@ -355,7 +355,7 @@ def load_state():
         session_running  = False
         LEVERAGE         = data.get("leverage", LEVERAGE)
         for name in AGENTS:
-            _default_dir = "SHORT" if name in _ORIGINAL_5 else "BOTH"
+            _default_dir = "BOTH"
             agent_direction[name] = data.get("agent_direction", {}).get(name, _default_dir)
             agent_balances[name]  = data.get("agent_balances", {}).get(name, CAPITAL)
             agent_open[name]      = data.get("agent_open",    {}).get(name, [])
@@ -501,7 +501,7 @@ def start_session():
         agent_open[name]      = []
         agent_closed[name]    = []
         agent_equity[name]    = [CAPITAL]
-        agent_direction[name] = "SHORT" if name in _ORIGINAL_5 else "BOTH"
+        agent_direction[name] = "BOTH"
     all_trades.clear()
     print(f"[Competition2] Session started at {session_start}")
 
