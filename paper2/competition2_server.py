@@ -94,6 +94,14 @@ async def stop():
 async def state():
     return JSONResponse(build_state())
 
+@app.post("/reset-restarts")
+async def reset_restarts():
+    engine.restart_count = 0
+    engine.restart_log.clear()
+    engine.save_state()
+    await broadcast(build_state())
+    return {"ok": True}
+
 @app.post("/set-direction")
 async def set_direction(payload: dict):
     agent     = payload.get("agent")

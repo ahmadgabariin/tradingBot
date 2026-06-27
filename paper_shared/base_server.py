@@ -97,6 +97,14 @@ def create_app(engine: CompEngine, port: int, comp_name: str, max_open: int) -> 
             await _broadcast(_build_state())
         return {"ok": True}
 
+    @app.post("/reset-restarts")
+    async def reset_restarts():
+        engine.restart_count = 0
+        engine.restart_log.clear()
+        engine._save_state()
+        await _broadcast(_build_state())
+        return {"ok": True}
+
     @app.get("/agent/{name}")
     async def agent_detail(name: str):
         if name not in AGENTS:

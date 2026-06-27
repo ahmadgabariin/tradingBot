@@ -179,7 +179,7 @@
     <span class="badge green"  id="badge-running">OFFLINE</span>
     <span class="badge blue"   id="badge-since">—</span>
     <span class="badge purple" id="badge-uptime">—</span>
-    <span class="badge red"    id="badge-restarts" style="display:none">0 RESTARTS</span>
+    <span class="badge red" id="badge-restarts" style="display:none;cursor:pointer" title="Click to reset" onclick="resetRestarts()">0 RESTARTS ✕</span>
   </div>
   <div class="controls">
     <button class="btn btn-start"  onclick="startSession()">NEW SESSION</button>
@@ -494,6 +494,10 @@ function renderPagination(pages) {
   el.innerHTML=html;
 }
 function goPage(p){currentPage=p;renderTable();}
+
+async function resetRestarts() {
+  await fetch(API+'/reset-restarts', {method:'POST'});
+}
 
 async function startSession() {
   if (!confirm('Start a NEW session? This wipes all existing data.')) return;
