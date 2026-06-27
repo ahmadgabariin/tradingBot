@@ -1,0 +1,17 @@
+[Unit]
+Description=Competition 7 Smart Agents (port 8128)
+After=network.target candle.service
+Wants=candle.service
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=/root/binanceBot
+ExecStart=/root/binanceBot/venv/bin/python -m paper7.comp7_server
+Restart=always
+RestartSec=5
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target

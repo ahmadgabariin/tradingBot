@@ -11,7 +11,7 @@ app = FastAPI(title="Candle Server")
 app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"])
 
 PAIRS      = ["BTCUSDT","ETHUSDT","SOLUSDT","BNBUSDT","XRPUSDT","ADAUSDT","LINKUSDT","DOTUSDT","AVAXUSDT","POLUSDT"]
-TIMEFRAMES = ["15m", "1h"]
+TIMEFRAMES = ["5m", "15m", "1h"]
 REFRESH    = 60
 PRICE_REFRESH = 3
 

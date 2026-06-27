@@ -209,12 +209,19 @@ SHORT_SIGNALS = {
 # ── ENGINE CLASS ───────────────────────────────────────────────────────────────
 
 class CompEngine:
-    def __init__(self, save_file, max_open=3, comp_name="Competition"):
+    def __init__(self, save_file, max_open=3, comp_name="Competition",
+                 agents=None, long_signals=None, short_signals=None, pairs_list=None):
         self.SAVE_FILE  = save_file
         self.MAX_OPEN   = max_open
         self.COMP_NAME  = comp_name
         self.LEVERAGE   = LEVERAGE
         self.CAPITAL    = CAPITAL
+
+        # Allow custom agent/signal/pair sets for specialized competitions
+        self.AGENTS        = agents        or AGENTS
+        self.LONG_SIGNALS  = long_signals  or LONG_SIGNALS
+        self.SHORT_SIGNALS = short_signals or SHORT_SIGNALS
+        self.PAIRS_LIST    = pairs_list    or PAIRS
 
         self.session_start    = None
         self.session_start_ts = None
@@ -223,11 +230,11 @@ class CompEngine:
         self.restart_log      = []
         self.live_prices      = {}
 
-        self.agent_balances = {n: CAPITAL for n in AGENTS}
-        self.agent_open     = {n: []      for n in AGENTS}
-        self.agent_closed   = {n: []      for n in AGENTS}
-        self.agent_equity   = {n: [CAPITAL] for n in AGENTS}
-        self.agent_direction= {n: "BOTH" for n in AGENTS}
+        self.agent_balances = {n: CAPITAL for n in self.AGENTS}
+        self.agent_open     = {n: []      for n in self.AGENTS}
+        self.agent_closed   = {n: []      for n in self.AGENTS}
+        self.agent_equity   = {n: [CAPITAL] for n in self.AGENTS}
+        self.agent_direction= {n: "BOTH" for n in self.AGENTS}
         self.all_trades     = []
 
         self._candle_cache  = {}
@@ -269,9 +276,9 @@ class CompEngine:
                 "leverage":         self.LEVERAGE,
                 "agent_direction":  self.agent_direction,
                 "agent_balances":   self.agent_balances,
-                "agent_open":       {n: self.agent_open[n]   for n in AGENTS},
-                "agent_closed":     {n: self.agent_closed[n] for n in AGENTS},
-                "agent_equity":     {n: self.agent_equity[n] for n in AGENTS},
+                "agent_open":       {n: self.agent_open[n]   for n in self.AGENTS},
+                "agent_closed":     {n: self.agent_closed[n] for n in self.AGENTS},
+                "agent_equity":     {n: self.agent_equity[n] for n in self.AGENTS},
                 "all_trades":       self.all_trades,
                 "restart_count":    self.restart_count,
                 "restart_log":      self.restart_log,
@@ -294,9 +301,8 @@ class CompEngine:
             self.session_start_ts = data.get("session_start_ts")
             self.session_running  = False
             self.LEVERAGE         = data.get("leverage", LEVERAGE)
-            for name in AGENTS:
-                _def = "BOTH"
-                self.agent_direction[name] = data.get("agent_direction", {}).get(name, _def)
+            for name in self.AGENTS:
+                self.agent_direction[name] = data.get("agent_direction", {}).get(name, "BOTH")
                 self.agent_balances[name]  = data.get("agent_balances",  {}).get(name, CAPITAL)
                 self.agent_open[name]      = data.get("agent_open",      {}).get(name, [])
                 self.agent_closed[name]    = data.get("agent_closed",    {}).get(name, [])
@@ -313,7 +319,7 @@ class CompEngine:
     # ── TRADE LIFECYCLE ───────────────────────────────────────────────────────
 
     def _open_trade(self, name, pair, price, side="LONG"):
-        cfg  = AGENTS[name]
+        cfg  = self.AGENTS[name]
         sl_p = price*(1-cfg["sl"]) if side=="LONG" else price*(1+cfg["sl"])
         tp_p = price*(1+cfg["tp"]) if side=="LONG" else price*(1-cfg["tp"])
         return {
@@ -361,7 +367,7 @@ class CompEngine:
             print(f"  [{self.COMP_NAME}] price err: {e}")
 
         with self._lock:
-            for name, cfg in AGENTS.items():
+            for name, cfg in self.AGENTS.items():
                 bal      = self.agent_balances[name]
                 open_pos = self.agent_open[name]
 
@@ -384,12 +390,12 @@ class CompEngine:
                 # new signals
                 direction = self.agent_direction.get(name, "BOTH")
                 if len(self.agent_open[name]) < self.MAX_OPEN and bal > POS_SIZE:
-                    sfn_long  = LONG_SIGNALS.get(name)
-                    sfn_short = SHORT_SIGNALS.get(name)
+                    sfn_long  = self.LONG_SIGNALS.get(name)
+                    sfn_short = self.SHORT_SIGNALS.get(name)
                     if name in ORIGINAL_5:
                         sfn_long = STRATS.get(cfg["strategy"])
 
-                    for pair in PAIRS:
+                    for pair in self.PAIRS_LIST:
                         if len(self.agent_open[name]) >= self.MAX_OPEN: break
                         price = self.live_prices.get(pair)
                         if not price: continue
@@ -432,7 +438,7 @@ class CompEngine:
         self.session_start    = datetime.now(timezone.utc).isoformat()
         self.session_start_ts = time.time()
         self.session_running  = True
-        for name in AGENTS:
+        for name in self.AGENTS:
             self.agent_balances[name]  = CAPITAL
             self.agent_open[name]      = []
             self.agent_closed[name]    = []
@@ -454,7 +460,7 @@ class CompEngine:
         self.restart_count += 1
         self.restart_log.append(datetime.now(timezone.utc).isoformat())
         self._save_state()
-        open_count = sum(len(self.agent_open[n]) for n in AGENTS)
+        open_count = sum(len(self.agent_open[n]) for n in self.AGENTS)
         print(f"[{self.COMP_NAME}] Resumed (restart #{self.restart_count}) — {open_count} open positions")
 
     def set_agent_direction(self, name, direction):
@@ -502,7 +508,7 @@ class CompEngine:
         durations = [t["close_ts"]-t["open_ts"] for t in closed if t.get("open_ts") and t.get("close_ts")]
         avg_dur = round(sum(durations)/len(durations)/60,1) if durations else 0
 
-        cfg = AGENTS[name]
+        cfg = self.AGENTS[name]
         return {
             "name": name, "id": cfg["id"], "emoji": cfg["emoji"], "color": cfg["color"],
             "strategy": cfg["strategy"], "timeframe": cfg["timeframe"],
@@ -556,7 +562,7 @@ class CompEngine:
 
         best_streak  = {"agent":"—","count":0}
         worst_streak = {"agent":"—","count":0}
-        for name in AGENTS:
+        for name in self.AGENTS:
             ws = wc = ls = lc = 0
             for t in self.agent_closed[name]:
                 if t["result"]=="TP": wc+=1; ls=0
@@ -573,7 +579,7 @@ class CompEngine:
             if ws2 > best_streak["count"]:  best_streak  = {"agent":name,"count":ws2}
             if ls2 > worst_streak["count"]: worst_streak = {"agent":name,"count":ls2}
 
-        most_active = max(AGENTS, key=lambda n: len(self.agent_closed[n]))
+        most_active = max(self.AGENTS, key=lambda n: len(self.agent_closed[n]))
         return {
             "biggest_win":        {"agent":best["agent"],  "pair":best["pair"],  "pnl":best["pnl"]},
             "biggest_loss":       {"agent":worst["agent"], "pair":worst["pair"], "pnl":worst["pnl"]},

@@ -7,7 +7,6 @@ from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 from paper_shared.base_engine import CompEngine
-from paper2.competition2_agents import AGENTS
 
 TICK_INTERVAL = 10
 _HTML_PATH = os.path.join(os.path.dirname(__file__), "competition.html")
@@ -37,7 +36,7 @@ def create_app(engine: CompEngine, port: int, comp_name: str, max_open: int) -> 
             if ws in clients: clients.remove(ws)
 
     def _build_state():
-        stats = {n: engine.get_agent_stats(n) for n in AGENTS}
+        stats = {n: engine.get_agent_stats(n) for n in engine.AGENTS}
         sorted_agents = sorted(stats.values(), key=lambda x: -x["equity"])
         for i, a in enumerate(sorted_agents): a["rank"] = i+1
         recent = sorted(engine.all_trades, key=lambda t: t.get("close_ts",0), reverse=True)[:100]
@@ -107,7 +106,7 @@ def create_app(engine: CompEngine, port: int, comp_name: str, max_open: int) -> 
 
     @app.get("/agent/{name}")
     async def agent_detail(name: str):
-        if name not in AGENTS:
+        if name not in engine.AGENTS:
             return JSONResponse({"error": "not found"}, status_code=404)
         return JSONResponse(engine.get_agent_detail(name))
 
@@ -136,8 +135,8 @@ def create_app(engine: CompEngine, port: int, comp_name: str, max_open: int) -> 
         return {
             "status":       "ok",
             "running":      engine.session_running,
-            "agents":       len(AGENTS),
-            "open_trades":  sum(len(engine.agent_open[n]) for n in AGENTS),
+            "agents":       len(engine.AGENTS),
+            "open_trades":  sum(len(engine.agent_open[n]) for n in engine.AGENTS),
             "total_closed": len(engine.all_trades),
             "max_open":     engine.MAX_OPEN,
         }
