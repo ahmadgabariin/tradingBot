@@ -11,8 +11,8 @@ from fast_backtest import precompute, STRATS
 from paper2.competition2_agents import AGENTS, PAIRS
 
 SAVE_FILE    = os.path.join(os.path.dirname(__file__), "competition2_state.json")
-CAPITAL      = 10_000.0
-POS_SIZE     = 500.0
+CAPITAL      = 1_000.0
+POS_SIZE     = 50.0
 LEVERAGE     = 50
 MAX_OPEN     = 3
 CANDLE_REFRESH = 60
