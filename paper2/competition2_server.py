@@ -75,13 +75,13 @@ async def startup():
 @app.post("/start")
 async def start():
     engine.start_session()
-    await broadcast({"type": "session_started"})
+    await broadcast(build_state())
     return {"ok": True, "message": "Competition 2 started with 17 agents"}
 
 @app.post("/resume")
 async def resume():
     engine.resume_session()
-    await broadcast({"type": "session_started"})
+    await broadcast(build_state())
     return {"ok": True, "message": "Competition 2 resumed"}
 
 @app.post("/stop")
