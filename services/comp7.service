@@ -5,9 +5,9 @@ Wants=candle.service
 
 [Service]
 Type=simple
-User=root
-WorkingDirectory=/root/binanceBot
-ExecStart=/root/binanceBot/venv/bin/python -m paper7.comp7_server
+User=mrpolo
+WorkingDirectory=/home/mrpolo/binanceBot
+ExecStart=/usr/bin/python3 -m paper7.comp7_server
 Restart=always
 RestartSec=5
 StandardOutput=journal
