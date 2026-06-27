@@ -373,6 +373,8 @@ function renderLeaderboard(agents, prices) {
         <div class="stat-item"><div class="stat-label">Max DD</div><div class="stat-val" style="color:${ddColor}">-${(a.max_drawdown_pct||0).toFixed(1)}%</div></div>
         <div class="stat-item"><div class="stat-label">Avg Duration</div><div class="stat-val">${durTxt}</div></div>
         <div class="stat-item"><div class="stat-label">Open</div><div class="stat-val">${a.open_count}/${MAX_OPEN_LIMIT}</div></div>
+        <div class="stat-item"><div class="stat-label">Long WR</div><div class="stat-val" style="color:${a.total_long>0?'var(--green)':'var(--muted)'}">${a.total_long>0?a.win_rate_long+'%':'—'}</div></div>
+        <div class="stat-item"><div class="stat-label">Short WR</div><div class="stat-val" style="color:${a.total_short>0?'var(--green)':'var(--muted)'}">${a.total_short>0?a.win_rate_short+'%':'—'}</div></div>
       </div>
       ${openHTML?'<div class="open-positions">'+openHTML+'</div>':''}
       ${a.description?`<div style="margin-top:10px;font-size:11px;color:#666;line-height:1.5;border-top:1px solid #1a1a1a;padding-top:10px">${a.description}</div>`:''}
