@@ -1,5 +1,6 @@
 """
-Competition 8 — The Surgeon v2 (solo).
+Competition 8 — The Surgeon v2 (max profit mode).
+20 pairs, MAX_OPEN=10 — maximizes trade frequency and compounding.
 5-year backtest: 5/5 profitable years, EVERY month profitable, 38% WR, MaxDD 19%.
 SL=0.5%, TP=1.0%, 15m timeframe. Both directions.
 """
@@ -10,15 +11,17 @@ SURGEON_AGENTS = {
         "strategy": "RSI_Oversold_Strict",
         "timeframe": "15m",
         "sl": 0.005, "tp": 0.010,
-        "description": "RSI reversal with volume spike + ADX. 38% WR, every month profitable. Best all-round agent.",
+        "description": "RSI reversal with volume spike + ADX. 20 pairs, MAX_OPEN=10. Maximum profit mode.",
         "personality": {"aggression": 30, "patience": 90, "risk": 25},
         "bias": "BOTH",
     },
 }
 
 SURGEON_PAIRS = [
-    "BTCUSDT", "ETHUSDT", "SOLUSDT", "BNBUSDT", "XRPUSDT",
-    "ADAUSDT", "LINKUSDT", "DOTUSDT", "AVAXUSDT", "POLUSDT",
+    "BTCUSDT",  "ETHUSDT",  "SOLUSDT",  "BNBUSDT",  "XRPUSDT",
+    "ADAUSDT",  "LINKUSDT", "DOTUSDT",  "AVAXUSDT", "POLUSDT",
+    "SUIUSDT",  "TONUSDT",  "TRXUSDT",  "XLMUSDT",  "SHIBUSDT",
+    "DOGEUSDT", "NEARUSDT", "APTUSDT",  "AAVEUSDT", "UNIUSDT",
 ]
 
 
