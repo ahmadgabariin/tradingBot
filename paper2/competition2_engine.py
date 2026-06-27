@@ -116,6 +116,13 @@ def _calc_swing(raw, lookback=10):
 
 def fetch_prices():
     try:
+        try:
+            r = requests.get("http://localhost:8200/prices", timeout=3)
+            r.raise_for_status()
+            live_prices.update(r.json())
+            return
+        except Exception:
+            pass
         r = requests.get("https://api.binance.com/api/v3/ticker/price", timeout=5)
         r.raise_for_status()
         for item in r.json():

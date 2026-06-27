@@ -42,6 +42,12 @@ def _fetch_raw(pair, tf, n=200):
     }
 
 def _fetch_prices():
+    try:
+        r = requests.get("http://localhost:8200/prices", timeout=3)
+        r.raise_for_status()
+        return r.json()
+    except Exception:
+        pass
     r = requests.get("https://api.binance.com/api/v3/ticker/price", timeout=5)
     r.raise_for_status()
     return {item["symbol"]: float(item["price"]) for item in r.json() if item["symbol"] in PAIRS}

@@ -1,6 +1,6 @@
 """
-Shared candle cache — one process fetches Binance, all competitions read from here.
-Port 8200. Refreshes each pair/timeframe every 60s (~20 fetches/min total).
+Shared candle + price cache — one process fetches Binance, all competitions read from here.
+Port 8200. Candles refresh every 60s, prices every 3s.
 """
 import time, threading, requests
 from fastapi import FastAPI
@@ -13,9 +13,11 @@ app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], all
 PAIRS      = ["BTCUSDT","ETHUSDT","SOLUSDT","BNBUSDT","XRPUSDT","ADAUSDT","LINKUSDT","DOTUSDT","AVAXUSDT","POLUSDT"]
 TIMEFRAMES = ["15m", "1h"]
 REFRESH    = 60
+PRICE_REFRESH = 3
 
 _cache    = {}
 _cache_ts = {}
+_prices   = {}
 _lock     = threading.Lock()
 
 def _fetch(pair, tf, n=200):
@@ -48,7 +50,20 @@ def _refresh_loop():
                     time.sleep(0.15)
         time.sleep(5)
 
+def _price_loop():
+    while True:
+        try:
+            r = requests.get("https://api.binance.com/api/v3/ticker/price", timeout=5)
+            r.raise_for_status()
+            prices = {item["symbol"]: float(item["price"]) for item in r.json() if item["symbol"] in PAIRS}
+            with _lock:
+                _prices.update(prices)
+        except Exception as e:
+            print(f"[candle_server] prices: {e}")
+        time.sleep(PRICE_REFRESH)
+
 threading.Thread(target=_refresh_loop, daemon=True).start()
+threading.Thread(target=_price_loop,   daemon=True).start()
 
 @app.get("/candles")
 def candles(pair: str, tf: str):
@@ -66,9 +81,14 @@ def candles(pair: str, tf: str):
     except Exception as e:
         return JSONResponse({"error": str(e)}, status_code=500)
 
+@app.get("/prices")
+def prices():
+    with _lock:
+        return JSONResponse(dict(_prices))
+
 @app.get("/health")
 def health():
-    return {"cached_keys": len(_cache), "pairs": PAIRS, "timeframes": TIMEFRAMES}
+    return {"cached_keys": len(_cache), "price_pairs": len(_prices), "pairs": PAIRS, "timeframes": TIMEFRAMES}
 
 if __name__ == "__main__":
     import uvicorn
