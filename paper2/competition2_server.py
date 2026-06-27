@@ -14,7 +14,7 @@ app = FastAPI(title="Competition 2")
 app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"])
 
 clients: list[WebSocket] = []
-TICK_INTERVAL = 5
+TICK_INTERVAL = 10
 
 def background_loop():
     while True:
@@ -126,6 +126,12 @@ async def monitor():
     html_path = os.path.join(os.path.dirname(__file__), "monitor2.html")
     with open(html_path, "r", encoding="utf-8") as f:
         return f.read()
+
+@app.get("/agent/{name}")
+async def agent_detail(name: str):
+    if name not in AGENTS:
+        return JSONResponse({"error": "not found"}, status_code=404)
+    return JSONResponse(engine.get_agent_detail(name))
 
 @app.get("/health")
 async def health():

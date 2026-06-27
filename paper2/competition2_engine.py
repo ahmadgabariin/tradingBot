@@ -599,17 +599,29 @@ def get_agent_stats(agent_name):
         "avg_loss":    avg_loss,
         "open_count":  len(open_p),
         "open_trades": open_detail,
-        "closed_trades": closed,
         "direction":   agent_direction.get(agent_name,"BOTH"),
         "best_trade":  {"pair":best["pair"],"pnl":best["pnl"]}  if best  else None,
         "worst_trade": {"pair":worst["pair"],"pnl":worst["pnl"]} if worst else None,
-        "equity_history": eq_hist[-500:],
         "max_drawdown":     round(max_dd, 2),
         "max_drawdown_pct": round(max_dd_pct, 2),
-        "daily_pnl":        daily_pnl_list,
         "avg_duration_min": avg_duration_min,
         "personality":  cfg.get("personality", {}),
         "bias":         cfg.get("bias", "BOTH"),
+    }
+
+def get_agent_detail(agent_name):
+    """Heavy data only fetched on-demand (modal open)."""
+    closed = agent_closed[agent_name]
+    eq_hist = agent_equity[agent_name]
+    daily_pnl = {}
+    for t in closed:
+        day = (t.get("close_at") or "")[:10]
+        if day:
+            daily_pnl[day] = round(daily_pnl.get(day, 0) + t["pnl"], 2)
+    return {
+        "equity_history": eq_hist[-500:],
+        "closed_trades":  closed,
+        "daily_pnl":      [{"date": d, "pnl": v} for d, v in sorted(daily_pnl.items())],
     }
 
 def get_pair_heatmap():

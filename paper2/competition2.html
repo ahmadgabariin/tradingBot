@@ -326,6 +326,8 @@ let ws, raceChart;
 let allTrades = [], filteredTrades = [], currentPage = 1;
 let agentNames = [];
 let lastState = null;
+let lastAgentHash = {};   // name -> equity+trades string for diff check
+let lastRaceUpdate = 0;   // timestamp of last race chart render
 
 // ── WebSocket ──────────────────────────────────────────────────────────────
 function connect() {
@@ -393,7 +395,7 @@ function applyState(s) {
   }
 
   renderLeaderboard(agents, prices);
-  renderRaceChart(agents);
+  if (Date.now() - lastRaceUpdate > 30000) { renderRaceChart(agents); lastRaceUpdate = Date.now(); }
   renderHeatmap(s.pair_heatmap || []);
   renderMoments(s.key_moments || {});
 
@@ -406,6 +408,15 @@ function applyState(s) {
 function renderLeaderboard(agents, prices) {
   const grid = document.getElementById('leader-grid');
   if (!agents.length) { grid.innerHTML = '<div class="no-data">No agents yet</div>'; return; }
+
+  // only re-render cards that actually changed
+  const changed = agents.filter(a => {
+    const key = `${a.equity}|${a.trades}|${a.open_count}`;
+    if (lastAgentHash[a.name] === key) return false;
+    lastAgentHash[a.name] = key;
+    return true;
+  });
+  if (!changed.length && grid.children.length === agents.length) return;
 
   const bestIdx  = 0;
   const worstIdx = agents.length - 1;
@@ -673,14 +684,17 @@ async function stopSession() {
 // ── Agent Modal ────────────────────────────────────────────────────────────
 let modalCharts = {};
 
-function openAgentModal(name) {
+async function openAgentModal(name) {
   const a = (lastState?.agents || []).find(x => x.name === name);
   if (!a) return;
 
   document.getElementById('modal-agent-title').textContent = `${a.emoji} ${a.name}`;
   document.getElementById('modal-agent-title').style.color = a.color;
+  document.getElementById('modal-trades-body').innerHTML =
+    '<tr><td colspan="7" style="color:#555;text-align:center;padding:20px">Loading…</td></tr>';
+  document.getElementById('agent-modal').classList.add('open');
 
-  // Stats
+  // Stats from main state (already have it)
   const ddColor = (a.max_drawdown_pct||0) > 20 ? '#ff3355' : (a.max_drawdown_pct||0) > 10 ? '#ffaa00' : '#00ff88';
   const dur = a.avg_duration_min >= 60 ? (a.avg_duration_min/60).toFixed(1)+'h' : (a.avg_duration_min||0)+'m';
   document.getElementById('modal-stats').innerHTML = [
@@ -698,14 +712,17 @@ function openAgentModal(name) {
     ['SL / TP',      `${a.sl_pct.toFixed(1)}% / ${a.tp_pct.toFixed(1)}%`,                    '#e0e0e0'],
   ].map(([l,v,c]) => `<div class="modal-stat"><div class="lbl">${l}</div><div class="val" style="color:${c}">${v}</div></div>`).join('');
 
+  // Fetch heavy data on-demand
+  const detail = await fetch(`${API}/agent/${encodeURIComponent(name)}`).then(r => r.json()).catch(() => ({}));
+
   // Equity chart
   renderModalChart('modal-equity-chart', 'Equity Curve', {
-    labels: (a.equity_history||[]).map((_,i) => i+1),
-    datasets: [{ label:'Equity', data: a.equity_history||[], borderColor: a.color, backgroundColor:'transparent', borderWidth:2, pointRadius:0, tension:0.3 }]
+    labels: (detail.equity_history||[]).map((_,i) => i+1),
+    datasets: [{ label:'Equity', data: detail.equity_history||[], borderColor: a.color, backgroundColor:'transparent', borderWidth:2, pointRadius:0, tension:0.3 }]
   }, 'line', { yCallback: v => '$'+v.toLocaleString() });
 
   // Daily PnL chart
-  const daily = a.daily_pnl || [];
+  const daily = detail.daily_pnl || [];
   renderModalChart('modal-daily-chart', 'Daily PnL', {
     labels: daily.map(d => d.date),
     datasets: [{ label:'Daily PnL', data: daily.map(d => d.pnl),
@@ -714,8 +731,8 @@ function openAgentModal(name) {
       borderWidth: 1 }]
   }, 'bar', { yCallback: v => '$'+v.toLocaleString() });
 
-  // Recent trades
-  const trades = [...(a.closed_trades||[])].reverse().slice(0,100);
+  // Trade history
+  const trades = [...(detail.closed_trades||[])].reverse().slice(0,100);
   document.getElementById('modal-trades-body').innerHTML = trades.length
     ? trades.map((t,i) => {
         const pc = t.result==='TP'?'#00ff88':'#ff3355';
@@ -732,8 +749,6 @@ function openAgentModal(name) {
         </tr>`;
       }).join('')
     : '<tr><td colspan="7" style="color:#333;text-align:center;padding:20px">No closed trades yet</td></tr>';
-
-  document.getElementById('agent-modal').classList.add('open');
 }
 
 function renderModalChart(id, title, data, type, opts={}) {
