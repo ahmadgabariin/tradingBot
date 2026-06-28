@@ -457,6 +457,8 @@ class CompEngine:
         self.session_running = True
         if not self.session_start_ts:
             self.session_start_ts = time.time()
+        if not self.session_start:
+            self.session_start = datetime.now(timezone.utc).isoformat()
         self.restart_count += 1
         self.restart_log.append(datetime.now(timezone.utc).isoformat())
         self._save_state()
