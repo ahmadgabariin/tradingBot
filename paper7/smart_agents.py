@@ -1,17 +1,16 @@
 """
-Competition 7 — 5 Smart Agents with proven strategies.
+Competition 7 / 8 — 8 Smart Agents with proven strategies.
 Deep backtest: 3-5 years historical data, 5 pairs, yearly + monthly breakdown.
-ALL agents profitable across every calendar year in backtest.
 
-  Agent           TF   SL    TP    WR%   Years  Aggregate PnL
-  Surgeon v2      15m  0.5%  1.0%  44.8%  5/5   high (+every month)
-  Regime Lord     1h   0.8%  3.2%  26.6%  6/6   +848%  MaxDD 16%
-  The Squeeze     5m   0.8%  3.2%  22.3%  4/4   +34,629%
-  The Structure   1h   1.2%  3.6%  35.0%  6/6   high
-  The EMA Rider   1h   1.0%  3.0%  34.1%  6/6   high
-
-Squeeze: upgraded from 2:1 R/R (lost money in 2024/2026) → 4:1 R/R (all 4 years profitable).
-Regime Lord: stricter ADX>25 + vol>1.3x filter reduces MaxDD 27% → 16%, still 6/6 profitable years.
+  Agent                TF   SL    TP    Strategy
+  Surgeon v2           15m  0.5%  1.0%  RSI reversal — every month profitable
+  Regime Lord          1h   0.8%  3.2%  Regime-adaptive trending/ranging
+  The Squeeze          5m   0.8%  3.2%  BB compression breakout
+  The Structure        1h   1.2%  3.6%  Market structure break of structure
+  The EMA Rider        1h   1.0%  3.0%  EMA21 pullback in trend
+  The Confluence       1h   1.0%  3.0%  Multi-timeframe: EMA200+EMA50+RSI all agree
+  The Keltner          1h   0.8%  2.4%  Keltner channel reversion (ATR-based)
+  The ATR Breakout     1h   1.2%  4.8%  ATR volatility expansion breakout
 """
 
 # ── AGENT DEFINITIONS ─────────────────────────────────────────────────────────
@@ -60,6 +59,33 @@ SMART_AGENTS = {
         "sl": 0.010, "tp": 0.030,
         "description": "EMA21 pullback in trend: buy dips in uptrend, sell rallies in downtrend. 3:1 R/R. +120% aggregate.",
         "personality": {"aggression": 45, "patience": 80, "risk": 50},
+        "bias": "BOTH",
+    },
+    "The Confluence": {
+        "id": "S7-06", "emoji": "🎯", "color": "#f59e0b",
+        "strategy": "MTF_Confluence",
+        "timeframe": "1h",
+        "sl": 0.010, "tp": 0.030,
+        "description": "Multi-timeframe: EMA200 big trend + EMA50 medium trend + RSI entry. All must agree. 3:1 R/R.",
+        "personality": {"aggression": 25, "patience": 95, "risk": 30},
+        "bias": "BOTH",
+    },
+    "The Keltner": {
+        "id": "S7-07", "emoji": "⚡", "color": "#ec4899",
+        "strategy": "Keltner_Reversion",
+        "timeframe": "1h",
+        "sl": 0.008, "tp": 0.024,
+        "description": "Price outside Keltner channels (EMA21 ± 2×ATR) → mean reversion. 3:1 R/R.",
+        "personality": {"aggression": 35, "patience": 85, "risk": 35},
+        "bias": "BOTH",
+    },
+    "The ATR Breakout": {
+        "id": "S7-08", "emoji": "🚀", "color": "#8b5cf6",
+        "strategy": "ATR_Volatility_Breakout",
+        "timeframe": "1h",
+        "sl": 0.012, "tp": 0.048,
+        "description": "ATR compression → expansion breakout above/below 20-bar range. 4:1 R/R.",
+        "personality": {"aggression": 65, "patience": 90, "risk": 55},
         "bias": "BOTH",
     },
 }
@@ -245,6 +271,84 @@ def _ema_rider_short(p, i):
     return downtrend and near_e21 and rsi_ok and not p["green"][i] and p["adx"][i] > 20
 
 
+# ─── Agent 6: Multi-Timeframe Confluence ─────────────────────────────────────
+# Uses EMA200 (big picture), EMA50 (medium trend), EMA21 (short trend) on 1h.
+# All three EMAs must be aligned + RSI pullback + volume confirmation.
+# Fewer signals but very high quality — avoids counter-trend trades.
+
+def _confluence_long(p, i):
+    if i < 210: return False
+    big_trend  = p["c"][i] > p["e200"][i]              # above EMA200 = bull market
+    mid_trend  = p["e21"][i] > p["e50"][i]             # medium uptrend
+    short_up   = p["e9"][i] > p["e21"][i]              # short-term up
+    pullback   = p["rsi"][i] < 45                       # RSI pulled back (not chasing)
+    turning    = p["rsi"][i] > p["rsi"][i - 1]         # RSI turning back up
+    entry      = p["green"][i] and p["v"][i] > p["vol_avg"][i] * 1.2
+    adx_ok     = p["adx"][i] > 18
+    return big_trend and mid_trend and short_up and pullback and turning and entry and adx_ok
+
+def _confluence_short(p, i):
+    if i < 210: return False
+    big_trend  = p["c"][i] < p["e200"][i]              # below EMA200 = bear market
+    mid_trend  = p["e21"][i] < p["e50"][i]             # medium downtrend
+    short_dn   = p["e9"][i] < p["e21"][i]              # short-term down
+    pullback   = p["rsi"][i] > 55                       # RSI rallied (not chasing)
+    turning    = p["rsi"][i] < p["rsi"][i - 1]         # RSI turning back down
+    entry      = not p["green"][i] and p["v"][i] > p["vol_avg"][i] * 1.2
+    adx_ok     = p["adx"][i] > 18
+    return big_trend and mid_trend and short_dn and pullback and turning and entry and adx_ok
+
+
+# ─── Agent 7: Keltner Channel Reversion ──────────────────────────────────────
+# Keltner bands = EMA21 ± 2×ATR. Price outside bands = overextended → revert.
+# ATR-based bands are more adaptive than BB (don't widen on spike volume).
+# 3:1 R/R (SL=0.8%, TP=2.4%) — mean reversion works best with tight SL.
+
+def _keltner_long(p, i):
+    if i < 30: return False
+    kelt_lo  = p["e21"][i] - 2.0 * p["atr"][i]        # lower Keltner band
+    oversold = p["c"][i] < kelt_lo                      # price below band
+    rsi_low  = p["rsi"][i] < 35
+    turning  = p["rsi"][i] > p["rsi"][i - 1]
+    return oversold and rsi_low and turning and p["green"][i] and p["v"][i] > p["vol_avg"][i] * 1.1
+
+def _keltner_short(p, i):
+    if i < 30: return False
+    kelt_hi   = p["e21"][i] + 2.0 * p["atr"][i]       # upper Keltner band
+    overbought = p["c"][i] > kelt_hi                    # price above band
+    rsi_high  = p["rsi"][i] > 65
+    turning   = p["rsi"][i] < p["rsi"][i - 1]
+    return overbought and rsi_high and turning and not p["green"][i] and p["v"][i] > p["vol_avg"][i] * 1.1
+
+
+# ─── Agent 8: ATR Volatility Expansion Breakout ───────────────────────────────
+# ATR compression (low volatility) → ATR expansion (breakout) → trend follows.
+# Different from BB Squeeze: uses true range not price bands, 1h not 5m.
+# 4:1 R/R (SL=1.2%, TP=4.8%) — breakouts run far when genuine.
+
+def _atr_avg(p, i, period=20):
+    if i < period: return p["atr"][i]
+    return sum(p["atr"][i - k] for k in range(period)) / period
+
+def _atr_breakout_long(p, i):
+    if i < 25: return False
+    atr_compressed = p["atr"][i] < _atr_avg(p, i) * 0.7   # low volatility squeeze
+    range_hi = max(p["h"][i - k] for k in range(1, 21))    # 20-bar high
+    breakout = p["c"][i] > range_hi                          # close above range
+    expanding = p["atr"][i] > p["atr"][i - 1]               # ATR expanding
+    vol_spike = p["v"][i] > p["vol_avg"][i] * 1.4
+    return atr_compressed and breakout and expanding and vol_spike and p["rsi"][i] < 75
+
+def _atr_breakout_short(p, i):
+    if i < 25: return False
+    atr_compressed = p["atr"][i] < _atr_avg(p, i) * 0.7
+    range_lo = min(p["l"][i - k] for k in range(1, 21))    # 20-bar low
+    breakdown = p["c"][i] < range_lo                         # close below range
+    expanding = p["atr"][i] > p["atr"][i - 1]
+    vol_spike = p["v"][i] > p["vol_avg"][i] * 1.4
+    return atr_compressed and breakdown and expanding and vol_spike and p["rsi"][i] > 25
+
+
 # ── SIGNAL MAPS ───────────────────────────────────────────────────────────────
 
 LONG_SIGNALS = {
@@ -253,6 +357,9 @@ LONG_SIGNALS = {
     "The Squeeze":     _squeeze_long,
     "The Structure":   _structure_long,
     "The EMA Rider":   _ema_rider_long,
+    "The Confluence":  _confluence_long,
+    "The Keltner":     _keltner_long,
+    "The ATR Breakout": _atr_breakout_long,
 }
 
 SHORT_SIGNALS = {
@@ -261,4 +368,7 @@ SHORT_SIGNALS = {
     "The Squeeze":     _squeeze_short,
     "The Structure":   _structure_short,
     "The EMA Rider":   _ema_rider_short,
+    "The Confluence":  _confluence_short,
+    "The Keltner":     _keltner_short,
+    "The ATR Breakout": _atr_breakout_short,
 }
