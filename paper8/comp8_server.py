@@ -11,7 +11,7 @@ from paper7.smart_agents import SMART_AGENTS, LONG_SIGNALS, SHORT_SIGNALS
 from paper8.surgeon_agent import SURGEON_PAIRS
 
 PORT      = 8129
-MAX_OPEN  = 20
+MAX_OPEN  = 9999
 COMP_NAME = "Competition 8 — All Agents Max Profit"
 SAVE_FILE = os.path.join(os.path.dirname(__file__), "comp8_state.json")
 
