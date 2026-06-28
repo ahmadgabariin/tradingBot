@@ -7,8 +7,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from paper_shared.base_engine import CompEngine
 from paper_shared.base_server import create_app
-from paper7.smart_agents import SMART_AGENTS, LONG_SIGNALS, SHORT_SIGNALS
-from paper8.surgeon_agent import SURGEON_PAIRS
+from paper7.smart_agents import SMART_AGENTS, LONG_SIGNALS, SHORT_SIGNALS, SMART_PAIRS
 
 PORT      = 8129
 MAX_OPEN  = 9999
@@ -22,7 +21,7 @@ engine = CompEngine(
     agents        = SMART_AGENTS,
     long_signals  = LONG_SIGNALS,
     short_signals = SHORT_SIGNALS,
-    pairs_list    = SURGEON_PAIRS,
+    pairs_list    = SMART_PAIRS,
 )
 
 app = create_app(engine, PORT, COMP_NAME, MAX_OPEN)
