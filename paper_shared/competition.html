@@ -373,7 +373,7 @@ function renderLeaderboard(agents, prices) {
         <span class="agent-emoji">${a.emoji}</span>
         <div>
           <div class="agent-name">${a.name}</div>
-          <div class="agent-strat">${a.strategy} · ${a.timeframe} · SL ${a.sl_pct.toFixed(1)}% · TP ${a.tp_pct.toFixed(1)}%</div>
+          <div class="agent-strat">${a.strategy} · ${a.timeframe} · ${a.atr_sl_mult ? `ATR ${a.atr_sl_mult}&#215;SL / ${a.atr_tp_mult}&#215;TP${a.trailing?' + Trail':''}` : `SL ${a.sl_pct.toFixed(1)}% · TP ${a.tp_pct.toFixed(1)}%`}</div>
         </div>
       </div>
       <div class="agent-equity ${cls}">$${(a.equity||0).toLocaleString(undefined,{minimumFractionDigits:0,maximumFractionDigits:0})}</div>
@@ -591,7 +591,7 @@ async function openAgentModal(name) {
     ['Avg Duration', dur,                                                                        '#bb77ff'],
     ['Strategy',     a.strategy,                                                                 '#e0e0e0'],
     ['Timeframe',    a.timeframe,                                                                '#e0e0e0'],
-    ['SL / TP',      `${a.sl_pct.toFixed(1)}% / ${a.tp_pct.toFixed(1)}%`,                     '#e0e0e0'],
+    ['SL / TP',      a.atr_sl_mult ? `ATR ${a.atr_sl_mult}× / ${a.atr_tp_mult}×${a.trailing?' + Trail':''}` : `${a.sl_pct.toFixed(1)}% / ${a.tp_pct.toFixed(1)}%`, '#e0e0e0'],
   ].map(([l,v,c])=>`<div class="modal-stat"><div class="lbl">${l}</div><div class="val" style="color:${c}">${v}</div></div>`).join('');
 
   const detail = await fetch(`${API}/agent/${encodeURIComponent(name)}`).then(r=>r.json()).catch(()=>({}));

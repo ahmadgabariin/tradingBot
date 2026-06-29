@@ -515,6 +515,8 @@ class CompEngine:
             "name": name, "id": cfg["id"], "emoji": cfg["emoji"], "color": cfg["color"],
             "strategy": cfg["strategy"], "timeframe": cfg["timeframe"],
             "sl_pct": cfg["sl"]*100, "tp_pct": cfg["tp"]*100,
+            "atr_sl_mult": cfg.get("atr_sl_mult"), "atr_tp_mult": cfg.get("atr_tp_mult"),
+            "trailing": cfg.get("trailing", False), "supertrend": cfg.get("supertrend", False),
             "description": cfg["description"],
             "balance": bal, "equity": equity,
             "return_pct": round((equity-CAPITAL)/CAPITAL*100,2),
