@@ -147,6 +147,18 @@
   .modal-trades-tbl tr:hover td { background:#111; }
   .no-data { text-align: center; color: var(--muted); padding: 48px; font-size: 13px; }
   #conn-status { font-size: 11px; color: var(--muted); margin-top: 8px; }
+  .pwd-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,.92); z-index:1100; align-items:center; justify-content:center; }
+  .pwd-overlay.open { display:flex; }
+  .pwd-box { background:#0f0f0f; border:1px solid #333; border-radius:14px; padding:36px 40px; width:340px; text-align:center; }
+  .pwd-box h3 { font-size:18px; font-weight:800; color:#bb77ff; margin-bottom:8px; }
+  .pwd-box p  { font-size:12px; color:#666; margin-bottom:22px; }
+  .pwd-input { width:100%; padding:12px 16px; background:#111; border:1px solid #333; border-radius:8px; color:#fff; font-size:16px; letter-spacing:4px; text-align:center; outline:none; margin-bottom:8px; }
+  .pwd-input:focus { border-color:#bb77ff; }
+  .pwd-err { font-size:12px; color:#ff3355; margin-bottom:12px; min-height:18px; }
+  .pwd-btn { width:100%; padding:12px; border-radius:8px; border:none; background:#bb77ff; color:#000; font-size:13px; font-weight:700; letter-spacing:1px; text-transform:uppercase; cursor:pointer; }
+  .pwd-btn:hover { background:#cc88ff; }
+  .pwd-cancel { margin-top:10px; font-size:12px; color:#555; cursor:pointer; }
+  .pwd-cancel:hover { color:#888; }
 </style>
 </head>
 <body>
@@ -497,16 +509,63 @@ function renderPagination(pages) {
 }
 function goPage(p){currentPage=p;renderTable();}
 
+// ── PASSWORD GATE ─────────────────────────────────────────────────────────────
+
+let _pwdResolve = null;
+
+function openPwdModal() {
+  document.getElementById('pwd-input').value = '';
+  document.getElementById('pwd-err').textContent = '';
+  document.getElementById('pwd-overlay').classList.add('open');
+  setTimeout(() => document.getElementById('pwd-input').focus(), 80);
+  return new Promise(resolve => { _pwdResolve = resolve; });
+}
+
+function closePwdModal(result) {
+  document.getElementById('pwd-overlay').classList.remove('open');
+  if (_pwdResolve) { _pwdResolve(result); _pwdResolve = null; }
+}
+
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') closePwdModal(null);
+  if (e.key === 'Enter' && document.getElementById('pwd-overlay').classList.contains('open')) submitPwd();
+});
+
+function submitPwd() {
+  const val = document.getElementById('pwd-input').value.trim();
+  if (!val) { document.getElementById('pwd-err').textContent = 'Enter password'; return; }
+  closePwdModal(val);
+}
+
+async function authFetch(url, opts = {}) {
+  const saved = sessionStorage.getItem('comp_pwd');
+  let pwd = saved;
+  if (!pwd) {
+    pwd = await openPwdModal();
+    if (!pwd) return;
+  }
+  const headers = { ...(opts.headers || {}), 'X-Action-Password': pwd, 'Content-Type': 'application/json' };
+  const res = await fetch(url, { ...opts, headers });
+  if (res.status === 403) {
+    sessionStorage.removeItem('comp_pwd');
+    document.getElementById('pwd-err').textContent = 'Wrong password';
+    document.getElementById('pwd-overlay').classList.add('open');
+    return;
+  }
+  sessionStorage.setItem('comp_pwd', pwd);
+  return res;
+}
+
 async function resetRestarts() {
-  await fetch(API+'/reset-restarts', {method:'POST'});
+  await authFetch(API+'/reset-restarts', {method:'POST'});
 }
 
 async function startSession() {
   if (!confirm('Start a NEW session? This wipes all existing data.')) return;
-  await fetch(API+'/start',{method:'POST'});
+  await authFetch(API+'/start', {method:'POST'});
 }
-async function resumeSession() { await fetch(API+'/resume',{method:'POST'}); }
-async function stopSession()   { await fetch(API+'/stop',  {method:'POST'}); }
+async function resumeSession() { await authFetch(API+'/resume', {method:'POST'}); }
+async function stopSession()   { await authFetch(API+'/stop',   {method:'POST'}); }
 
 let modalCharts = {};
 
@@ -573,6 +632,17 @@ function _renderModalChart(id, data, type, yCallback) {
 
 function closeAgentModal() { document.getElementById('agent-modal').classList.remove('open'); }
 </script>
+
+<div class="pwd-overlay" id="pwd-overlay" onclick="if(event.target===this)closePwdModal(null)">
+  <div class="pwd-box">
+    <h3>🔐 Confirm Action</h3>
+    <p>Enter the competition password to continue</p>
+    <input class="pwd-input" id="pwd-input" type="password" placeholder="••••••••" autocomplete="current-password">
+    <div class="pwd-err" id="pwd-err"></div>
+    <button class="pwd-btn" onclick="submitPwd()">CONFIRM</button>
+    <div class="pwd-cancel" onclick="closePwdModal(null)">Cancel</div>
+  </div>
+</div>
 
 <div class="modal-overlay" id="agent-modal" onclick="if(event.target===this)closeAgentModal()">
   <div class="modal">

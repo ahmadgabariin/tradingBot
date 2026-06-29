@@ -24,7 +24,7 @@ engine = CompEngine(
     pairs_list    = SMART_PAIRS,
 )
 
-app = create_app(engine, PORT, COMP_NAME, MAX_OPEN)
+app = create_app(engine, PORT, COMP_NAME, MAX_OPEN, comp_password="BOT2024")
 
 if __name__ == "__main__":
     import uvicorn

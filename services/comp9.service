@@ -1,0 +1,17 @@
+[Unit]
+Description=Competition 9 — ATR Dynamic SL/TP + Trailing + Supertrend (port 8130)
+After=network.target candle.service
+Wants=candle.service
+
+[Service]
+Type=simple
+User=mrpolo
+WorkingDirectory=/home/mrpolo/binanceBot
+ExecStart=/usr/bin/python3 -m paper9.comp9_server
+Restart=always
+RestartSec=5
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target

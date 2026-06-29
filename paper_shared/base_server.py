@@ -3,7 +3,7 @@ Factory that creates a FastAPI app for any competition.
 Each comp server just calls create_app() with its config.
 """
 import asyncio, time, os, threading
-from fastapi import FastAPI, WebSocket, WebSocketDisconnect
+from fastapi import FastAPI, WebSocket, WebSocketDisconnect, Request
 from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 from paper_shared.base_engine import CompEngine
@@ -12,9 +12,16 @@ TICK_INTERVAL = 10
 _HTML_PATH = os.path.join(os.path.dirname(__file__), "competition.html")
 
 
-def create_app(engine: CompEngine, port: int, comp_name: str, max_open: int) -> FastAPI:
+def create_app(engine: CompEngine, port: int, comp_name: str, max_open: int,
+               comp_password: str = "BOT2024") -> FastAPI:
     app = FastAPI(title=comp_name)
     app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"])
+
+    def _auth(request: Request):
+        if not comp_password:
+            return True
+        pwd = request.headers.get("X-Action-Password", "")
+        return pwd == comp_password
 
     clients: list[WebSocket] = []
 
@@ -66,19 +73,22 @@ def create_app(engine: CompEngine, port: int, comp_name: str, max_open: int) -> 
         asyncio.create_task(_push_loop())
 
     @app.post("/start")
-    async def start():
+    async def start(request: Request):
+        if not _auth(request): return JSONResponse({"error": "forbidden"}, status_code=403)
         engine.start_session()
         await _broadcast(_build_state())
         return {"ok": True}
 
     @app.post("/resume")
-    async def resume():
+    async def resume(request: Request):
+        if not _auth(request): return JSONResponse({"error": "forbidden"}, status_code=403)
         engine.resume_session()
         await _broadcast(_build_state())
         return {"ok": True}
 
     @app.post("/stop")
-    async def stop():
+    async def stop(request: Request):
+        if not _auth(request): return JSONResponse({"error": "forbidden"}, status_code=403)
         engine.stop_session()
         await _broadcast(_build_state())
         return {"ok": True}
@@ -88,7 +98,8 @@ def create_app(engine: CompEngine, port: int, comp_name: str, max_open: int) -> 
         return JSONResponse(_build_state())
 
     @app.post("/set-direction")
-    async def set_direction(payload: dict):
+    async def set_direction(request: Request, payload: dict):
+        if not _auth(request): return JSONResponse({"error": "forbidden"}, status_code=403)
         agent     = payload.get("agent")
         direction = payload.get("direction")
         if agent and direction:
@@ -97,7 +108,8 @@ def create_app(engine: CompEngine, port: int, comp_name: str, max_open: int) -> 
         return {"ok": True}
 
     @app.post("/reset-restarts")
-    async def reset_restarts():
+    async def reset_restarts(request: Request):
+        if not _auth(request): return JSONResponse({"error": "forbidden"}, status_code=403)
         engine.restart_count = 0
         engine.restart_log.clear()
         engine._save_state()
