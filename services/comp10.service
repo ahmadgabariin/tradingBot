@@ -1,0 +1,17 @@
+[Unit]
+Description=Competition 10 — 26 Agents ATR Unlimited (port 8131)
+After=network.target candle.service
+Wants=candle.service
+
+[Service]
+Type=simple
+User=mrpolo
+WorkingDirectory=/home/mrpolo/binanceBot
+ExecStart=/usr/bin/python3 -m paper10.comp10_server
+Restart=always
+RestartSec=5
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target

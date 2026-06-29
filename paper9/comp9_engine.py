@@ -9,12 +9,26 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from datetime import datetime, timezone
 from paper_shared.base_engine import CompEngine, POS_SIZE, LEVERAGE, _fetch_prices
-from paper9.comp9_agents import calc_supertrend
+from paper9.comp9_agents import calc_supertrend, ORIGINAL_5
+from fast_backtest import STRATS
+
+# short signal functions for original 5 (same as base_engine.py)
+from paper_shared.base_engine import (
+    _short_keltner, _short_adx, _short_macd_bb, _short_orb, _short_donchian,
+)
+_ORIG5_SHORT = {
+    "The Surgeon": _short_macd_bb,
+    "The Maniac":  _short_keltner,
+    "The Hound":   _short_donchian,
+    "The Oracle":  _short_adx,
+    "The Comet":   _short_orb,
+}
 
 CAPITAL = 1_000.0
 
 
 class Comp9Engine(CompEngine):
+
 
     def _open_trade(self, name, pair, price, side="LONG", p=None):
         cfg = self.AGENTS[name]
@@ -152,6 +166,10 @@ class Comp9Engine(CompEngine):
                 if len(self.agent_open[name]) < self.MAX_OPEN and bal > POS_SIZE:
                     sfn_long  = self.LONG_SIGNALS.get(name)
                     sfn_short = self.SHORT_SIGNALS.get(name)
+                    # original 5 use STRATS for long, dedicated short fns
+                    if name in ORIGINAL_5:
+                        sfn_long  = STRATS.get(cfg["strategy"])
+                        sfn_short = _ORIG5_SHORT.get(name)
 
                     for pair in self.PAIRS_LIST:
                         if len(self.agent_open[name]) >= self.MAX_OPEN:
