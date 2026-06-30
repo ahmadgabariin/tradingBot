@@ -51,7 +51,7 @@ def build_state():
     for i, a in enumerate(sorted_agents):
         a["rank"] = i + 1
 
-    recent_trades = sorted(engine.all_trades, key=lambda t: t.get("close_ts", 0), reverse=True)[:100]
+    recent_trades = sorted(engine.all_trades, key=lambda t: t.get("close_ts", 0), reverse=True)[:2000]
 
     return {
         "type":          "state",
