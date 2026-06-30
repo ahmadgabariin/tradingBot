@@ -1,0 +1,17 @@
+[Unit]
+Description=Competition 11 — Upgraded Exits Chandelier/SAR/Supertrend/Keltner (port 8132)
+After=network.target candle.service
+Wants=candle.service
+
+[Service]
+Type=simple
+User=mrpolo
+WorkingDirectory=/home/mrpolo/binanceBot
+ExecStart=/usr/bin/python3 -m paper11.comp11_server
+Restart=always
+RestartSec=5
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target

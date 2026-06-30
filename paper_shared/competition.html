@@ -373,7 +373,7 @@ function renderLeaderboard(agents, prices) {
         <span class="agent-emoji">${a.emoji}</span>
         <div>
           <div class="agent-name">${a.name}</div>
-          <div class="agent-strat">${a.strategy} · ${a.timeframe} · ${a.atr_sl_mult ? `ATR ${a.atr_sl_mult}&#215;SL / ${a.atr_tp_mult}&#215;TP${a.trailing?' + Trail':''}` : `SL ${a.sl_pct.toFixed(1)}% · TP ${a.tp_pct.toFixed(1)}%`}</div>
+          <div class="agent-strat">${a.strategy} · ${a.timeframe} · ${a.atr_sl_mult ? `ATR ${a.atr_sl_mult}&#215;SL / ${a.atr_tp_mult}&#215;TP${a.trailing ? ` + ${{'chandelier':'Chandelier','parabolic':'SAR','supertrend':'Supertrend','keltner_exit':'Keltner'}[a.exit_mode]||'Trail'}` : ''}` : `SL ${a.sl_pct.toFixed(1)}% · TP ${a.tp_pct.toFixed(1)}%`}</div>
         </div>
       </div>
       <div class="agent-equity ${cls}">$${(a.equity||0).toLocaleString(undefined,{minimumFractionDigits:0,maximumFractionDigits:0})}</div>

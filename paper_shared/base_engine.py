@@ -518,6 +518,7 @@ class CompEngine:
             "sl_pct": cfg["sl"]*100, "tp_pct": cfg["tp"]*100,
             "atr_sl_mult": cfg.get("atr_sl_mult"), "atr_tp_mult": cfg.get("atr_tp_mult"),
             "trailing": cfg.get("trailing", False), "supertrend": cfg.get("supertrend", False),
+            "exit_mode": cfg.get("exit_mode", "atr_trail"),
             "description": cfg["description"],
             "balance": bal, "equity": equity,
             "return_pct": round((equity-CAPITAL)/CAPITAL*100,2),
