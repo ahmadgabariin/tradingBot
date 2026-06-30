@@ -347,14 +347,15 @@ class CompEngine:
         price = trade["tp"] if result=="TP" else trade["sl"]
         side  = trade.get("side","LONG")
         trade["exit"]     = price
-        trade["result"]   = result
         trade["status"]   = "CLOSED"
         trade["close_at"] = datetime.now(timezone.utc).isoformat()
         trade["close_ts"] = time.time()
         if side=="LONG":
-            trade["pnl"] = round(trade["qty"]*(trade["tp"]-trade["entry"]),4) if result=="TP" else round(trade["qty"]*(trade["sl"]-trade["entry"]),4)
+            trade["pnl"] = round(trade["qty"]*(price-trade["entry"]),4)
         else:
-            trade["pnl"] = round(trade["qty"]*(trade["entry"]-trade["tp"]),4) if result=="TP" else round(trade["qty"]*(trade["entry"]-trade["sl"]),4)
+            trade["pnl"] = round(trade["qty"]*(trade["entry"]-price),4)
+        # trailing stop can move SL into profit — label by actual PnL not trigger type
+        trade["result"] = "TP" if trade["pnl"] >= 0 else "SL"
         return trade
 
     # ── TICK ─────────────────────────────────────────────────────────────────
