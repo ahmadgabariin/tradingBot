@@ -46,7 +46,7 @@ def create_app(engine: CompEngine, port: int, comp_name: str, max_open: int,
         stats = {n: engine.get_agent_stats(n) for n in engine.AGENTS}
         sorted_agents = sorted(stats.values(), key=lambda x: -x["equity"])
         for i, a in enumerate(sorted_agents): a["rank"] = i+1
-        recent = sorted(engine.all_trades, key=lambda t: t.get("close_ts",0), reverse=True)[:100]
+        recent = sorted(engine.all_trades, key=lambda t: t.get("close_ts",0), reverse=True)[:2000]
         return {
             "type":          "state",
             "running":       engine.session_running,
