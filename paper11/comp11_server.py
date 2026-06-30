@@ -10,7 +10,7 @@ from paper11.comp11_engine import Comp11Engine
 from paper11.comp11_agents import COMP11_AGENTS, LONG_SIGNALS_11, SHORT_SIGNALS_11, COMP11_PAIRS
 
 PORT      = 8132
-MAX_OPEN  = 3
+MAX_OPEN  = 9999
 COMP_NAME = "Competition 11 — 15 Agents Upgraded Exits (Chandelier / SAR / Supertrend / Keltner)"
 PASSWORD  = "BOT2024"
 SAVE_FILE = os.path.join(os.path.dirname(__file__), "comp11_state.json")
