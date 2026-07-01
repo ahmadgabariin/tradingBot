@@ -58,6 +58,17 @@ def to_scaled_int(value: float, decimals: int) -> int:
     return int(round(value * (10 ** decimals)))
 
 
+def signed_position_size(p) -> float:
+    """Lighter's `position` field is always a positive magnitude — direction
+    is a SEPARATE `sign` field (-1 for SHORT, 1 for LONG). Reading `position`
+    alone and assuming positive=LONG is wrong and silently sends closes in
+    the wrong direction for shorts (confirmed live: a 'successful' close on a
+    SHORT position did nothing because it sent a SELL instead of a BUY)."""
+    magnitude = float(getattr(p, "position", 0) or 0)
+    sign = float(getattr(p, "sign", 1) or 1)
+    return magnitude * sign
+
+
 class LighterClient:
     def __init__(self):
         self.base_url   = os.environ["LIGHTER_BASE_URL"]

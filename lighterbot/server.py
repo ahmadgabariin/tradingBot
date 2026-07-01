@@ -13,7 +13,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from lighterbot import config as cfgmod
 from lighterbot.engine import engine, _load_state
-from lighterbot.lighter_client import MARKET_INDEX, PRICE_DECIMALS
+from lighterbot.lighter_client import MARKET_INDEX, PRICE_DECIMALS, signed_position_size
 
 _SYMBOL_BY_MARKET_INDEX = {v: k for k, v in MARKET_INDEX.items()}
 
@@ -89,7 +89,7 @@ async def state():
             orders_by_market.setdefault(getattr(o, "market_index", None), []).append(o)
 
         for p in raw_positions:
-            size = float(getattr(p, "position", 0) or 0)
+            size = signed_position_size(p)
             if size == 0:
                 continue
             symbol = getattr(p, "symbol", "?")

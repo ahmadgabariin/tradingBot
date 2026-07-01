@@ -10,7 +10,7 @@ from datetime import datetime, timezone
 from lighterbot import config as cfgmod
 from lighterbot import data_feed
 from lighterbot.agents import AGENTS, LONG_SIGNALS, SHORT_SIGNALS, PAIRS
-from lighterbot.lighter_client import LighterClient, MARKET_INDEX
+from lighterbot.lighter_client import LighterClient, MARKET_INDEX, signed_position_size
 
 STATE_FILE = os.path.join(os.path.dirname(__file__), "lighterbot_state.json")
 TICK_INTERVAL = 15  # seconds — slower than paper bots since these are real orders
@@ -201,7 +201,7 @@ class LighterBotEngine:
             target = None
             for p in positions:
                 if getattr(p, "symbol", None) == symbol:
-                    size = float(getattr(p, "position", 0) or 0)
+                    size = signed_position_size(p)
                     if size != 0:
                         target = (p, size)
                         break
@@ -250,7 +250,7 @@ class LighterBotEngine:
         pos_map = self.state.get("position_agent_map", {})
         for p in live_positions:
             symbol = getattr(p, "symbol", None)
-            size = float(getattr(p, "position", 0) or 0)
+            size = signed_position_size(p)
             if not symbol or size == 0:
                 continue
 
