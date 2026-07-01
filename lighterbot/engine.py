@@ -19,8 +19,10 @@ TICK_INTERVAL = 15  # seconds — slower than paper bots since these are real or
 def _load_state():
     if os.path.exists(STATE_FILE):
         with open(STATE_FILE) as f:
-            return json.load(f)
-    return {"trade_log": []}
+            data = json.load(f)
+            data.setdefault("position_agent_map", {})
+            return data
+    return {"trade_log": [], "position_agent_map": {}}
 
 
 def _save_state(state):
@@ -206,6 +208,76 @@ class LighterBotEngine:
             results[symbol] = {"ok": ok, "result": str(result)}
         return results, None
 
+    async def update_trailing_stops(self, client, live_positions):
+        """Live equivalent of comp9/comp10's _update_trailing_stops(): moves the
+        resting stop-loss to lock in profit as price moves favorably. Lighter
+        has no 'modify order' — moving a stop means cancel the old OCO pair and
+        recreate it with the new SL (same TP), same as comp9's ATR trail formula:
+        LONG:  new_sl = price - atr_mult*atr   (only moves up)
+        SHORT: new_sl = price + atr_mult*atr   (only moves down)
+        """
+        pos_map = self.state.get("position_agent_map", {})
+        for p in live_positions:
+            symbol = getattr(p, "symbol", None)
+            size = float(getattr(p, "position", 0) or 0)
+            if not symbol or size == 0:
+                continue
+
+            mapping = pos_map.get(symbol)
+            if not mapping:
+                continue  # not opened by an agent we're tracking (e.g. a manual trade) — leave it alone
+
+            agent = AGENTS.get(mapping["agent"])
+            if not agent or agent.get("exit_mode") != "atr_trail":
+                continue
+
+            p_candles = data_feed.get_candles(symbol, agent["timeframe"])
+            if not p_candles or p_candles["n"] < 20 or "atr" not in p_candles:
+                continue
+            idx = p_candles["n"] - 2
+            atr = p_candles["atr"][idx]
+            if not atr or atr <= 0:
+                continue
+
+            price = data_feed.get_live_price(symbol)
+            if not price:
+                continue
+
+            side = "LONG" if size > 0 else "SHORT"
+            atr_mult = agent["atr_sl_mult"]
+            new_sl = price - atr_mult * atr if side == "LONG" else price + atr_mult * atr
+
+            orders, err = await client.get_active_orders(market_id=MARKET_INDEX.get(symbol))
+            if err:
+                continue
+            sl_order = next((o for o in orders if getattr(o, "type", "") == "stop-loss-limit"), None)
+            tp_order = next((o for o in orders if getattr(o, "type", "") == "take-profit-limit"), None)
+            if not sl_order or not tp_order:
+                continue  # nothing resting to trail, or already closed
+
+            current_sl = float(getattr(sl_order, "trigger_price", 0) or 0)
+            favorable = (new_sl > current_sl) if side == "LONG" else (new_sl < current_sl)
+            if not favorable:
+                continue
+
+            tp_price = float(getattr(tp_order, "trigger_price", 0) or 0)
+            ok1, r1 = await client.cancel_order(symbol, getattr(sl_order, "order_index"))
+            ok2, r2 = await client.cancel_order(symbol, getattr(tp_order, "order_index"))
+            if not (ok1 and ok2):
+                self.log(f"Trailing stop cancel failed for {symbol}: sl={r1} tp={r2} — leaving old bracket in place")
+                continue
+
+            is_ask = (side == "SHORT")
+            ok, result = await client.attach_sl_tp(symbol, is_ask, new_sl, tp_price)
+            if ok:
+                self.log(f"Trailing stop {symbol}: {current_sl} -> {new_sl} (price={price})")
+            else:
+                self.log(f"Trailing stop re-attach FAILED for {symbol} after cancelling old bracket "
+                          f"(position now unprotected!): {result}")
+                # Best-effort safety: flatten rather than leave a real position with no SL/TP at all.
+                await client.close_position_market(symbol, is_ask=not is_ask, base_amount=abs(size), ref_price=price)
+                self.log(f"Flattened {symbol} after failed trailing re-attach.")
+
     async def run_tick(self):
         cfg = cfgmod.load_config()
         client = await self.ensure_client()
@@ -223,6 +295,8 @@ class LighterBotEngine:
             if float(getattr(p, "position", 0) or 0) != 0
         }
         open_count = len(symbols_with_position)
+
+        await self.update_trailing_stops(client, live_positions)
 
         for agent_name, acfg in cfg["agents"].items():
             if not acfg.get("enabled"):
@@ -289,6 +363,16 @@ class LighterBotEngine:
                 if ok:
                     symbols_with_position.add(symbol)
                     open_count += 1
+                    self.state["position_agent_map"][symbol] = {"agent": agent_name}
+                    _save_state(self.state)
+
+        # Drop mapping entries for symbols that no longer have a live position
+        # (closed via SL/TP fill, manual close, etc.) so trailing doesn't act
+        # on stale data next tick.
+        for sym in list(self.state["position_agent_map"].keys()):
+            if sym not in symbols_with_position:
+                del self.state["position_agent_map"][sym]
+        _save_state(self.state)
 
 
 engine = LighterBotEngine()

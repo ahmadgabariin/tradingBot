@@ -187,6 +187,20 @@ class LighterClient:
         except Exception as e:
             return [], str(e)
 
+    async def cancel_order(self, symbol: str, order_index: int):
+        market_index = MARKET_INDEX.get(symbol)
+        if market_index is None:
+            return False, f"Unknown symbol {symbol}"
+        try:
+            tx, tx_hash, err = await _call(
+                self.signer.cancel_order,
+                market_index=market_index,
+                order_index=order_index,
+            )
+            return (err is None), (tx_hash or err)
+        except Exception as e:
+            return False, str(e)
+
     # ── Leverage ───────────────────────────────────────────────────────────
     async def set_leverage(self, symbol: str, leverage: int):
         if self.client_check_error:
@@ -267,19 +281,37 @@ class LighterClient:
         except Exception as e:
             return False, f"entry order exception: {e}"
 
-        # Attach OCO stop-loss / take-profit, reduce-only, opposite side of entry.
-        # Must be real CreateOrderTxReq ctypes.Structure instances, not dicts —
-        # confirmed from SDK source (sign_create_grouped_orders builds a ctypes array).
-        #
-        # BaseAmount=0 is intentional: position-tied SL/TP orders close whatever
-        # the position size is at trigger time, not a fixed amount — confirmed
-        # from the SDK's own create_position_tied_sl_tp.py example. Passing the
-        # actual order size here caused the tx to be silently dropped (accepted
-        # into mempool with code=200, but never actually included on-chain).
-        #
-        # Price gets a small buffer past TriggerPrice in the fill direction so
-        # the limit order guarantees execution once triggered (closing side is
-        # a SELL for a LONG position, so worse price = lower).
+        ok, result = await self.attach_sl_tp(symbol, is_ask, sl_price, tp_price,
+                                              client_order_seed=entry_client_order_index)
+        if not ok:
+            # SL/TP failed to attach — flatten the now-unprotected position immediately.
+            await self.close_position_market(symbol, is_ask=not is_ask, base_amount=base_amount, ref_price=ref_price)
+            return False, f"SL/TP attach failed, position flattened: {result}"
+        return True, {"entry": entry_hash, "oco": result}
+
+    async def attach_sl_tp(self, symbol: str, is_ask: bool, sl_price: float, tp_price: float,
+                            client_order_seed: int = None):
+        """Attaches OCO stop-loss/take-profit to an EXISTING position — no new
+        entry order. Used both for the initial bracket and for re-attaching a
+        moved trailing stop (cancel old bracket, call this again with new SL).
+
+        BaseAmount=0 is intentional: position-tied SL/TP orders close whatever
+        the position size is at trigger time, not a fixed amount — confirmed
+        from the SDK's own create_position_tied_sl_tp.py example. Passing the
+        actual order size caused the tx to be silently dropped (accepted into
+        mempool with code=200, but never actually included on-chain).
+
+        Price gets a small buffer past TriggerPrice in the fill direction so
+        the limit order guarantees execution once triggered (closing side is
+        a SELL for a LONG position, so worse price = lower)."""
+        market_index = MARKET_INDEX.get(symbol)
+        if market_index is None:
+            return False, f"Unknown symbol {symbol}"
+        price_dec = PRICE_DECIMALS.get(symbol, 2)
+        sl_price_i = to_scaled_int(sl_price, price_dec)
+        tp_price_i = to_scaled_int(tp_price, price_dec)
+        seed = client_order_seed if client_order_seed is not None else int(time.time() * 1000) % 1_000_000
+
         close_is_ask = not is_ask
         fill_buffer_pct = 0.5
         tp_fill_price = tp_price * (1 - fill_buffer_pct/100) if close_is_ask else tp_price * (1 + fill_buffer_pct/100)
@@ -288,7 +320,7 @@ class LighterClient:
         try:
             tp_order = CreateOrderTxReq(
                 MarketIndex=market_index,
-                ClientOrderIndex=(entry_client_order_index + 1) % 1_000_000,
+                ClientOrderIndex=(seed + 1) % 1_000_000,
                 BaseAmount=0,
                 Price=to_scaled_int(tp_fill_price, price_dec),
                 IsAsk=int(close_is_ask),
@@ -300,7 +332,7 @@ class LighterClient:
             )
             sl_order = CreateOrderTxReq(
                 MarketIndex=market_index,
-                ClientOrderIndex=(entry_client_order_index + 2) % 1_000_000,
+                ClientOrderIndex=(seed + 2) % 1_000_000,
                 BaseAmount=0,
                 Price=to_scaled_int(sl_fill_price, price_dec),
                 IsAsk=int(close_is_ask),
@@ -315,11 +347,9 @@ class LighterClient:
                 grouping_type=self.signer.GROUPING_TYPE_ONE_CANCELS_THE_OTHER,
                 orders=[tp_order, sl_order],
             )
-            return True, {"entry": entry_hash, "oco": oco_tx}
+            return True, oco_tx
         except Exception as e:
-            # SL/TP failed to attach — flatten the now-unprotected position immediately.
-            await self.close_position_market(symbol, is_ask=not is_ask, base_amount=base_amount, ref_price=ref_price)
-            return False, f"SL/TP attach failed, position flattened: {e}"
+            return False, str(e)
 
     async def close_position_market(self, symbol: str, is_ask: bool, base_amount: float,
                                       ref_price: float, slippage_pct: float = 1.0):

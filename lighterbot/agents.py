@@ -13,14 +13,14 @@ AGENTS = {
     "Liquidity Hunt": {
         "timeframe": "1h",
         "atr_sl_mult": 1.5, "atr_tp_mult": 3.0,
-        "exit_mode": "chandelier",
-        "description": "Stop sweep reversal — Chandelier exit anchors SL to the post-sweep peak.",
+        "exit_mode": "atr_trail",
+        "description": "Stop sweep reversal — ATR trailing stop (same as comp9/comp10).",
     },
     "Surgeon v2": {
         "timeframe": "15m",
         "atr_sl_mult": 1.5, "atr_tp_mult": 3.0,
-        "exit_mode": "chandelier",
-        "description": "RSI reversal — Chandelier exit anchors SL to the spike top.",
+        "exit_mode": "atr_trail",
+        "description": "RSI reversal — ATR trailing stop (same as comp9/comp10).",
     },
 }
 
