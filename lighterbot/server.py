@@ -13,7 +13,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from lighterbot import config as cfgmod
 from lighterbot.engine import engine, _load_state
-from lighterbot.lighter_client import MARKET_INDEX
+from lighterbot.lighter_client import MARKET_INDEX, PRICE_DECIMALS
 
 _SYMBOL_BY_MARKET_INDEX = {v: k for k, v in MARKET_INDEX.items()}
 
@@ -100,18 +100,19 @@ async def state():
 
             mapping = st.get("position_agent_map", {}).get(symbol)
             agent_label = mapping["agent"] if mapping else "Manual"
+            price_dec = PRICE_DECIMALS.get(symbol, 4)
 
             live_positions.append({
                 "symbol": symbol,
                 "agent": agent_label,
                 "size": size,
-                "avg_entry_price": float(getattr(p, "avg_entry_price", 0) or 0),
-                "position_value": float(getattr(p, "position_value", 0) or 0),
-                "unrealized_pnl": float(getattr(p, "unrealized_pnl", 0) or 0),
+                "avg_entry_price": round(float(getattr(p, "avg_entry_price", 0) or 0), price_dec),
+                "position_value": round(float(getattr(p, "position_value", 0) or 0), 2),
+                "unrealized_pnl": round(float(getattr(p, "unrealized_pnl", 0) or 0), 4),
                 "liquidation_price": getattr(p, "liquidation_price", None),
                 "open_order_count": getattr(p, "open_order_count", 0),
-                "sl_price": float(getattr(sl_order, "trigger_price", 0) or 0) if sl_order else None,
-                "tp_price": float(getattr(tp_order, "trigger_price", 0) or 0) if tp_order else None,
+                "sl_price": round(float(getattr(sl_order, "trigger_price", 0) or 0), price_dec) if sl_order else None,
+                "tp_price": round(float(getattr(tp_order, "trigger_price", 0) or 0), price_dec) if tp_order else None,
             })
     except Exception as e:
         bal_err = bal_err or str(e)
@@ -198,8 +199,9 @@ async def trades():
                     return quote / amt if amt else float(getattr(order, "price", 0) or 0)
 
                 side = "LONG" if not getattr(entry, "is_ask", False) else "SHORT"
-                entry_price = _real_price(entry)
-                exit_price  = _real_price(o)
+                price_dec = PRICE_DECIMALS.get(symbol, 4)
+                entry_price = round(_real_price(entry), price_dec)
+                exit_price  = round(_real_price(o), price_dec)
                 qty = float(getattr(entry, "filled_base_amount", 0) or 0)
                 pnl = qty * (exit_price - entry_price) if side == "LONG" else qty * (entry_price - exit_price)
 
