@@ -37,6 +37,10 @@ class LighterBotEngine:
         self.state = _load_state()
         self.last_error = None
         self._task = None
+        # Serializes every position-opening/closing action (manual trades,
+        # automated signals, closes) so a manual click and a tick can never
+        # race and stack an unintended duplicate position on the same symbol.
+        self._trade_lock = asyncio.Lock()
 
     def log(self, msg):
         line = f"[{datetime.now(timezone.utc).isoformat()}] {msg}"
@@ -128,67 +132,79 @@ class LighterBotEngine:
                             leverage_override=None, sl_pct=1.5, tp_pct=3.0):
         """side: 'LONG' or 'SHORT'. Plain manual trade ticket — no agent involved.
         sl_pct/tp_pct are simple % distance from entry price (defaults: 1.5% / 3%)."""
-        cfg = cfgmod.load_config()
-        leverage = leverage_override or cfg["leverage"].get(symbol, cfg["default_leverage"])
-        client = await self.ensure_client()
+        async with self._trade_lock:
+            cfg = cfgmod.load_config()
+            client = await self.ensure_client()
 
-        price = data_feed.get_live_price(symbol)
-        if not price:
-            return False, "Could not fetch live price"
+            # Refuse to stack a second position on a symbol that already has
+            # one open — a misclick shouldn't silently double exposure.
+            existing, err = await client.get_open_positions()
+            if err:
+                return False, f"Could not verify existing positions: {err}"
+            for p in existing:
+                if getattr(p, "symbol", None) == symbol and float(getattr(p, "position", 0) or 0) != 0:
+                    return False, f"{symbol} already has an open position — close it first"
 
-        ok, lev_res = await client.set_leverage(symbol, leverage)
-        if not ok:
-            self.log(f"Leverage set failed for {symbol} @ {leverage}x: {lev_res}")
-            return False, f"Leverage rejected by exchange: {lev_res}"
+            leverage = leverage_override or cfg["leverage"].get(symbol, cfg["default_leverage"])
 
-        if override_usd:
-            base_amount = round((override_usd * leverage) / price, 6)
-        else:
-            base_amount = await self._compute_size(symbol, leverage, price, cfg)
-            if base_amount is None:
-                return False, "Sizing failed"
+            price = data_feed.get_live_price(symbol)
+            if not price:
+                return False, "Could not fetch live price"
 
-        is_ask = (side == "SHORT")
-        sl_dist = price * (sl_pct / 100.0)
-        tp_dist = price * (tp_pct / 100.0)
-        sl_price = price - sl_dist if side == "LONG" else price + sl_dist
-        tp_price = price + tp_dist if side == "LONG" else price - tp_dist
+            ok, lev_res = await client.set_leverage(symbol, leverage)
+            if not ok:
+                self.log(f"Leverage set failed for {symbol} @ {leverage}x: {lev_res}")
+                return False, f"Leverage rejected by exchange: {lev_res}"
 
-        ok, result = await client.place_market_order_with_sl_tp(
-            symbol, is_ask, base_amount, price, sl_price, tp_price
-        )
-        self.log(f"MANUAL {side} {symbol} amount={base_amount} leverage={leverage} "
-                  f"price={price} sl={sl_price} tp={tp_price} -> ok={ok} result={result}")
-        return ok, result
+            if override_usd:
+                base_amount = round((override_usd * leverage) / price, 6)
+            else:
+                base_amount = await self._compute_size(symbol, leverage, price, cfg)
+                if base_amount is None:
+                    return False, "Sizing failed"
+
+            is_ask = (side == "SHORT")
+            sl_dist = price * (sl_pct / 100.0)
+            tp_dist = price * (tp_pct / 100.0)
+            sl_price = price - sl_dist if side == "LONG" else price + sl_dist
+            tp_price = price + tp_dist if side == "LONG" else price - tp_dist
+
+            ok, result = await client.place_market_order_with_sl_tp(
+                symbol, is_ask, base_amount, price, sl_price, tp_price
+            )
+            self.log(f"MANUAL {side} {symbol} amount={base_amount} leverage={leverage} "
+                      f"price={price} sl={sl_price} tp={tp_price} -> ok={ok} result={result}")
+            return ok, result
 
     async def close_position(self, symbol: str):
         """Closes whatever position currently exists on this symbol, sized to
         the live position (not a guessed amount), so it always exactly flattens."""
-        client = await self.ensure_client()
-        positions, err = await client.get_open_positions()
-        if err:
-            return False, f"Could not fetch positions: {err}"
+        async with self._trade_lock:
+            client = await self.ensure_client()
+            positions, err = await client.get_open_positions()
+            if err:
+                return False, f"Could not fetch positions: {err}"
 
-        target = None
-        for p in positions:
-            if getattr(p, "symbol", None) == symbol:
-                size = float(getattr(p, "position", 0) or 0)
-                if size != 0:
-                    target = (p, size)
-                    break
-        if not target:
-            return False, f"No open position on {symbol}"
+            target = None
+            for p in positions:
+                if getattr(p, "symbol", None) == symbol:
+                    size = float(getattr(p, "position", 0) or 0)
+                    if size != 0:
+                        target = (p, size)
+                        break
+            if not target:
+                return False, f"No open position on {symbol}"
 
-        p, size = target
-        price = data_feed.get_live_price(symbol)
-        if not price:
-            return False, "Could not fetch live price"
+            p, size = target
+            price = data_feed.get_live_price(symbol)
+            if not price:
+                return False, "Could not fetch live price"
 
-        is_ask = size > 0  # closing a LONG needs a SELL; closing a SHORT needs a BUY
-        ok, result = await client.close_position_market(symbol, is_ask=is_ask,
-                                                          base_amount=abs(size), ref_price=price)
-        self.log(f"CLOSE {symbol} size={size} -> ok={ok} result={result}")
-        return ok, result
+            is_ask = size > 0  # closing a LONG needs a SELL; closing a SHORT needs a BUY
+            ok, result = await client.close_position_market(symbol, is_ask=is_ask,
+                                                              base_amount=abs(size), ref_price=price)
+            self.log(f"CLOSE {symbol} size={size} -> ok={ok} result={result}")
+            return ok, result
 
     async def close_all_positions(self):
         """Closes every open position one by one. Returns a per-symbol result
@@ -279,100 +295,101 @@ class LighterBotEngine:
                 self.log(f"Flattened {symbol} after failed trailing re-attach.")
 
     async def run_tick(self):
-        cfg = cfgmod.load_config()
-        client = await self.ensure_client()
+        async with self._trade_lock:
+            cfg = cfgmod.load_config()
+            client = await self.ensure_client()
 
-        # Check LIVE positions from Lighter, not local state — local state
-        # drifts from reality when trades happen outside the engine (manual
-        # trades, dashboard closes), so it's not a safe source of truth for
-        # dedup/limit checks.
-        live_positions, pos_err = await client.get_open_positions()
-        if pos_err:
-            self.log(f"Could not fetch live positions, skipping tick: {pos_err}")
-            return
-        symbols_with_position = {
-            getattr(p, "symbol", None) for p in live_positions
-            if float(getattr(p, "position", 0) or 0) != 0
-        }
-        open_count = len(symbols_with_position)
+            # Check LIVE positions from Lighter, not local state — local state
+            # drifts from reality when trades happen outside the engine (manual
+            # trades, dashboard closes), so it's not a safe source of truth for
+            # dedup/limit checks.
+            live_positions, pos_err = await client.get_open_positions()
+            if pos_err:
+                self.log(f"Could not fetch live positions, skipping tick: {pos_err}")
+                return
+            symbols_with_position = {
+                getattr(p, "symbol", None) for p in live_positions
+                if float(getattr(p, "position", 0) or 0) != 0
+            }
+            open_count = len(symbols_with_position)
 
-        await self.update_trailing_stops(client, live_positions)
+            await self.update_trailing_stops(client, live_positions)
 
-        for agent_name, acfg in cfg["agents"].items():
-            if not acfg.get("enabled"):
-                continue
-
-            agent = AGENTS.get(agent_name)
-            if not agent:
-                continue
-
-            direction = acfg.get("direction", "BOTH")
-            sfn_long  = LONG_SIGNALS.get(agent_name)
-            sfn_short = SHORT_SIGNALS.get(agent_name)
-
-            for symbol in PAIRS:
-                if open_count >= cfg["max_open_positions"]:
-                    break
-                if symbol in symbols_with_position:
-                    continue  # already have a position on this symbol (any agent)
-
-                p = data_feed.get_candles(symbol, agent["timeframe"])
-                if not p or p["n"] < 50:
-                    continue
-                idx = p["n"] - 2
-
-                long_sig = short_sig = False
-                if direction in ("LONG", "BOTH"):
-                    try: long_sig = sfn_long(p, idx) if sfn_long else False
-                    except Exception as e: self.log(f"{agent_name} {symbol} long signal error: {e}")
-                if direction in ("SHORT", "BOTH") and not long_sig:
-                    try: short_sig = sfn_short(p, idx) if sfn_short else False
-                    except Exception as e: self.log(f"{agent_name} {symbol} short signal error: {e}")
-
-                if not (long_sig or short_sig):
+            for agent_name, acfg in cfg["agents"].items():
+                if not acfg.get("enabled"):
                     continue
 
-                side = "LONG" if long_sig else "SHORT"
-                price = data_feed.get_live_price(symbol)
-                if not price:
-                    self.log(f"No live price for {symbol}, skipping signal")
+                agent = AGENTS.get(agent_name)
+                if not agent:
                     continue
 
-                leverage = cfg["leverage"].get(symbol, cfg["default_leverage"])
-                ok, lev_res = await client.set_leverage(symbol, leverage)
-                if not ok:
-                    self.log(f"Leverage set failed for {symbol} @ {leverage}x: {lev_res} — skipping trade")
-                    continue
+                direction = acfg.get("direction", "BOTH")
+                sfn_long  = LONG_SIGNALS.get(agent_name)
+                sfn_short = SHORT_SIGNALS.get(agent_name)
 
-                base_amount = await self._compute_size(symbol, leverage, price, cfg)
-                if base_amount is None:
-                    continue
+                for symbol in PAIRS:
+                    if open_count >= cfg["max_open_positions"]:
+                        break
+                    if symbol in symbols_with_position:
+                        continue  # already have a position on this symbol (any agent)
 
-                is_ask = (side == "SHORT")
-                sl_dist = agent["atr_sl_mult"] * p["atr"][idx]
-                tp_dist = agent["atr_tp_mult"] * p["atr"][idx]
-                sl_price = price - sl_dist if side == "LONG" else price + sl_dist
-                tp_price = price + tp_dist if side == "LONG" else price - tp_dist
+                    p = data_feed.get_candles(symbol, agent["timeframe"])
+                    if not p or p["n"] < 50:
+                        continue
+                    idx = p["n"] - 2
 
-                ok, result = await client.place_market_order_with_sl_tp(
-                    symbol, is_ask, base_amount, price, sl_price, tp_price
-                )
-                self.log(f"{agent_name} SIGNAL {side} {symbol} amount={base_amount} "
-                          f"price={price} sl={sl_price} tp={tp_price} -> ok={ok} result={result}")
+                    long_sig = short_sig = False
+                    if direction in ("LONG", "BOTH"):
+                        try: long_sig = sfn_long(p, idx) if sfn_long else False
+                        except Exception as e: self.log(f"{agent_name} {symbol} long signal error: {e}")
+                    if direction in ("SHORT", "BOTH") and not long_sig:
+                        try: short_sig = sfn_short(p, idx) if sfn_short else False
+                        except Exception as e: self.log(f"{agent_name} {symbol} short signal error: {e}")
 
-                if ok:
-                    symbols_with_position.add(symbol)
-                    open_count += 1
-                    self.state["position_agent_map"][symbol] = {"agent": agent_name}
-                    _save_state(self.state)
+                    if not (long_sig or short_sig):
+                        continue
 
-        # Drop mapping entries for symbols that no longer have a live position
-        # (closed via SL/TP fill, manual close, etc.) so trailing doesn't act
-        # on stale data next tick.
-        for sym in list(self.state["position_agent_map"].keys()):
-            if sym not in symbols_with_position:
-                del self.state["position_agent_map"][sym]
-        _save_state(self.state)
+                    side = "LONG" if long_sig else "SHORT"
+                    price = data_feed.get_live_price(symbol)
+                    if not price:
+                        self.log(f"No live price for {symbol}, skipping signal")
+                        continue
+
+                    leverage = cfg["leverage"].get(symbol, cfg["default_leverage"])
+                    ok, lev_res = await client.set_leverage(symbol, leverage)
+                    if not ok:
+                        self.log(f"Leverage set failed for {symbol} @ {leverage}x: {lev_res} — skipping trade")
+                        continue
+
+                    base_amount = await self._compute_size(symbol, leverage, price, cfg)
+                    if base_amount is None:
+                        continue
+
+                    is_ask = (side == "SHORT")
+                    sl_dist = agent["atr_sl_mult"] * p["atr"][idx]
+                    tp_dist = agent["atr_tp_mult"] * p["atr"][idx]
+                    sl_price = price - sl_dist if side == "LONG" else price + sl_dist
+                    tp_price = price + tp_dist if side == "LONG" else price - tp_dist
+
+                    ok, result = await client.place_market_order_with_sl_tp(
+                        symbol, is_ask, base_amount, price, sl_price, tp_price
+                    )
+                    self.log(f"{agent_name} SIGNAL {side} {symbol} amount={base_amount} "
+                              f"price={price} sl={sl_price} tp={tp_price} -> ok={ok} result={result}")
+
+                    if ok:
+                        symbols_with_position.add(symbol)
+                        open_count += 1
+                        self.state["position_agent_map"][symbol] = {"agent": agent_name}
+                        _save_state(self.state)
+
+            # Drop mapping entries for symbols that no longer have a live position
+            # (closed via SL/TP fill, manual close, etc.) so trailing doesn't act
+            # on stale data next tick.
+            for sym in list(self.state["position_agent_map"].keys()):
+                if sym not in symbols_with_position:
+                    del self.state["position_agent_map"][sym]
+            _save_state(self.state)
 
 
 engine = LighterBotEngine()

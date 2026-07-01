@@ -44,6 +44,19 @@ def _auth(request: Request):
     return request.headers.get("X-Action-Password", "") == PASSWORD
 
 
+@app.on_event("startup")
+async def resume_if_was_running():
+    """If the process crashes or the server restarts while trading was
+    active, the saved config still says running=True — without this, the
+    engine would silently stay stopped until someone notices and clicks
+    Start again, even though real positions may still be open and need
+    their trailing stops managed."""
+    cfg = cfgmod.load_config()
+    if cfg.get("running"):
+        engine.log("Server restarted with running=True in saved config — auto-resuming trading loop.")
+        await engine.start()
+
+
 @app.get("/", response_class=HTMLResponse)
 async def index():
     path = os.path.join(os.path.dirname(__file__), "dashboard.html")
