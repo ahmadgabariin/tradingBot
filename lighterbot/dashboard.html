@@ -524,6 +524,12 @@ async function emergencyStop() {
 }
 
 async function clearLog() {
+  const proceed = await showInfo(
+    'Clear Log?',
+    'This will permanently erase the trade log history shown below.',
+    {ok:false, confirm:true}
+  );
+  if (!proceed) return;
   await authFetch('/clear-log', {method:'POST'});
   refresh();
 }
