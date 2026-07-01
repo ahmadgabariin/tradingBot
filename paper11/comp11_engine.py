@@ -71,7 +71,7 @@ class Comp11Engine(CompEngine):
         if exit_mode == "keltner_exit" and p:
             period = cfg.get("keltner_period", 20)
             mult   = cfg.get("keltner_mult", 1.5)
-            closes = np.array(p["closes"][:p["n"]])
+            closes = np.array(p["c"][:p["n"]])
             atrs   = np.array(p["atr"][:p["n"]]) if "atr" in p else np.zeros(p["n"])
             ema    = _ema_arr(closes, period)
             idx    = p["n"] - 2
@@ -208,7 +208,7 @@ class Comp11Engine(CompEngine):
                 elif mode == "keltner_exit":
                     period = trade.get("keltner_period", 20)
                     mult   = trade.get("keltner_mult", 1.5)
-                    closes = np.array(p["closes"][:p["n"]])
+                    closes = np.array(p["c"][:p["n"]])
                     atrs   = np.array(p["atr"][:p["n"]]) if "atr" in p else np.zeros(p["n"])
                     ema    = _ema_arr(closes, period)
                     if ema[idx] <= 0: continue
