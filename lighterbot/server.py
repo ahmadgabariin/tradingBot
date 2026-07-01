@@ -187,9 +187,19 @@ async def trades():
                 entry = pending_entry
                 pending_entry = None
 
+                # `price` on a filled market order is the worst-acceptable
+                # slippage-buffer price WE submitted, not the real fill price
+                # (confirmed against Lighter's own trade history UI — differs
+                # by exactly the buffer we apply for guaranteed execution).
+                # The real average fill price is filled_quote/filled_base.
+                def _real_price(order):
+                    amt = float(getattr(order, "filled_base_amount", 0) or 0)
+                    quote = float(getattr(order, "filled_quote_amount", 0) or 0)
+                    return quote / amt if amt else float(getattr(order, "price", 0) or 0)
+
                 side = "LONG" if not getattr(entry, "is_ask", False) else "SHORT"
-                entry_price = float(getattr(entry, "price", 0) or 0)
-                exit_price  = float(getattr(o, "price", 0) or 0)
+                entry_price = _real_price(entry)
+                exit_price  = _real_price(o)
                 qty = float(getattr(entry, "filled_base_amount", 0) or 0)
                 pnl = qty * (exit_price - entry_price) if side == "LONG" else qty * (entry_price - exit_price)
 
