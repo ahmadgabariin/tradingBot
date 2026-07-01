@@ -13,9 +13,9 @@ import numpy as np
 
 
 def calc_supertrend(p, period=10, multiplier=3.0):
-    highs  = np.array(p["h"][:p["n"]])
-    lows   = np.array(p["l"][:p["n"]])
-    closes = np.array(p["c"][:p["n"]])
+    highs  = np.array(p["highs"][:p["n"]])
+    lows   = np.array(p["lows"][:p["n"]])
+    closes = np.array(p["closes"][:p["n"]])
     trs = np.maximum(highs[1:] - lows[1:],
           np.maximum(np.abs(highs[1:] - closes[:-1]),
                      np.abs(lows[1:]  - closes[:-1])))
@@ -196,7 +196,7 @@ def _rsi(closes, n=14):
     return np.concatenate([np.full(n, np.nan), 100 - 100/(1+rs)])
 
 def _atr_arr(p):
-    h=np.array(p["h"][:p["n"]]); l=np.array(p["l"][:p["n"]]); c=np.array(p["c"][:p["n"]])
+    h=np.array(p["highs"][:p["n"]]); l=np.array(p["lows"][:p["n"]]); c=np.array(p["closes"][:p["n"]])
     trs=np.maximum(h[1:]-l[1:],np.maximum(np.abs(h[1:]-c[:-1]),np.abs(l[1:]-c[:-1])))
     atr=np.zeros(len(c)); atr[1]=trs[0]
     for i in range(2,len(c)): atr[i]=(atr[i-1]*13+trs[i-1])/14
@@ -212,98 +212,98 @@ def _macd(closes, fast=12, slow=26, sig=9):
 
 # Liquidity Hunt (from comp9 signals)
 def _long_liq_hunt(p, idx):
-    c=np.array(p["c"][:p["n"]]); h=np.array(p["h"][:p["n"]]); l=np.array(p["l"][:p["n"]])
+    c=np.array(p["closes"][:p["n"]]); h=np.array(p["highs"][:p["n"]]); l=np.array(p["lows"][:p["n"]])
     if idx<5: return False
     recent_low=np.min(l[idx-5:idx]); swept=l[idx]<recent_low
     return swept and c[idx]>c[idx-1] and c[idx]>recent_low
 
 def _short_liq_hunt(p, idx):
-    c=np.array(p["c"][:p["n"]]); h=np.array(p["h"][:p["n"]])
+    c=np.array(p["closes"][:p["n"]]); h=np.array(p["highs"][:p["n"]])
     if idx<5: return False
     recent_high=np.max(h[idx-5:idx]); swept=h[idx]>recent_high
     return swept and c[idx]<c[idx-1] and c[idx]<recent_high
 
 def _long_liq_mom(p, idx):
-    c=np.array(p["c"][:p["n"]]); l=np.array(p["l"][:p["n"]])
+    c=np.array(p["closes"][:p["n"]]); l=np.array(p["lows"][:p["n"]])
     e21=_ema(c,21)
     if idx<5: return False
     swept=l[idx]<np.min(l[idx-5:idx])
     return swept and c[idx]>c[idx-1] and c[idx]>e21[idx]
 
 def _short_liq_mom(p, idx):
-    c=np.array(p["c"][:p["n"]]); h=np.array(p["h"][:p["n"]])
+    c=np.array(p["closes"][:p["n"]]); h=np.array(p["highs"][:p["n"]])
     e21=_ema(c,21)
     if idx<5: return False
     swept=h[idx]>np.max(h[idx-5:idx])
     return swept and c[idx]<c[idx-1] and c[idx]<e21[idx]
 
 def _long_vwap_liq(p, idx):
-    c=np.array(p["c"][:p["n"]]); l=np.array(p["l"][:p["n"]])
-    v=np.array(p.get("v",np.ones(p["n"]))[:p["n"]])
+    c=np.array(p["closes"][:p["n"]]); l=np.array(p["lows"][:p["n"]])
+    v=np.array(p.get("volumes",np.ones(p["n"]))[:p["n"]])
     vwap=np.cumsum(c*v)/np.cumsum(v)
     if idx<5: return False
     swept=l[idx]<np.min(l[idx-5:idx])
     return swept and c[idx]>c[idx-1] and c[idx]>vwap[idx]
 
 def _short_vwap_liq(p, idx):
-    c=np.array(p["c"][:p["n"]]); h=np.array(p["h"][:p["n"]])
-    v=np.array(p.get("v",np.ones(p["n"]))[:p["n"]])
+    c=np.array(p["closes"][:p["n"]]); h=np.array(p["highs"][:p["n"]])
+    v=np.array(p.get("volumes",np.ones(p["n"]))[:p["n"]])
     vwap=np.cumsum(c*v)/np.cumsum(v)
     if idx<5: return False
     swept=h[idx]>np.max(h[idx-5:idx])
     return swept and c[idx]<c[idx-1] and c[idx]<vwap[idx]
 
 def _long_rsi_oversold(p, idx):
-    c=np.array(p["c"][:p["n"]]); rsi=_rsi(c)
+    c=np.array(p["closes"][:p["n"]]); rsi=_rsi(c)
     if np.isnan(rsi[idx-1]) or np.isnan(rsi[idx]): return False
     return rsi[idx-1]<30 and rsi[idx]>30
 
 def _short_rsi_oversold(p, idx):
-    c=np.array(p["c"][:p["n"]]); rsi=_rsi(c)
+    c=np.array(p["closes"][:p["n"]]); rsi=_rsi(c)
     if np.isnan(rsi[idx-1]) or np.isnan(rsi[idx]): return False
     return rsi[idx-1]>70 and rsi[idx]<70
 
 def _long_squeeze(p, idx):
-    c=np.array(p["c"][:p["n"]]); ub,mb,lb=_bb(c); atr=_atr_arr(p)
+    c=np.array(p["closes"][:p["n"]]); ub,mb,lb=_bb(c); atr=_atr_arr(p)
     kc_u=mb+1.5*atr; kc_l=mb-1.5*atr
     if np.isnan(ub[idx-1]): return False
     was_sq=ub[idx-1]<kc_u[idx-1] and lb[idx-1]>kc_l[idx-1]
     return was_sq and ub[idx]>kc_u[idx] and c[idx]>mb[idx]
 
 def _short_squeeze(p, idx):
-    c=np.array(p["c"][:p["n"]]); ub,mb,lb=_bb(c); atr=_atr_arr(p)
+    c=np.array(p["closes"][:p["n"]]); ub,mb,lb=_bb(c); atr=_atr_arr(p)
     kc_u=mb+1.5*atr; kc_l=mb-1.5*atr
     if np.isnan(lb[idx-1]): return False
     was_sq=ub[idx-1]<kc_u[idx-1] and lb[idx-1]>kc_l[idx-1]
     return was_sq and lb[idx]<kc_l[idx] and c[idx]<mb[idx]
 
 def _long_atr_breakout(p, idx):
-    c=np.array(p["c"][:p["n"]]); atr=_atr_arr(p)
+    c=np.array(p["closes"][:p["n"]]); atr=_atr_arr(p)
     if idx<20: return False
     rng=np.max(c[idx-20:idx])-np.min(c[idx-20:idx])
     return c[idx]>c[idx-1] and (c[idx]-c[idx-1])>1.5*atr[idx] and rng>3*atr[idx]
 
 def _short_atr_breakout(p, idx):
-    c=np.array(p["c"][:p["n"]]); atr=_atr_arr(p)
+    c=np.array(p["closes"][:p["n"]]); atr=_atr_arr(p)
     if idx<20: return False
     rng=np.max(c[idx-20:idx])-np.min(c[idx-20:idx])
     return c[idx]<c[idx-1] and (c[idx-1]-c[idx])>1.5*atr[idx] and rng>3*atr[idx]
 
 def _long_momentum(p, idx):
-    c=np.array(p["c"][:p["n"]]); e20=_ema(c,20); macd,sig=_macd(c)
+    c=np.array(p["closes"][:p["n"]]); e20=_ema(c,20); macd,sig=_macd(c)
     return c[idx]>e20[idx] and macd[idx]>sig[idx] and macd[idx]>macd[idx-1]
 
 def _short_momentum(p, idx):
-    c=np.array(p["c"][:p["n"]]); e20=_ema(c,20); macd,sig=_macd(c)
+    c=np.array(p["closes"][:p["n"]]); e20=_ema(c,20); macd,sig=_macd(c)
     return c[idx]<e20[idx] and macd[idx]<sig[idx] and macd[idx]<macd[idx-1]
 
 def _long_regime(p, idx):
-    c=np.array(p["c"][:p["n"]]); e50=_ema(c,50); e200=_ema(c,200)
+    c=np.array(p["closes"][:p["n"]]); e50=_ema(c,50); e200=_ema(c,200)
     if e200[idx]<=0: return False
     return e50[idx]>e200[idx] and c[idx]>e50[idx] and c[idx]>c[idx-1]
 
 def _short_regime(p, idx):
-    c=np.array(p["c"][:p["n"]]); e50=_ema(c,50); e200=_ema(c,200)
+    c=np.array(p["closes"][:p["n"]]); e50=_ema(c,50); e200=_ema(c,200)
     if e200[idx]<=0: return False
     return e50[idx]<e200[idx] and c[idx]<e50[idx] and c[idx]<c[idx-1]
 
@@ -318,24 +318,24 @@ def _short_supertrend(p, idx):
     return trend[idx-1]==1 and trend[idx]==-1
 
 def _long_meanrev(p, idx):
-    c=np.array(p["c"][:p["n"]]); ub,mb,lb=_bb(c)
+    c=np.array(p["closes"][:p["n"]]); ub,mb,lb=_bb(c)
     if np.isnan(lb[idx]): return False
     return c[idx-1]<lb[idx-1] and c[idx]>lb[idx]
 
 def _short_meanrev(p, idx):
-    c=np.array(p["c"][:p["n"]]); ub,mb,lb=_bb(c)
+    c=np.array(p["closes"][:p["n"]]); ub,mb,lb=_bb(c)
     if np.isnan(ub[idx]): return False
     return c[idx-1]>ub[idx-1] and c[idx]<ub[idx]
 
 def _long_mr_of(p, idx):
-    c=np.array(p["c"][:p["n"]]); v=np.array(p.get("v",np.ones(p["n"]))[:p["n"]])
+    c=np.array(p["closes"][:p["n"]]); v=np.array(p.get("volumes",np.ones(p["n"]))[:p["n"]])
     ub,mb,lb=_bb(c)
     if np.isnan(lb[idx]): return False
     vol_surge=v[idx]>np.mean(v[max(0,idx-10):idx])*1.2
     return c[idx-1]<lb[idx-1] and c[idx]>lb[idx] and vol_surge
 
 def _short_mr_of(p, idx):
-    c=np.array(p["c"][:p["n"]]); v=np.array(p.get("v",np.ones(p["n"]))[:p["n"]])
+    c=np.array(p["closes"][:p["n"]]); v=np.array(p.get("volumes",np.ones(p["n"]))[:p["n"]])
     ub,mb,lb=_bb(c)
     if np.isnan(ub[idx]): return False
     vol_surge=v[idx]>np.mean(v[max(0,idx-10):idx])*1.2
@@ -344,23 +344,23 @@ def _short_mr_of(p, idx):
 # Supertrend agents (Hound/Comet use STRATS from fast_backtest — handled in engine like comp9)
 # Structure / EMA Rider
 def _long_structure(p, idx):
-    c=np.array(p["c"][:p["n"]]); h=np.array(p["h"][:p["n"]])
+    c=np.array(p["closes"][:p["n"]]); h=np.array(p["highs"][:p["n"]])
     if idx<20: return False
     return c[idx]>np.max(h[idx-20:idx-1]) and c[idx]>c[idx-1]>c[idx-2]
 
 def _short_structure(p, idx):
-    c=np.array(p["c"][:p["n"]]); l=np.array(p["l"][:p["n"]])
+    c=np.array(p["closes"][:p["n"]]); l=np.array(p["lows"][:p["n"]])
     if idx<20: return False
     return c[idx]<np.min(l[idx-20:idx-1]) and c[idx]<c[idx-1]<c[idx-2]
 
 def _long_ema_pullback(p, idx):
-    c=np.array(p["c"][:p["n"]]); e21=_ema(c,21); e50=_ema(c,50)
+    c=np.array(p["closes"][:p["n"]]); e21=_ema(c,21); e50=_ema(c,50)
     if idx<2: return False
     was_below=c[idx-2]<e21[idx-2] or c[idx-1]<e21[idx-1]
     return e21[idx]>e50[idx] and c[idx]>e21[idx] and was_below
 
 def _short_ema_pullback(p, idx):
-    c=np.array(p["c"][:p["n"]]); e21=_ema(c,21); e50=_ema(c,50)
+    c=np.array(p["closes"][:p["n"]]); e21=_ema(c,21); e50=_ema(c,50)
     if idx<2: return False
     was_above=c[idx-2]>e21[idx-2] or c[idx-1]>e21[idx-1]
     return e21[idx]<e50[idx] and c[idx]<e21[idx] and was_above
