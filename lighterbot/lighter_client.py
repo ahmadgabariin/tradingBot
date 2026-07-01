@@ -8,8 +8,10 @@ import os, time, inspect
 
 try:
     import lighter
+    from lighter.signer_client import CreateOrderTxReq
 except ImportError:
     lighter = None  # allows the dashboard/config to load even before `pip install lighter-sdk`
+    CreateOrderTxReq = None
 
 
 async def _call(fn, *args, **kwargs):
@@ -192,32 +194,33 @@ class LighterClient:
             return False, f"entry order exception: {e}"
 
         # Attach OCO stop-loss / take-profit, reduce-only, opposite side of entry.
-        # CreateOrderTxReq field names are capitalized — confirmed from SDK source.
+        # Must be real CreateOrderTxReq ctypes.Structure instances, not dicts —
+        # confirmed from SDK source (sign_create_grouped_orders builds a ctypes array).
         try:
-            tp_order = {
-                "MarketIndex": market_index,
-                "ClientOrderIndex": (entry_client_order_index + 1) % 1_000_000,
-                "BaseAmount": amount_i,
-                "Price": tp_price_i,
-                "IsAsk": not is_ask,
-                "Type": self.signer.ORDER_TYPE_TAKE_PROFIT_LIMIT,
-                "TimeInForce": self.signer.ORDER_TIME_IN_FORCE_GOOD_TILL_TIME,
-                "ReduceOnly": True,
-                "TriggerPrice": tp_price_i,
-                "OrderExpiry": self.signer.DEFAULT_28_DAY_ORDER_EXPIRY,
-            }
-            sl_order = {
-                "MarketIndex": market_index,
-                "ClientOrderIndex": (entry_client_order_index + 2) % 1_000_000,
-                "BaseAmount": amount_i,
-                "Price": sl_price_i,
-                "IsAsk": not is_ask,
-                "Type": self.signer.ORDER_TYPE_STOP_LOSS_LIMIT,
-                "TimeInForce": self.signer.ORDER_TIME_IN_FORCE_GOOD_TILL_TIME,
-                "ReduceOnly": True,
-                "TriggerPrice": sl_price_i,
-                "OrderExpiry": self.signer.DEFAULT_28_DAY_ORDER_EXPIRY,
-            }
+            tp_order = CreateOrderTxReq(
+                MarketIndex=market_index,
+                ClientOrderIndex=(entry_client_order_index + 1) % 1_000_000,
+                BaseAmount=amount_i,
+                Price=tp_price_i,
+                IsAsk=int(not is_ask),
+                Type=self.signer.ORDER_TYPE_TAKE_PROFIT_LIMIT,
+                TimeInForce=self.signer.ORDER_TIME_IN_FORCE_GOOD_TILL_TIME,
+                ReduceOnly=1,
+                TriggerPrice=tp_price_i,
+                OrderExpiry=self.signer.DEFAULT_28_DAY_ORDER_EXPIRY,
+            )
+            sl_order = CreateOrderTxReq(
+                MarketIndex=market_index,
+                ClientOrderIndex=(entry_client_order_index + 2) % 1_000_000,
+                BaseAmount=amount_i,
+                Price=sl_price_i,
+                IsAsk=int(not is_ask),
+                Type=self.signer.ORDER_TYPE_STOP_LOSS_LIMIT,
+                TimeInForce=self.signer.ORDER_TIME_IN_FORCE_GOOD_TILL_TIME,
+                ReduceOnly=1,
+                TriggerPrice=sl_price_i,
+                OrderExpiry=self.signer.DEFAULT_28_DAY_ORDER_EXPIRY,
+            )
             oco_tx = await _call(
                 self.signer.create_grouped_orders,
                 grouping_type=self.signer.GROUPING_TYPE_ONE_CANCELS_THE_OTHER,
