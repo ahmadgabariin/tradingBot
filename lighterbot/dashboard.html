@@ -379,8 +379,14 @@ async function refresh() {
 
   const levRow = document.getElementById('leverage-row');
   levRow.innerHTML = '';
+  const maxLev = d.max_leverage || {};
   for (const [sym, lev] of Object.entries(d.config.leverage)) {
-    levRow.innerHTML += `<div class="lev-item"><label class="field">${sym}</label><input id="lev-${sym}" type="number" value="${lev}"></div>`;
+    const max = maxLev[sym];
+    levRow.innerHTML += `<div class="lev-item">
+      <label class="field">${sym}${max ? ` <span style="color:#484f58;">(max ${max}x)</span>` : ''}</label>
+      <input id="lev-${sym}" type="number" value="${lev}" ${max ? `max="${max}"` : ''}
+             onchange="if(this.value>${max||9999}) this.value=${max||9999};">
+    </div>`;
   }
 
   const tbody = document.querySelector('#positions tbody');

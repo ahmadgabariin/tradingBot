@@ -50,6 +50,11 @@ class LighterBotEngine:
     async def ensure_client(self):
         if self.client is None:
             self.client = LighterClient()
+            ok, result = await self.client.refresh_max_leverage(force=True)
+            if ok:
+                self.log(f"Live max leverage fetched: {result}")
+            else:
+                self.log(f"Max leverage live fetch failed, using fallback defaults: {result}")
         return self.client
 
     async def selftest(self):

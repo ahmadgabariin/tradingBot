@@ -43,12 +43,14 @@ SIZE_DECIMALS = {
     "ETH": 4, "BTC": 5, "SOL": 3, "XRP": 0, "LINK": 1,
     "AVAX": 2, "DOT": 1, "POL": 0, "BNB": 2, "ADA": 1,
 }
-# max_leverage = 10000 / min_initial_margin_fraction (confirmed live, not the
-# maintenance_margin_fraction — that field gives a much lower, wrong number).
-MAX_LEVERAGE = {
+# Fallback only — used before the first live fetch succeeds, or if a live
+# refresh fails. The real values are fetched from Lighter on client startup
+# and refreshed periodically; see LighterClient.refresh_max_leverage().
+MAX_LEVERAGE_FALLBACK = {
     "BTC": 50, "ETH": 50, "SOL": 25, "XRP": 20, "BNB": 20,
     "LINK": 10, "DOT": 10, "AVAX": 10, "ADA": 10, "POL": 8,
 }
+MAX_LEVERAGE_REFRESH_SECONDS = 300  # re-check every 5 minutes
 MIN_NOTIONAL_USD = 10.0
 
 
@@ -82,6 +84,43 @@ class LighterClient:
         # on every signed request instead of a clear error up front.
         check_err = self.signer.check_client()
         self.client_check_error = str(check_err) if check_err else None
+
+        # Max leverage per symbol — fetched live below, this is just the seed
+        # value used until the first successful refresh completes.
+        self.max_leverage_cache = dict(MAX_LEVERAGE_FALLBACK)
+        self.max_leverage_last_refresh = 0.0
+
+    def get_max_leverage(self, symbol: str) -> int:
+        return self.max_leverage_cache.get(symbol, MAX_LEVERAGE_FALLBACK.get(symbol, 1))
+
+    async def refresh_max_leverage(self, force: bool = False):
+        """Pulls min_initial_margin_fraction per market from Lighter's public
+        orderBookDetails endpoint and recomputes max_leverage = 10000 / fraction.
+        Cached for MAX_LEVERAGE_REFRESH_SECONDS so this isn't hit every tick."""
+        now = time.time()
+        if not force and (now - self.max_leverage_last_refresh) < MAX_LEVERAGE_REFRESH_SECONDS:
+            return True, None
+        try:
+            res = await _call(self.order_api.order_book_details, market_id=255, filter="perp")
+            markets = getattr(res, "order_book_details", None) or []
+            symbol_by_market_index = {v: k for k, v in MARKET_INDEX.items()}
+            updated = {}
+            for m in markets:
+                market_id = getattr(m, "market_id", None)
+                symbol = symbol_by_market_index.get(market_id)
+                if symbol is None:
+                    continue
+                frac = getattr(m, "min_initial_margin_fraction", None)
+                if frac:
+                    updated[symbol] = int(10_000 // frac)
+            if updated:
+                self.max_leverage_cache.update(updated)
+                self.max_leverage_last_refresh = now
+                return True, updated
+            return False, "No matching markets in orderBookDetails response"
+        except Exception as e:
+            # Keep the last known-good values on failure — never wipe the cache.
+            return False, str(e)
 
     # ── Read-only ──────────────────────────────────────────────────────────
     async def get_account_raw(self):
@@ -155,6 +194,12 @@ class LighterClient:
         market_index = MARKET_INDEX.get(symbol)
         if market_index is None:
             return False, f"Unknown symbol {symbol}"
+
+        await self.refresh_max_leverage()  # cached, cheap no-op if recently refreshed
+        max_lev = self.get_max_leverage(symbol)
+        if leverage > max_lev:
+            return False, f"Requested {leverage}x exceeds {symbol}'s live max of {max_lev}x"
+
         try:
             fraction = 10_000 // leverage
             tx = await _call(

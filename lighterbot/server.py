@@ -54,8 +54,11 @@ async def state():
     st = _load_state()
     balance, bal_err = (None, None)
     live_positions, pos_err = ([], None)
+    max_leverage = {}
     try:
         client = await engine.ensure_client()
+        await client.refresh_max_leverage()
+        max_leverage = dict(client.max_leverage_cache)
         balance, bal_err = await client.get_balance_usd()
         raw_positions, pos_err = await client.get_open_positions()
         for p in raw_positions:
@@ -83,6 +86,7 @@ async def state():
         "balance_error": bal_err,
         "positions_error": pos_err,
         "last_error": engine.last_error,
+        "max_leverage": max_leverage,       # live from Lighter, refreshed every 5 min
     })
 
 
@@ -119,7 +123,13 @@ async def update_config(request: Request, payload: dict):
     if "sizing" in payload:
         cfg["sizing"].update(payload["sizing"])
     if "leverage" in payload:
-        cfg["leverage"].update(payload["leverage"])
+        client = await engine.ensure_client()
+        await client.refresh_max_leverage()
+        clamped = {}
+        for symbol, requested in payload["leverage"].items():
+            max_lev = client.get_max_leverage(symbol)
+            clamped[symbol] = min(int(requested), max_lev)
+        cfg["leverage"].update(clamped)
     if "default_leverage" in payload:
         cfg["default_leverage"] = payload["default_leverage"]
     if "max_open_positions" in payload:
