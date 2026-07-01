@@ -165,8 +165,11 @@
   </div>
 
   <div class="card">
-    <h3>Leverage per Symbol</h3>
-    <div class="lev-grid" id="leverage-row"></div>
+    <div class="stat-row" style="margin-bottom:0;">
+      <h3 style="margin:0;">Leverage per Symbol</h3>
+      <button class="ghost" id="refresh-lev-btn" onclick="refreshMaxLeverage()" title="Refresh max leverage from Lighter">⟳</button>
+    </div>
+    <div class="lev-grid" id="leverage-row" style="margin-top:14px;"></div>
     <div style="margin-top:12px"><button onclick="saveLeverage()">Save Leverage</button></div>
   </div>
 </div>
@@ -522,6 +525,20 @@ async function emergencyStop() {
 
 async function clearLog() {
   await authFetch('/clear-log', {method:'POST'});
+  refresh();
+}
+
+async function refreshMaxLeverage() {
+  const btn = document.getElementById('refresh-lev-btn');
+  btn.textContent = '⏳';
+  btn.disabled = true;
+  const res = await authFetch('/refresh-leverage', {method:'POST'});
+  const d = await res.json();
+  btn.textContent = '⟳';
+  btn.disabled = false;
+  if (!d.ok) {
+    await showInfo('Refresh Failed', d.result, {ok:false});
+  }
   refresh();
 }
 

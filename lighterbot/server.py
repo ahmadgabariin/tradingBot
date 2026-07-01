@@ -111,6 +111,14 @@ async def selftest(request: Request):
     return {"ok": ok, "result": str(res)}
 
 
+@app.post("/refresh-leverage")
+async def refresh_leverage(request: Request):
+    if not _auth(request): return JSONResponse({"error": "forbidden"}, status_code=403)
+    client = await engine.ensure_client()
+    ok, result = await client.refresh_max_leverage(force=True)
+    return {"ok": ok, "result": str(result)}
+
+
 @app.post("/config")
 async def update_config(request: Request, payload: dict):
     if not _auth(request): return JSONResponse({"error": "forbidden"}, status_code=403)
