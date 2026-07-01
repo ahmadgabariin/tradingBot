@@ -2,38 +2,114 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>LighterBot — Real Trading</title>
+<title>LighterBot</title>
 <style>
-  body { background:#0d1117; color:#e6edf3; font-family: -apple-system, Segoe UI, sans-serif; margin:0; padding:20px; }
-  h1 { color:#ff6b6b; }
-  .warn { background:#3d1f1f; border:1px solid #ff6b6b; padding:10px 15px; border-radius:8px; margin-bottom:20px; }
-  .card { background:#161b22; border:1px solid #30363d; border-radius:10px; padding:16px; margin-bottom:16px; }
-  .row { display:flex; gap:12px; flex-wrap:wrap; align-items:center; }
-  label { font-size:13px; color:#8b949e; }
-  input, select, button { background:#0d1117; color:#e6edf3; border:1px solid #30363d; border-radius:6px; padding:6px 10px; }
-  button { cursor:pointer; }
-  button.primary { background:#238636; border-color:#238636; }
-  button.danger { background:#da3633; border-color:#da3633; }
+  * { box-sizing: border-box; }
+  body {
+    background: #0a0e14; color: #e6edf3;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    margin: 0; padding: 24px 32px 60px; max-width: 980px; margin-inline: auto;
+  }
+  h1 { font-size: 20px; display:flex; align-items:center; gap:10px; margin: 0 0 4px; }
+  h1 .dot { width:9px; height:9px; border-radius:50%; background:#f85149; }
+  h1 .dot.live { background:#3fb950; box-shadow:0 0 8px #3fb950; }
+  .sub { color:#7d8590; font-size:13px; margin-bottom:20px; }
+  .warn {
+    background: linear-gradient(180deg, #3d1f1f, #2a1616); border:1px solid #f85149;
+    padding:10px 16px; border-radius:10px; margin-bottom:22px; font-size:13px; color:#ffb3ad;
+  }
+  .grid { display:grid; grid-template-columns: 1fr 1fr; gap:16px; }
+  @media (max-width:760px){ .grid { grid-template-columns: 1fr; } }
+  .card {
+    background: #10151c; border:1px solid #21262d; border-radius:12px;
+    padding:18px 20px; margin-bottom:16px;
+  }
+  .card h3 {
+    font-size:12px; text-transform:uppercase; letter-spacing:0.06em; color:#7d8590;
+    margin:0 0 14px; font-weight:600;
+  }
+  .stat-row { display:flex; align-items:center; justify-content:space-between; gap:16px; flex-wrap:wrap; }
+  .stat { }
+  .stat .label { font-size:12px; color:#7d8590; }
+  .stat .value { font-size:22px; font-weight:600; margin-top:2px; }
+  .btns { display:flex; gap:8px; }
+  button {
+    background:#21262d; color:#e6edf3; border:1px solid #30363d; border-radius:8px;
+    padding:8px 14px; cursor:pointer; font-size:13px; font-weight:500; transition:filter .1s;
+  }
+  button:hover { filter:brightness(1.15); }
+  button.primary { background:#238636; border-color:#2ea043; }
+  button.danger { background:#da3633; border-color:#f85149; }
+  button.ghost { background:transparent; }
+  select, input[type=number], input[type=text] {
+    background:#0a0e14; color:#e6edf3; border:1px solid #30363d; border-radius:7px;
+    padding:7px 10px; font-size:13px;
+  }
+  label.field { font-size:12px; color:#7d8590; display:block; margin-bottom:5px; }
+  .field-group { display:flex; flex-direction:column; gap:4px; }
+  .row { display:flex; gap:14px; align-items:flex-end; flex-wrap:wrap; }
+
+  .agent-card {
+    border:1px solid #21262d; border-radius:10px; padding:14px 16px; margin-bottom:10px;
+    display:flex; align-items:center; justify-content:space-between; gap:14px; flex-wrap:wrap;
+    background:#0d1117;
+  }
+  .agent-name { font-weight:600; font-size:14px; }
+  .agent-desc { font-size:12px; color:#7d8590; margin-top:2px; }
+  .toggle { position:relative; width:40px; height:22px; }
+  .toggle input { opacity:0; width:0; height:0; }
+  .slider {
+    position:absolute; inset:0; background:#30363d; border-radius:22px; cursor:pointer; transition:.15s;
+  }
+  .slider:before {
+    content:""; position:absolute; width:16px; height:16px; left:3px; top:3px;
+    background:white; border-radius:50%; transition:.15s;
+  }
+  input:checked + .slider { background:#3fb950; }
+  input:checked + .slider:before { transform:translateX(18px); }
+
   table { width:100%; border-collapse:collapse; font-size:13px; }
-  td, th { padding:6px 10px; border-bottom:1px solid #30363d; text-align:left; }
-  #log { background:#000; color:#0f0; font-family:monospace; font-size:12px; padding:10px; height:200px; overflow-y:scroll; border-radius:8px; }
-  .agent-row { display:flex; gap:10px; align-items:center; padding:8px 0; border-bottom:1px solid #30363d; }
-  .badge { padding:2px 8px; border-radius:10px; font-size:11px; }
-  .on { background:#238636; }
-  .off { background:#444; }
+  td, th { padding:8px 10px; border-bottom:1px solid #21262d; text-align:left; }
+  th { color:#7d8590; font-weight:500; font-size:11px; text-transform:uppercase; }
+  tr:last-child td { border-bottom:none; }
+  .empty-row td { color:#484f58; text-align:center; padding:20px; }
+
+  #log {
+    background:#05070a; color:#7ee787; font-family:"SF Mono", Consolas, monospace;
+    font-size:11.5px; padding:12px; height:180px; overflow-y:auto; border-radius:8px;
+    border:1px solid #21262d; line-height:1.6;
+  }
+
+  .badge { padding:3px 10px; border-radius:20px; font-size:11px; font-weight:600; }
+  .on { background:rgba(63,185,80,.15); color:#3fb950; border:1px solid rgba(63,185,80,.4); }
+  .off { background:rgba(248,81,73,.15); color:#f85149; border:1px solid rgba(248,81,73,.4); }
+
+  .lev-grid { display:flex; gap:10px; flex-wrap:wrap; }
+  .lev-item { display:flex; flex-direction:column; gap:5px; align-items:center; }
+  .lev-item input { width:64px; text-align:center; }
 </style>
 </head>
 <body>
-<h1>⚡ LighterBot — Real Money, Real Leverage</h1>
-<div class="warn">This bot places real orders with real leverage on Lighter. Test with /selftest before relying on it.</div>
+
+<h1><span class="dot" id="live-dot"></span> LighterBot</h1>
+<div class="sub">Real orders, real leverage, real money — Lighter.xyz</div>
+<div class="warn">⚠ This bot places real orders on your Lighter account. Run Self-Test before trusting balance/sizing.</div>
 
 <div class="card">
-  <div class="row">
-    <strong>Balance:</strong> <span id="balance">--</span>
-    <strong>Status:</strong> <span id="running-badge" class="badge off">STOPPED</span>
-    <button class="primary" onclick="startBot()">Start</button>
-    <button class="danger" onclick="stopBot()">Stop</button>
-    <button onclick="selftest()">Run Self-Test</button>
+  <div class="stat-row">
+    <div class="stat">
+      <div class="label">Balance</div>
+      <div class="value" id="balance">--</div>
+    </div>
+    <div class="stat">
+      <div class="label">Status</div>
+      <div class="value"><span id="running-badge" class="badge off">STOPPED</span></div>
+    </div>
+    <div class="btns">
+      <button class="primary" onclick="startBot()">Start</button>
+      <button class="danger" onclick="stopBot()">Stop</button>
+      <button class="ghost" onclick="selftest()">Self-Test</button>
+    </div>
   </div>
 </div>
 
@@ -42,41 +118,61 @@
   <div id="agents"></div>
 </div>
 
-<div class="card">
-  <h3>Sizing</h3>
-  <div class="row">
-    <label>Mode</label>
-    <select id="sizing-mode">
-      <option value="percent">% of balance</option>
-      <option value="fixed">Fixed USD</option>
-    </select>
-    <label>Percent</label><input id="sizing-percent" type="number" step="0.1" style="width:70px">
-    <label>Fixed USD</label><input id="sizing-fixed" type="number" step="0.1" style="width:70px">
-    <button onclick="saveSizing()">Save</button>
+<div class="grid">
+  <div class="card">
+    <h3>Position Sizing</h3>
+    <div class="row">
+      <div class="field-group">
+        <label class="field">Mode</label>
+        <select id="sizing-mode" onchange="renderSizingValue()">
+          <option value="percent">% of balance</option>
+          <option value="fixed">Fixed USD</option>
+        </select>
+      </div>
+      <div class="field-group">
+        <label class="field" id="sizing-value-label">Value</label>
+        <input id="sizing-value" type="number" step="0.1" style="width:90px">
+      </div>
+      <button onclick="saveSizing()">Save</button>
+    </div>
   </div>
-</div>
 
-<div class="card">
-  <h3>Leverage per symbol</h3>
-  <div class="row" id="leverage-row"></div>
-  <button onclick="saveLeverage()">Save Leverage</button>
+  <div class="card">
+    <h3>Leverage per Symbol</h3>
+    <div class="lev-grid" id="leverage-row"></div>
+    <div style="margin-top:12px"><button onclick="saveLeverage()">Save Leverage</button></div>
+  </div>
 </div>
 
 <div class="card">
   <h3>Manual Test Trade</h3>
   <div class="row">
-    <select id="m-agent"><option>Liquidity Hunt</option><option>Surgeon v2</option></select>
-    <select id="m-symbol"><option>BTC</option><option>ETH</option><option>SOL</option></select>
-    <select id="m-side"><option>LONG</option><option>SHORT</option></select>
-    <label>Override margin USD (optional, e.g. 0.5)</label>
-    <input id="m-usd" type="number" step="0.1" style="width:80px">
+    <div class="field-group">
+      <label class="field">Agent</label>
+      <select id="m-agent"><option>Liquidity Hunt</option><option>Surgeon v2</option></select>
+    </div>
+    <div class="field-group">
+      <label class="field">Symbol</label>
+      <select id="m-symbol"><option>BTC</option><option>ETH</option><option>SOL</option></select>
+    </div>
+    <div class="field-group">
+      <label class="field">Side</label>
+      <select id="m-side"><option>LONG</option><option>SHORT</option></select>
+    </div>
+    <div class="field-group">
+      <label class="field">Override margin $ (optional)</label>
+      <input id="m-usd" type="number" step="0.1" placeholder="e.g. 0.5" style="width:110px">
+    </div>
     <button class="danger" onclick="manualTrade()">Place Real Trade</button>
   </div>
 </div>
 
 <div class="card">
   <h3>Open Positions</h3>
-  <table id="positions"><thead><tr><th>Agent</th><th>Symbol</th><th>Side</th><th>Entry</th><th>SL</th><th>TP</th><th>Amount</th></tr></thead><tbody></tbody></table>
+  <table id="positions">
+    <thead><tr><th>Agent</th><th>Symbol</th><th>Side</th><th>Entry</th><th>SL</th><th>TP</th><th>Amount</th></tr></thead>
+    <tbody><tr class="empty-row"><td colspan="7">No open positions</td></tr></tbody>
+  </table>
 </div>
 
 <div class="card">
@@ -86,6 +182,7 @@
 
 <script>
 let pwd = sessionStorage.getItem('lb_pwd') || '';
+let currentConfig = null;
 
 async function authFetch(url, opts={}) {
   if (!pwd) { pwd = prompt('Dashboard password:'); if (!pwd) return; sessionStorage.setItem('lb_pwd', pwd); }
@@ -95,45 +192,71 @@ async function authFetch(url, opts={}) {
   return res;
 }
 
+function renderSizingValue() {
+  const mode = document.getElementById('sizing-mode').value;
+  const label = document.getElementById('sizing-value-label');
+  const input = document.getElementById('sizing-value');
+  if (!currentConfig) return;
+  if (mode === 'percent') {
+    label.textContent = 'Percent of balance';
+    input.value = currentConfig.sizing.percent;
+    input.step = '0.1';
+  } else {
+    label.textContent = 'Fixed USD margin';
+    input.value = currentConfig.sizing.fixed_usd;
+    input.step = '0.5';
+  }
+}
+
 async function refresh() {
   const res = await fetch('/state');
   const d = await res.json();
-  document.getElementById('balance').textContent = d.balance_usd != null ? `$${d.balance_usd.toFixed(2)}` : (d.balance_error || '--');
+  currentConfig = d.config;
+
+  document.getElementById('balance').textContent = d.balance_usd != null ? `$${d.balance_usd.toFixed(2)}` : '—';
   const badge = document.getElementById('running-badge');
   badge.textContent = d.running ? 'RUNNING' : 'STOPPED';
   badge.className = 'badge ' + (d.running ? 'on' : 'off');
+  document.getElementById('live-dot').className = 'dot' + (d.running ? ' live' : '');
 
   const agentsDiv = document.getElementById('agents');
   agentsDiv.innerHTML = '';
   for (const [name, acfg] of Object.entries(d.config.agents)) {
-    const row = document.createElement('div');
-    row.className = 'agent-row';
-    row.innerHTML = `
-      <strong style="width:160px">${name}</strong>
-      <label><input type="checkbox" ${acfg.enabled?'checked':''} onchange="toggleAgent('${name}', this.checked)"> Enabled</label>
-      <select onchange="setDirection('${name}', this.value)">
-        <option value="LONG" ${acfg.direction==='LONG'?'selected':''}>LONG only</option>
-        <option value="SHORT" ${acfg.direction==='SHORT'?'selected':''}>SHORT only</option>
-        <option value="BOTH" ${acfg.direction==='BOTH'?'selected':''}>BOTH</option>
-      </select>`;
-    agentsDiv.appendChild(row);
+    const el = document.createElement('div');
+    el.className = 'agent-card';
+    el.innerHTML = `
+      <div>
+        <div class="agent-name">${name}</div>
+        <div class="agent-desc">${acfg.direction === 'BOTH' ? 'Long & Short' : acfg.direction + ' only'}</div>
+      </div>
+      <div style="display:flex; align-items:center; gap:12px;">
+        <select onchange="setDirection('${name}', this.value)">
+          <option value="LONG" ${acfg.direction==='LONG'?'selected':''}>Long only</option>
+          <option value="SHORT" ${acfg.direction==='SHORT'?'selected':''}>Short only</option>
+          <option value="BOTH" ${acfg.direction==='BOTH'?'selected':''}>Both</option>
+        </select>
+        <label class="toggle">
+          <input type="checkbox" ${acfg.enabled?'checked':''} onchange="toggleAgent('${name}', this.checked)">
+          <span class="slider"></span>
+        </label>
+      </div>`;
+    agentsDiv.appendChild(el);
   }
 
   document.getElementById('sizing-mode').value = d.config.sizing.mode;
-  document.getElementById('sizing-percent').value = d.config.sizing.percent;
-  document.getElementById('sizing-fixed').value = d.config.sizing.fixed_usd;
+  renderSizingValue();
 
   const levRow = document.getElementById('leverage-row');
   levRow.innerHTML = '';
   for (const [sym, lev] of Object.entries(d.config.leverage)) {
-    levRow.innerHTML += `<label>${sym}</label><input id="lev-${sym}" type="number" value="${lev}" style="width:60px">`;
+    levRow.innerHTML += `<div class="lev-item"><label class="field">${sym}</label><input id="lev-${sym}" type="number" value="${lev}"></div>`;
   }
 
   const tbody = document.querySelector('#positions tbody');
-  tbody.innerHTML = '';
-  for (const [key, pos] of Object.entries(d.open_positions)) {
-    tbody.innerHTML += `<tr><td>${pos.agent}</td><td>${pos.symbol}</td><td>${pos.side}</td><td>${pos.entry}</td><td>${pos.sl}</td><td>${pos.tp}</td><td>${pos.base_amount}</td></tr>`;
-  }
+  const entries = Object.entries(d.open_positions);
+  tbody.innerHTML = entries.length ? entries.map(([key, pos]) =>
+    `<tr><td>${pos.agent}</td><td>${pos.symbol}</td><td>${pos.side}</td><td>${pos.entry}</td><td>${pos.sl}</td><td>${pos.tp}</td><td>${pos.base_amount}</td></tr>`
+  ).join('') : `<tr class="empty-row"><td colspan="7">No open positions</td></tr>`;
 
   const log = document.getElementById('log');
   log.innerHTML = d.trade_log.map(l => `<div>${l}</div>`).join('');
@@ -149,11 +272,10 @@ async function setDirection(name, direction) {
   refresh();
 }
 async function saveSizing() {
-  await authFetch('/config', {method:'POST', body: JSON.stringify({sizing:{
-    mode: document.getElementById('sizing-mode').value,
-    percent: parseFloat(document.getElementById('sizing-percent').value),
-    fixed_usd: parseFloat(document.getElementById('sizing-fixed').value),
-  }})});
+  const mode = document.getElementById('sizing-mode').value;
+  const value = parseFloat(document.getElementById('sizing-value').value);
+  const payload = mode === 'percent' ? {mode, percent: value} : {mode, fixed_usd: value};
+  await authFetch('/config', {method:'POST', body: JSON.stringify({sizing: payload})});
   refresh();
 }
 async function saveLeverage() {
