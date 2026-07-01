@@ -64,6 +64,15 @@ async def main():
         for p in positions:
             print(f"   {p}")
 
+    print("\nFetching active/resting orders (ground truth for SL/TP)...")
+    orders, ord_err = await client.get_active_orders()
+    if ord_err:
+        print(f"[FAIL] Active orders fetch failed: {ord_err}")
+    else:
+        print(f"[OK] Active orders: {len(orders)}")
+        for o in orders:
+            print(f"   {o}")
+
     # Run the balance fetch 3x in a row to check for flakiness/consistency
     print("\nRunning 3x consistency check...")
     for i in range(3):

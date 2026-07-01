@@ -71,6 +71,7 @@ class LighterClient:
             configuration=lighter.Configuration(host=self.base_url)
         )
         self.account_api = lighter.AccountApi(self.api_client)
+        self.order_api   = lighter.OrderApi(self.api_client)
 
         # Validates the API key is actually registered on-chain for this
         # account. Skipping this is what produces "invalid signature" (21120)
@@ -122,6 +123,24 @@ class LighterClient:
         try:
             positions = getattr(acct, "positions", []) or []
             return positions, None
+        except Exception as e:
+            return [], str(e)
+
+    async def get_active_orders(self, market_id: int = None):
+        """Ground-truth check for resting orders (incl. stop/take-profit
+        triggers) — the position object's open_order_count field may not
+        reflect conditional orders, so this hits the order book directly."""
+        try:
+            auth_token, err = self.signer.create_auth_token_with_expiry()
+            if err:
+                return [], f"auth token error: {err}"
+            res = await _call(
+                self.order_api.account_active_orders,
+                authorization=auth_token,
+                account_index=self.account_index,
+                market_id=market_id,
+            )
+            return getattr(res, "orders", []) or [], None
         except Exception as e:
             return [], str(e)
 
@@ -202,13 +221,28 @@ class LighterClient:
         # Attach OCO stop-loss / take-profit, reduce-only, opposite side of entry.
         # Must be real CreateOrderTxReq ctypes.Structure instances, not dicts —
         # confirmed from SDK source (sign_create_grouped_orders builds a ctypes array).
+        #
+        # BaseAmount=0 is intentional: position-tied SL/TP orders close whatever
+        # the position size is at trigger time, not a fixed amount — confirmed
+        # from the SDK's own create_position_tied_sl_tp.py example. Passing the
+        # actual order size here caused the tx to be silently dropped (accepted
+        # into mempool with code=200, but never actually included on-chain).
+        #
+        # Price gets a small buffer past TriggerPrice in the fill direction so
+        # the limit order guarantees execution once triggered (closing side is
+        # a SELL for a LONG position, so worse price = lower).
+        close_is_ask = not is_ask
+        fill_buffer_pct = 0.5
+        tp_fill_price = tp_price * (1 - fill_buffer_pct/100) if close_is_ask else tp_price * (1 + fill_buffer_pct/100)
+        sl_fill_price = sl_price * (1 - fill_buffer_pct/100) if close_is_ask else sl_price * (1 + fill_buffer_pct/100)
+
         try:
             tp_order = CreateOrderTxReq(
                 MarketIndex=market_index,
                 ClientOrderIndex=(entry_client_order_index + 1) % 1_000_000,
-                BaseAmount=amount_i,
-                Price=tp_price_i,
-                IsAsk=int(not is_ask),
+                BaseAmount=0,
+                Price=to_scaled_int(tp_fill_price, price_dec),
+                IsAsk=int(close_is_ask),
                 Type=self.signer.ORDER_TYPE_TAKE_PROFIT_LIMIT,
                 TimeInForce=self.signer.ORDER_TIME_IN_FORCE_GOOD_TILL_TIME,
                 ReduceOnly=1,
@@ -218,9 +252,9 @@ class LighterClient:
             sl_order = CreateOrderTxReq(
                 MarketIndex=market_index,
                 ClientOrderIndex=(entry_client_order_index + 2) % 1_000_000,
-                BaseAmount=amount_i,
-                Price=sl_price_i,
-                IsAsk=int(not is_ask),
+                BaseAmount=0,
+                Price=to_scaled_int(sl_fill_price, price_dec),
+                IsAsk=int(close_is_ask),
                 Type=self.signer.ORDER_TYPE_STOP_LOSS_LIMIT,
                 TimeInForce=self.signer.ORDER_TIME_IN_FORCE_GOOD_TILL_TIME,
                 ReduceOnly=1,
