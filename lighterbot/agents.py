@@ -1,9 +1,11 @@
 """
-Standalone signal logic for LighterBot — ported from paper9/paper11 (Liquidity
-Hunt + Surgeon v2). Copied, not imported, so this bot never depends on the
-existing paper-trading project.
+Signal logic for LighterBot — ported 1:1 from paper9/comp9_agents.py's
+_liq_long/_liq_short (Liquidity Hunt) and _surgeon2_long/_surgeon2_short
+(Surgeon v2). These are the EXACT functions comp10 uses (comp10 imports
+LONG_SIGNALS_9/SHORT_SIGNALS_9 straight from paper9 — there's no separate
+comp10 signal code). Data comes from lighterbot/data_feed.py, which precomputes
+the same rsi/adx/vol_avg/green/s_hi/s_lo/atr fields as fast_backtest.precompute().
 """
-import numpy as np
 
 # Same 10 pairs as paper9/paper11 (COMP9_PAIRS) — each agent scans all of them
 # every tick, same as the paper-trading competitions.
@@ -14,73 +16,49 @@ AGENTS = {
         "timeframe": "1h",
         "atr_sl_mult": 1.5, "atr_tp_mult": 3.0,
         "exit_mode": "atr_trail",
-        "description": "Stop sweep reversal — ATR trailing stop (same as comp9/comp10).",
+        "description": "Stop sweep reversal — ATR trailing stop. Signal logic identical to comp9/comp10.",
     },
     "Surgeon v2": {
         "timeframe": "15m",
         "atr_sl_mult": 1.5, "atr_tp_mult": 3.0,
         "exit_mode": "atr_trail",
-        "description": "RSI reversal — ATR trailing stop (same as comp9/comp10).",
+        "description": "RSI reversal — ATR trailing stop. Signal logic identical to comp9/comp10.",
     },
 }
 
 
-def _ema(arr, n):
-    out = np.zeros(len(arr))
-    if len(arr) < n:
-        return out
-    out[n-1] = np.mean(arr[:n])
-    k = 2/(n+1)
-    for i in range(n, len(arr)):
-        out[i] = arr[i]*k + out[i-1]*(1-k)
-    return out
-
-
-def _rsi(closes, n=14):
-    d = np.diff(closes)
-    g = np.where(d > 0, d, 0.0)
-    l = np.where(d < 0, -d, 0.0)
-    if len(g) < n:
-        return np.full(len(closes), np.nan)
-    ag = np.convolve(g, np.ones(n)/n, mode='valid')
-    al = np.convolve(l, np.ones(n)/n, mode='valid')
-    rs = np.where(al == 0, 100.0, ag / (al + 1e-9))
-    rsi = 100 - 100/(1+rs)
-    return np.concatenate([np.full(n, np.nan), rsi])
-
-
-# ── Liquidity Hunt ─────────────────────────────────────────────────────────
-def long_liquidity_hunt(p, idx):
-    c, l = p["closes"], p["lows"]
-    if idx < 5:
+# ── Liquidity Hunt — ported verbatim from paper9/comp9_agents.py:_liq_long/_liq_short ──
+def long_liquidity_hunt(p, i):
+    if i < 15 or "s_lo" not in p:
         return False
-    recent_low = np.min(l[idx-5:idx])
-    swept = l[idx] < recent_low
-    return bool(swept and c[idx] > c[idx-1] and c[idx] > recent_low)
+    swept = p["l"][i] < p["s_lo"][i] * 0.999
+    rev   = p["c"][i] > p["s_lo"][i]
+    wick  = (p["c"][i] - p["l"][i]) > (p["h"][i] - p["l"][i]) * 0.5
+    return bool(swept and rev and wick and p["v"][i] > p["vol_avg"][i] * 1.4)
 
 
-def short_liquidity_hunt(p, idx):
-    c, h = p["closes"], p["highs"]
-    if idx < 5:
+def short_liquidity_hunt(p, i):
+    if i < 15 or "s_hi" not in p:
         return False
-    recent_high = np.max(h[idx-5:idx])
-    swept = h[idx] > recent_high
-    return bool(swept and c[idx] < c[idx-1] and c[idx] < recent_high)
+    swept = p["h"][i] > p["s_hi"][i] * 1.001
+    rev   = p["c"][i] < p["s_hi"][i]
+    wick  = (p["h"][i] - p["c"][i]) > (p["h"][i] - p["l"][i]) * 0.5
+    return bool(swept and rev and wick and p["v"][i] > p["vol_avg"][i] * 1.4)
 
 
-# ── Surgeon v2 (RSI reversal) ────────────────────────────────────────────────
-def long_surgeon_v2(p, idx):
-    rsi = _rsi(p["closes"])
-    if idx < 1 or np.isnan(rsi[idx-1]) or np.isnan(rsi[idx]):
+# ── Surgeon v2 — ported verbatim from paper9/comp9_agents.py:_surgeon2_long/_surgeon2_short ──
+def long_surgeon_v2(p, i):
+    if i < 50:
         return False
-    return bool(rsi[idx-1] < 30 and rsi[idx] > 30)
+    return bool(p["rsi"][i] < 35 and p["rsi"][i] > p["rsi"][i-1]
+                and p["green"][i] and p["v"][i] > p["vol_avg"][i] * 1.2 and p["adx"][i] > 15)
 
 
-def short_surgeon_v2(p, idx):
-    rsi = _rsi(p["closes"])
-    if idx < 1 or np.isnan(rsi[idx-1]) or np.isnan(rsi[idx]):
+def short_surgeon_v2(p, i):
+    if i < 50:
         return False
-    return bool(rsi[idx-1] > 70 and rsi[idx] < 70)
+    return bool(p["rsi"][i] > 65 and p["rsi"][i] < p["rsi"][i-1]
+                and not p["green"][i] and p["v"][i] > p["vol_avg"][i] * 1.2 and p["adx"][i] > 15)
 
 
 LONG_SIGNALS = {
