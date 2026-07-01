@@ -12,6 +12,9 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from lighterbot import config as cfgmod
 from lighterbot.engine import engine, _load_state
+from lighterbot.lighter_client import MARKET_INDEX
+
+_SYMBOL_BY_MARKET_INDEX = {v: k for k, v in MARKET_INDEX.items()}
 
 
 def _load_dotenv():
@@ -61,18 +64,34 @@ async def state():
         max_leverage = dict(client.max_leverage_cache)
         balance, bal_err = await client.get_balance_usd()
         raw_positions, pos_err = await client.get_open_positions()
+
+        # Fetch all active orders once, group by market so SL/TP trigger
+        # prices can be attached to each open position below.
+        active_orders, _ = await client.get_active_orders()
+        orders_by_market = {}
+        for o in active_orders:
+            orders_by_market.setdefault(getattr(o, "market_index", None), []).append(o)
+
         for p in raw_positions:
             size = float(getattr(p, "position", 0) or 0)
             if size == 0:
                 continue
+            symbol = getattr(p, "symbol", "?")
+            market_index = MARKET_INDEX.get(symbol)
+            market_orders = orders_by_market.get(market_index, [])
+            sl_order = next((o for o in market_orders if getattr(o, "type", "") == "stop-loss-limit"), None)
+            tp_order = next((o for o in market_orders if getattr(o, "type", "") == "take-profit-limit"), None)
+
             live_positions.append({
-                "symbol": getattr(p, "symbol", "?"),
+                "symbol": symbol,
                 "size": size,
                 "avg_entry_price": float(getattr(p, "avg_entry_price", 0) or 0),
                 "position_value": float(getattr(p, "position_value", 0) or 0),
                 "unrealized_pnl": float(getattr(p, "unrealized_pnl", 0) or 0),
                 "liquidation_price": getattr(p, "liquidation_price", None),
                 "open_order_count": getattr(p, "open_order_count", 0),
+                "sl_price": float(getattr(sl_order, "trigger_price", 0) or 0) if sl_order else None,
+                "tp_price": float(getattr(tp_order, "trigger_price", 0) or 0) if tp_order else None,
             })
     except Exception as e:
         bal_err = bal_err or str(e)
@@ -88,6 +107,38 @@ async def state():
         "last_error": engine.last_error,
         "max_leverage": max_leverage,       # live from Lighter, refreshed every 5 min
     })
+
+
+@app.get("/trades")
+async def trades():
+    """Real trade history straight from Lighter's account_inactive_orders —
+    ground truth for entries and SL/TP fills, not something reconstructed
+    locally. Frontend paginates client-side over this list."""
+    try:
+        client = await engine.ensure_client()
+        orders, err = await client.get_inactive_orders(limit=100)
+        if err:
+            return JSONResponse({"trades": [], "error": err})
+
+        result = []
+        for o in orders:
+            if getattr(o, "status", "") != "filled":
+                continue
+            market_index = getattr(o, "market_index", None)
+            result.append({
+                "symbol": _SYMBOL_BY_MARKET_INDEX.get(market_index, f"market_{market_index}"),
+                "side": "SELL" if getattr(o, "is_ask", False) else "BUY",
+                "type": getattr(o, "type", "?"),
+                "price": float(getattr(o, "price", 0) or 0),
+                "filled_base_amount": float(getattr(o, "filled_base_amount", 0) or 0),
+                "filled_quote_amount": float(getattr(o, "filled_quote_amount", 0) or 0),
+                "reduce_only": getattr(o, "reduce_only", False),
+                "timestamp": getattr(o, "timestamp", 0),
+            })
+        result.sort(key=lambda t: t["timestamp"], reverse=True)
+        return JSONResponse({"trades": result, "error": None})
+    except Exception as e:
+        return JSONResponse({"trades": [], "error": str(e)})
 
 
 @app.post("/start")

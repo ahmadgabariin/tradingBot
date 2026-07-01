@@ -187,6 +187,24 @@ class LighterClient:
         except Exception as e:
             return [], str(e)
 
+    async def get_inactive_orders(self, limit: int = 100):
+        """Real trade history — filled/cancelled orders (entries, SL/TP fills,
+        manual closes). This is ground truth from the exchange, not something
+        the bot reconstructs locally."""
+        try:
+            auth_token, err = self.signer.create_auth_token_with_expiry()
+            if err:
+                return [], f"auth token error: {err}"
+            res = await _call(
+                self.order_api.account_inactive_orders,
+                authorization=auth_token,
+                account_index=self.account_index,
+                limit=limit,
+            )
+            return getattr(res, "orders", []) or [], None
+        except Exception as e:
+            return [], str(e)
+
     async def cancel_order(self, symbol: str, order_index: int):
         market_index = MARKET_INDEX.get(symbol)
         if market_index is None:

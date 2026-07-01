@@ -211,9 +211,31 @@
 <div class="card">
   <h3>Open Positions <span style="font-weight:400; color:#7d8590; text-transform:none; letter-spacing:0;">(live from Lighter)</span></h3>
   <table id="positions">
-    <thead><tr><th>Symbol</th><th>Side</th><th>Size</th><th>Entry</th><th>Value</th><th>Unrealized P&amp;L</th><th>Protected (SL/TP)</th><th></th></tr></thead>
-    <tbody><tr class="empty-row"><td colspan="8">No open positions</td></tr></tbody>
+    <thead><tr><th>Symbol</th><th>Side</th><th>Size</th><th>Entry</th><th>SL</th><th>TP</th><th>Value</th><th>Unrealized P&amp;L</th><th>Protected</th><th></th></tr></thead>
+    <tbody><tr class="empty-row"><td colspan="10">No open positions</td></tr></tbody>
   </table>
+</div>
+
+<div class="card">
+  <div class="stat-row" style="margin-bottom:12px;">
+    <h3 style="margin:0;">Trade History <span style="font-weight:400; color:#7d8590; text-transform:none; letter-spacing:0;">(live from Lighter)</span></h3>
+    <div class="field-group">
+      <select id="trades-per-page" onchange="renderTradesPage()" style="width:auto;">
+        <option value="10">10 / page</option>
+        <option value="25" selected>25 / page</option>
+        <option value="50">50 / page</option>
+      </select>
+    </div>
+  </div>
+  <table id="trades">
+    <thead><tr><th>Symbol</th><th>Side</th><th>Type</th><th>Price</th><th>Amount</th><th>Value</th><th>Time</th></tr></thead>
+    <tbody><tr class="empty-row"><td colspan="7">No trades yet</td></tr></tbody>
+  </table>
+  <div class="stat-row" style="margin-top:12px; justify-content:center; gap:14px;">
+    <button class="ghost" onclick="tradesPage=Math.max(0,tradesPage-1); renderTradesPage();">&laquo; Prev</button>
+    <span id="trades-page-label" style="font-size:13px; color:#7d8590;"></span>
+    <button class="ghost" onclick="tradesPage++; renderTradesPage();">Next &raquo;</button>
+  </div>
 </div>
 
 <div class="card">
@@ -252,6 +274,8 @@
 <script>
 let pwd = sessionStorage.getItem('lb_pwd') || '';
 let currentConfig = null;
+let allTrades = [];
+let tradesPage = 0;
 
 let pwdResolve = null;
 
@@ -404,12 +428,15 @@ async function refresh() {
       : '<span class="badge off">NO — unprotected!</span>';
     return `<tr>
       <td>${pos.symbol}</td><td>${side}</td><td>${Math.abs(pos.size)}</td>
-      <td>${pos.avg_entry_price}</td><td>$${pos.position_value.toFixed(2)}</td>
+      <td>${pos.avg_entry_price}</td>
+      <td>${pos.sl_price != null ? pos.sl_price : '—'}</td>
+      <td>${pos.tp_price != null ? pos.tp_price : '—'}</td>
+      <td>$${pos.position_value.toFixed(2)}</td>
       <td style="color:${pnlColor}">$${pos.unrealized_pnl.toFixed(4)}</td>
       <td>${protectedBadge}</td>
       <td><button class="danger" onclick="closePosition('${pos.symbol}')">Close</button></td>
     </tr>`;
-  }).join('') : `<tr class="empty-row"><td colspan="8">No open positions</td></tr>`;
+  }).join('') : `<tr class="empty-row"><td colspan="10">No open positions</td></tr>`;
 
   const log = document.getElementById('log');
   log.innerHTML = d.trade_log.map(l => `<div>${l}</div>`).join('');
@@ -536,6 +563,40 @@ async function clearLog() {
   refresh();
 }
 
+async function fetchTrades() {
+  const res = await fetch('/trades');
+  const d = await res.json();
+  allTrades = d.trades || [];
+  renderTradesPage();
+}
+
+function renderTradesPage() {
+  const perPage = parseInt(document.getElementById('trades-per-page').value);
+  const totalPages = Math.max(1, Math.ceil(allTrades.length / perPage));
+  tradesPage = Math.min(Math.max(0, tradesPage), totalPages - 1);
+
+  const start = tradesPage * perPage;
+  const pageItems = allTrades.slice(start, start + perPage);
+
+  const tbody = document.querySelector('#trades tbody');
+  tbody.innerHTML = pageItems.length ? pageItems.map(t => {
+    const sideColor = t.side === 'BUY' ? '#3fb950' : '#f85149';
+    const time = t.timestamp ? new Date(t.timestamp * 1000).toLocaleString() : '—';
+    return `<tr>
+      <td>${t.symbol}</td>
+      <td style="color:${sideColor}">${t.side}</td>
+      <td>${t.type}</td>
+      <td>${t.price}</td>
+      <td>${t.filled_base_amount}</td>
+      <td>$${t.filled_quote_amount.toFixed(2)}</td>
+      <td>${time}</td>
+    </tr>`;
+  }).join('') : `<tr class="empty-row"><td colspan="7">No trades yet</td></tr>`;
+
+  document.getElementById('trades-page-label').textContent =
+    allTrades.length ? `Page ${tradesPage+1} of ${totalPages} (${allTrades.length} trades)` : '';
+}
+
 async function refreshMaxLeverage() {
   const btn = document.getElementById('refresh-lev-btn');
   btn.textContent = '⏳';
@@ -551,7 +612,9 @@ async function refreshMaxLeverage() {
 }
 
 refresh();
+fetchTrades();
 setInterval(refresh, 5000);
+setInterval(fetchTrades, 20000);
 </script>
 </body>
 </html>
