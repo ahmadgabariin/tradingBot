@@ -126,33 +126,93 @@ async def state():
     })
 
 
+def _find_agent(agent_open_log, symbol, opened_at, tolerance_sec=180):
+    """Best-effort join: find the agent_open_log entry for this symbol whose
+    logged open time is closest to (and within tolerance of) the exchange's
+    actual fill timestamp. Falls back to 'Manual' if nothing matches — this
+    happens for trades placed before this tracking existed, or from outside
+    the bot entirely."""
+    candidates = [e for e in agent_open_log if e["symbol"] == symbol]
+    if not candidates:
+        return "Manual"
+    best = min(candidates, key=lambda e: abs(e["opened_at"] - opened_at))
+    if abs(best["opened_at"] - opened_at) <= tolerance_sec:
+        return best["agent"]
+    return "Manual"
+
+
 @app.get("/trades")
 async def trades():
-    """Real trade history straight from Lighter's account_inactive_orders —
-    ground truth for entries and SL/TP fills, not something reconstructed
-    locally. Frontend paginates client-side over this list."""
+    """Real trade history built by pairing entry fills with their exit fills
+    from Lighter's account_inactive_orders — ground truth for prices/timing,
+    not reconstructed from local guesses. PNL is computed from the real
+    entry/exit prices. Agent attribution comes from the bot's own open-log
+    (the exchange has no concept of 'which agent'), matched by nearest
+    timestamp. Frontend paginates client-side over this list."""
     try:
         client = await engine.ensure_client()
         orders, err = await client.get_inactive_orders(limit=100)
         if err:
             return JSONResponse({"trades": [], "error": err})
 
+        st = _load_state()
+        agent_open_log = st.get("agent_open_log", [])
+
+        filled = [o for o in orders if getattr(o, "status", "") == "filled"]
+        by_market = {}
+        for o in filled:
+            by_market.setdefault(getattr(o, "market_index", None), []).append(o)
+
         result = []
-        for o in orders:
-            if getattr(o, "status", "") != "filled":
-                continue
-            market_index = getattr(o, "market_index", None)
-            result.append({
-                "symbol": _SYMBOL_BY_MARKET_INDEX.get(market_index, f"market_{market_index}"),
-                "side": "SELL" if getattr(o, "is_ask", False) else "BUY",
-                "type": getattr(o, "type", "?"),
-                "price": float(getattr(o, "price", 0) or 0),
-                "filled_base_amount": float(getattr(o, "filled_base_amount", 0) or 0),
-                "filled_quote_amount": float(getattr(o, "filled_quote_amount", 0) or 0),
-                "reduce_only": getattr(o, "reduce_only", False),
-                "timestamp": getattr(o, "timestamp", 0),
-            })
-        result.sort(key=lambda t: t["timestamp"], reverse=True)
+        for market_index, group in by_market.items():
+            group.sort(key=lambda o: getattr(o, "timestamp", 0))
+            symbol = _SYMBOL_BY_MARKET_INDEX.get(market_index, f"market_{market_index}")
+
+            pending_entry = None
+            for o in group:
+                reduce_only = getattr(o, "reduce_only", False)
+                if not reduce_only:
+                    # A new entry — if one was already pending with no exit yet,
+                    # it's superseded (shouldn't normally happen with
+                    # max_open_positions=1, but don't silently drop data).
+                    pending_entry = o
+                    continue
+
+                if pending_entry is None:
+                    continue  # exit with no matching entry in this window — skip
+
+                entry = pending_entry
+                pending_entry = None
+
+                side = "LONG" if not getattr(entry, "is_ask", False) else "SHORT"
+                entry_price = float(getattr(entry, "price", 0) or 0)
+                exit_price  = float(getattr(o, "price", 0) or 0)
+                qty = float(getattr(entry, "filled_base_amount", 0) or 0)
+                pnl = qty * (exit_price - entry_price) if side == "LONG" else qty * (entry_price - exit_price)
+
+                exit_type_raw = getattr(o, "type", "")
+                if "take-profit" in exit_type_raw:
+                    exit_label = "TP"
+                elif "stop-loss" in exit_type_raw:
+                    exit_label = "SL"
+                else:
+                    exit_label = "Manual"
+
+                opened_at = getattr(entry, "timestamp", 0)
+                closed_at = getattr(o, "timestamp", 0)
+                agent = _find_agent(agent_open_log, symbol, opened_at)
+
+                result.append({
+                    "agent": agent,
+                    "symbol": symbol,
+                    "side": side,
+                    "exit_type": exit_label,
+                    "pnl": round(pnl, 4),
+                    "opened_at": opened_at,
+                    "closed_at": closed_at,
+                })
+
+        result.sort(key=lambda t: t["closed_at"], reverse=True)
         return JSONResponse({"trades": result, "error": None})
     except Exception as e:
         return JSONResponse({"trades": [], "error": str(e)})

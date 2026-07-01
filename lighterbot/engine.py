@@ -21,8 +21,9 @@ def _load_state():
         with open(STATE_FILE) as f:
             data = json.load(f)
             data.setdefault("position_agent_map", {})
+            data.setdefault("agent_open_log", [])
             return data
-    return {"trade_log": [], "position_agent_map": {}}
+    return {"trade_log": [], "position_agent_map": {}, "agent_open_log": []}
 
 
 def _save_state(state):
@@ -48,6 +49,16 @@ class LighterBotEngine:
         self.state["trade_log"].append(line)
         self.state["trade_log"] = self.state["trade_log"][-300:]
         _save_state(self.state)
+
+    def _log_open(self, symbol, agent):
+        """Persistent record of who opened what, when — survives after the
+        position closes (unlike position_agent_map, which only tracks CURRENT
+        open positions for the trailing-stop updater). Used to attribute
+        Agent on the Trade History table."""
+        self.state.setdefault("agent_open_log", []).append({
+            "symbol": symbol, "agent": agent, "opened_at": time.time(),
+        })
+        self.state["agent_open_log"] = self.state["agent_open_log"][-200:]
 
     def clear_log(self):
         self.state["trade_log"] = []
@@ -174,6 +185,8 @@ class LighterBotEngine:
             )
             self.log(f"MANUAL {side} {symbol} amount={base_amount} leverage={leverage} "
                       f"price={price} sl={sl_price} tp={tp_price} -> ok={ok} result={result}")
+            if ok:
+                self._log_open(symbol, "Manual")
             return ok, result
 
     async def close_position(self, symbol: str):
@@ -374,6 +387,7 @@ class LighterBotEngine:
                         symbols_with_position.add(symbol)
                         open_count += 1
                         self.state["position_agent_map"][symbol] = {"agent": agent_name}
+                        self._log_open(symbol, agent_name)
                         _save_state(self.state)
 
             # Drop mapping entries for symbols that no longer have a live position

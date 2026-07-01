@@ -228,7 +228,7 @@
     </div>
   </div>
   <table id="trades">
-    <thead><tr><th>Symbol</th><th>Side</th><th>Type</th><th>Price</th><th>Amount</th><th>Value</th><th>Time</th></tr></thead>
+    <thead><tr><th>Agent</th><th>Pair</th><th>Side</th><th>Exit</th><th>PNL</th><th>Opened</th><th>Closed</th></tr></thead>
     <tbody><tr class="empty-row"><td colspan="7">No trades yet</td></tr></tbody>
   </table>
   <div class="stat-row" style="margin-top:12px; justify-content:center; gap:14px;">
@@ -582,16 +582,19 @@ function renderTradesPage() {
 
   const tbody = document.querySelector('#trades tbody');
   tbody.innerHTML = pageItems.length ? pageItems.map(t => {
-    const sideColor = t.side === 'BUY' ? '#3fb950' : '#f85149';
-    const time = t.timestamp ? new Date(t.timestamp * 1000).toLocaleString() : '—';
+    const sideColor = t.side === 'LONG' ? '#3fb950' : '#f85149';
+    const pnlColor = t.pnl >= 0 ? '#3fb950' : '#f85149';
+    const exitColor = t.exit_type === 'TP' ? '#3fb950' : (t.exit_type === 'SL' ? '#f85149' : '#7d8590');
+    const opened = t.opened_at ? new Date(t.opened_at * 1000).toLocaleString() : '—';
+    const closed = t.closed_at ? new Date(t.closed_at * 1000).toLocaleString() : '—';
     return `<tr>
+      <td style="color:${t.agent === 'Manual' ? '#7d8590' : '#e6edf3'}">${t.agent}</td>
       <td>${t.symbol}</td>
       <td style="color:${sideColor}">${t.side}</td>
-      <td>${t.type}</td>
-      <td>${t.price}</td>
-      <td>${t.filled_base_amount}</td>
-      <td>$${t.filled_quote_amount.toFixed(2)}</td>
-      <td>${time}</td>
+      <td style="color:${exitColor}">${t.exit_type}</td>
+      <td style="color:${pnlColor}">$${t.pnl.toFixed(4)}</td>
+      <td>${opened}</td>
+      <td>${closed}</td>
     </tr>`;
   }).join('') : `<tr class="empty-row"><td colspan="7">No trades yet</td></tr>`;
 
