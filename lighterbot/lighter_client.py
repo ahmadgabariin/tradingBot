@@ -35,6 +35,17 @@ PRICE_DECIMALS = {
     "BTC": 1,
     "SOL": 3,
 }
+# From live orderBookDetails (size_decimals) — the SDK's create_order wants
+# base_amount and price as scaled integers, not floats.
+SIZE_DECIMALS = {
+    "ETH": 4,
+    "BTC": 5,
+    "SOL": 3,
+}
+
+
+def to_scaled_int(value: float, decimals: int) -> int:
+    return int(round(value * (10 ** decimals)))
 MIN_NOTIONAL_USD = 10.0
 
 
@@ -147,14 +158,21 @@ class LighterClient:
         if notional < MIN_NOTIONAL_USD:
             return False, f"notional ${notional:.2f} below exchange minimum ${MIN_NOTIONAL_USD}"
 
+        size_dec  = SIZE_DECIMALS.get(symbol, 4)
+        price_dec = PRICE_DECIMALS.get(symbol, 2)
+        amount_i    = to_scaled_int(base_amount, size_dec)
+        ref_price_i = to_scaled_int(ref_price, price_dec)
+        sl_price_i  = to_scaled_int(sl_price, price_dec)
+        tp_price_i  = to_scaled_int(tp_price, price_dec)
+
         try:
             client_order_index = int(time.time() * 1000) % 1_000_000
             entry_tx, entry_hash, err = await _call(
                 self.signer.create_order,
                 market_index=market_index,
                 client_order_index=client_order_index,
-                base_amount=base_amount,
-                price=ref_price,
+                base_amount=amount_i,
+                price=ref_price_i,
                 is_ask=is_ask,
                 order_type=self.signer.ORDER_TYPE_MARKET,
                 time_in_force=self.signer.ORDER_TIME_IN_FORCE_IMMEDIATE_OR_CANCEL,
@@ -171,18 +189,18 @@ class LighterClient:
             tp_order = {
                 "market_index": market_index,
                 "is_ask": not is_ask,
-                "base_amount": base_amount,
-                "trigger_price": tp_price,
-                "price": tp_price,
+                "base_amount": amount_i,
+                "trigger_price": tp_price_i,
+                "price": tp_price_i,
                 "order_type": self.signer.ORDER_TYPE_TAKE_PROFIT_LIMIT,
                 "reduce_only": True,
             }
             sl_order = {
                 "market_index": market_index,
                 "is_ask": not is_ask,
-                "base_amount": base_amount,
-                "trigger_price": sl_price,
-                "price": sl_price,
+                "base_amount": amount_i,
+                "trigger_price": sl_price_i,
+                "price": sl_price_i,
                 "order_type": self.signer.ORDER_TYPE_STOP_LOSS_LIMIT,
                 "reduce_only": True,
             }
@@ -199,14 +217,16 @@ class LighterClient:
 
     async def close_position_market(self, symbol: str, is_ask: bool, base_amount: float, ref_price: float):
         market_index = MARKET_INDEX.get(symbol)
+        size_dec  = SIZE_DECIMALS.get(symbol, 4)
+        price_dec = PRICE_DECIMALS.get(symbol, 2)
         try:
             client_order_index = int(time.time() * 1000) % 1_000_000
             tx, tx_hash, err = await _call(
                 self.signer.create_order,
                 market_index=market_index,
                 client_order_index=client_order_index,
-                base_amount=base_amount,
-                price=ref_price,
+                base_amount=to_scaled_int(base_amount, size_dec),
+                price=to_scaled_int(ref_price, price_dec),
                 is_ask=is_ask,
                 order_type=self.signer.ORDER_TYPE_MARKET,
                 time_in_force=self.signer.ORDER_TIME_IN_FORCE_IMMEDIATE_OR_CANCEL,
