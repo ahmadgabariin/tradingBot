@@ -355,13 +355,15 @@ async function refresh() {
 
   const agentsDiv = document.getElementById('agents');
   agentsDiv.innerHTML = '';
+  const dirColor = {LONG: '#3fb950', SHORT: '#f85149', BOTH: '#7d8590'};
   for (const [name, acfg] of Object.entries(d.config.agents)) {
     const el = document.createElement('div');
     el.className = 'agent-card';
+    const dirLabel = acfg.direction === 'BOTH' ? 'Long & Short' : acfg.direction + ' only';
     el.innerHTML = `
       <div>
         <div class="agent-name">${name}</div>
-        <div class="agent-desc">${acfg.direction === 'BOTH' ? 'Long & Short' : acfg.direction + ' only'}</div>
+        <div class="agent-desc" style="color:${dirColor[acfg.direction] || '#7d8590'}; font-weight:600;">${dirLabel}</div>
       </div>
       <div style="display:flex; align-items:center; gap:12px;">
         <select onchange="setDirection('${name}', this.value)">

@@ -10,8 +10,8 @@ _lock = threading.Lock()
 DEFAULT_CONFIG = {
     # Which agents are active. Engine only evaluates signals for agents set True.
     "agents": {
-        "Liquidity Hunt": {"enabled": True,  "direction": "BOTH"},  # LONG | SHORT | BOTH
-        "Surgeon v2":     {"enabled": True,  "direction": "BOTH"},
+        "Liquidity Hunt": {"enabled": True,  "direction": "LONG"},   # LONG | SHORT | BOTH
+        "Surgeon v2":     {"enabled": True,  "direction": "SHORT"},
     },
 
     # Position sizing. mode: "fixed" (USD amount) or "percent" (% of live balance).
