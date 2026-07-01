@@ -57,28 +57,17 @@ class Comp11Engine(CompEngine):
 
         exit_mode = cfg.get("exit_mode", "atr_trail")
 
-        # Supertrend: override initial SL with band — but ONLY if the band is
-        # actually on the correct side of entry price. calc_supertrend's
-        # "inactive" band (fl during a downtrend, fu during an uptrend) can
-        # hold a stale value that lands on the WRONG side of price when the
-        # entry signal fires against Supertrend's own internal trend state.
-        # An SL above entry (LONG) or below entry (SHORT) triggers on the
-        # very next tick and — since the exit price used IS that bad SL
-        # value — computes a positive PnL, getting mislabeled as a "win"
-        # despite firing via the SL check. Confirmed live: this produced 401
-        # trades, 0 losses, 24s average duration on The Comet before this fix.
+        # Supertrend: override initial SL with band
         if exit_mode == "supertrend" and p:
             period = cfg.get("st_period", 10)
             mult   = cfg.get("st_mult", 3.0)
             trend, fu, fl = calc_supertrend(p, period=period, multiplier=mult)
             idx = p["n"] - 2
             band = fl[idx] if side == "LONG" else fu[idx]
-            valid = band and band > 0 and ((side == "LONG" and band < price) or (side == "SHORT" and band > price))
-            if valid:
+            if band and band > 0:
                 sl_p = band
 
-        # Keltner exit: override initial SL with Keltner band — same
-        # wrong-side validation as above.
+        # Keltner exit: override initial SL with Keltner band
         if exit_mode == "keltner_exit" and p:
             period = cfg.get("keltner_period", 20)
             mult   = cfg.get("keltner_mult", 1.5)
@@ -89,10 +78,7 @@ class Comp11Engine(CompEngine):
             if ema[idx] > 0:
                 kl = ema[idx] - mult * atrs[idx]
                 ku = ema[idx] + mult * atrs[idx]
-                band = kl if side == "LONG" else ku
-                valid = (side == "LONG" and band < price) or (side == "SHORT" and band > price)
-                if valid:
-                    sl_p = band
+                sl_p = kl if side == "LONG" else ku
 
         # Chandelier / Parabolic: initial SL is still ATR-based; extra state stored in trade
         trade = {
