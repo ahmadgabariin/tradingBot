@@ -36,6 +36,12 @@ DEFAULT_CONFIG = {
     "min_notional_usd":   10.0,  # Lighter's exchange-enforced floor; sizing is bumped up to this if below
 
     "running": False,
+
+    # Trades closed at/before this unix timestamp are hidden from the Trade
+    # History table. The real trades still exist on Lighter (can't be erased,
+    # it's exchange history) — this just clears the DISPLAYED table going
+    # forward, e.g. to drop early manual test trades from the view.
+    "trade_history_cutoff": 0,
 }
 
 

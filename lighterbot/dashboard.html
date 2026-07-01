@@ -219,12 +219,13 @@
 <div class="card">
   <div class="stat-row" style="margin-bottom:12px;">
     <h3 style="margin:0;">Trade History <span style="font-weight:400; color:#7d8590; text-transform:none; letter-spacing:0;">(live from Lighter)</span></h3>
-    <div class="field-group">
+    <div style="display:flex; gap:10px; align-items:center;">
       <select id="trades-per-page" onchange="renderTradesPage()" style="width:auto;">
         <option value="10">10 / page</option>
         <option value="25" selected>25 / page</option>
         <option value="50">50 / page</option>
       </select>
+      <button class="danger" onclick="clearTradeHistory()">Clear History</button>
     </div>
   </div>
   <table id="trades">
@@ -581,6 +582,36 @@ async function clearLog() {
   if (!proceed) return;
   await authFetch('/clear-log', {method:'POST'});
   refresh();
+}
+
+async function clearTradeHistory() {
+  const proceed = await showInfo(
+    'Clear Trade History?',
+    'This hides all currently shown trades from the table. The real trades remain permanently on Lighter — this only clears what LighterBot displays.',
+    {ok:false, confirm:true}
+  );
+  if (!proceed) return;
+
+  // Always prompt fresh for the password here, even if one is already
+  // cached from earlier — this is a destructive action, ask every time.
+  const enteredPwd = await openPwdModal();
+  if (!enteredPwd) return;
+
+  const res = await fetch('/clear-trade-history', {
+    method: 'POST',
+    headers: {'X-Action-Password': enteredPwd, 'Content-Type': 'application/json'},
+  });
+  if (res.status === 403) {
+    await showInfo('Wrong Password', 'Trade history was not cleared.', {ok:false});
+    return;
+  }
+  const d = await res.json();
+  await showInfo(
+    d.ok ? 'Trade History Cleared' : 'Failed',
+    d.ok ? 'The table will refresh now.' : JSON.stringify(d),
+    {ok: d.ok}
+  );
+  fetchTrades();
 }
 
 async function fetchTrades() {

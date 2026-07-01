@@ -230,8 +230,14 @@ async def trades():
                     "closed_at": closed_at,
                 })
 
-        # Number trades in chronological order (#1 = earliest), then present
-        # most-recent-first — trade_number reflects real sequence, not page position.
+        # Trades at/before the cutoff are hidden from the displayed table (the
+        # real trades still exist on Lighter — this only clears the view).
+        cutoff = cfgmod.load_config().get("trade_history_cutoff", 0)
+        result = [t for t in result if t["closed_at"] > cutoff]
+
+        # Number trades in chronological order (#1 = earliest visible), then
+        # present most-recent-first — trade_number reflects real sequence,
+        # not page position.
         result.sort(key=lambda t: t["closed_at"])
         for i, t in enumerate(result):
             t["trade_number"] = i + 1
@@ -318,6 +324,16 @@ async def manual_trade(request: Request, payload: dict):
 async def clear_log(request: Request):
     if not _auth(request): return JSONResponse({"error": "forbidden"}, status_code=403)
     engine.clear_log()
+    return {"ok": True}
+
+
+@app.post("/clear-trade-history")
+async def clear_trade_history(request: Request):
+    if not _auth(request): return JSONResponse({"error": "forbidden"}, status_code=403)
+    import time
+    cfg = cfgmod.load_config()
+    cfg["trade_history_cutoff"] = time.time()
+    cfgmod.save_config(cfg)
     return {"ok": True}
 
 
