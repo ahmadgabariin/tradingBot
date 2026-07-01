@@ -43,6 +43,10 @@ class LighterBotEngine:
         self.state["trade_log"] = self.state["trade_log"][-300:]
         _save_state(self.state)
 
+    def clear_log(self):
+        self.state["trade_log"] = []
+        _save_state(self.state)
+
     async def ensure_client(self):
         if self.client is None:
             self.client = LighterClient()

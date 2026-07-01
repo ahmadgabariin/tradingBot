@@ -176,7 +176,10 @@
   <div class="row">
     <div class="field-group">
       <label class="field">Symbol</label>
-      <select id="m-symbol"><option>BTC</option><option>ETH</option><option>SOL</option></select>
+      <select id="m-symbol">
+        <option>BTC</option><option>ETH</option><option>SOL</option><option>XRP</option><option>BNB</option>
+        <option>ADA</option><option>LINK</option><option>DOT</option><option>AVAX</option><option>POL</option>
+      </select>
     </div>
     <div class="field-group">
       <label class="field">Side</label>
@@ -211,7 +214,10 @@
 </div>
 
 <div class="card">
-  <h3>Log</h3>
+  <div class="stat-row" style="margin-bottom:12px;">
+    <h3 style="margin:0;">Log</h3>
+    <button class="ghost" onclick="clearLog()">Clear Log</button>
+  </div>
   <div id="log"></div>
 </div>
 
@@ -505,6 +511,11 @@ async function emergencyStop() {
     JSON.stringify(d.result, null, 2),
     {ok: d.ok}
   );
+  refresh();
+}
+
+async function clearLog() {
+  await authFetch('/clear-log', {method:'POST'});
   refresh();
 }
 

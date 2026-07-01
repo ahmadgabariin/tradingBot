@@ -21,15 +21,15 @@ DEFAULT_CONFIG = {
         "percent":   5.0,
     },
 
-    # Leverage per symbol. Bot attempts this leverage via sign_update_leverage;
-    # if the exchange rejects it, the order is skipped and logged (never silently
-    # retried at a guessed value).
+    # Leverage per symbol, defaulted to each market's real max (confirmed live
+    # via Lighter's min_initial_margin_fraction on 2026-07-01). Bot attempts
+    # this leverage via sign_update_leverage; if the exchange rejects it, the
+    # trade is skipped and logged (never silently retried at a guessed value).
     "leverage": {
-        "BTC": 50,
-        "ETH": 25,
-        "SOL": 25,
+        "BTC": 50, "ETH": 50, "SOL": 25, "XRP": 20, "BNB": 20,
+        "LINK": 10, "DOT": 10, "AVAX": 10, "ADA": 10, "POL": 8,
     },
-    "default_leverage": 20,
+    "default_leverage": 10,
 
     # Hard safety rails
     "max_open_positions": 1,     # matches small account reality — avoid overcommitting $12

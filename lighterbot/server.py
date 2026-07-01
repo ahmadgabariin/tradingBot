@@ -145,6 +145,13 @@ async def manual_trade(request: Request, payload: dict):
     return {"ok": ok, "result": str(result)}
 
 
+@app.post("/clear-log")
+async def clear_log(request: Request):
+    if not _auth(request): return JSONResponse({"error": "forbidden"}, status_code=403)
+    engine.clear_log()
+    return {"ok": True}
+
+
 @app.post("/close-position")
 async def close_position(request: Request, payload: dict):
     if not _auth(request): return JSONResponse({"error": "forbidden"}, status_code=403)

@@ -23,27 +23,31 @@ async def _call(fn, *args, **kwargs):
     return result
 
 
+# All 10 confirmed live via /api/v1/orderBookDetails on 2026-07-01 — matches
+# the pairs list used by paper9/paper11 agents (COMP9_PAIRS).
 MARKET_INDEX = {
-    "ETH": 0,
-    "BTC": 1,
-    "SOL": 2,
+    "ETH": 0, "BTC": 1, "SOL": 2, "XRP": 7, "LINK": 8,
+    "AVAX": 9, "DOT": 11, "POL": 14, "BNB": 25, "ADA": 39,
 }
 MIN_BASE_AMOUNT = {
-    "ETH": 0.0050,
-    "BTC": 0.00020,
-    "SOL": 0.050,
+    "ETH": 0.0050, "BTC": 0.00020, "SOL": 0.050, "XRP": 20, "LINK": 1.0,
+    "AVAX": 0.50, "DOT": 2.0, "POL": 40, "BNB": 0.02, "ADA": 10.0,
 }
 PRICE_DECIMALS = {
-    "ETH": 2,
-    "BTC": 1,
-    "SOL": 3,
+    "ETH": 2, "BTC": 1, "SOL": 3, "XRP": 6, "LINK": 5,
+    "AVAX": 4, "DOT": 5, "POL": 6, "BNB": 4, "ADA": 5,
 }
 # From live orderBookDetails (size_decimals) — the SDK wants base_amount and
 # price as scaled integers, not floats.
 SIZE_DECIMALS = {
-    "ETH": 4,
-    "BTC": 5,
-    "SOL": 3,
+    "ETH": 4, "BTC": 5, "SOL": 3, "XRP": 0, "LINK": 1,
+    "AVAX": 2, "DOT": 1, "POL": 0, "BNB": 2, "ADA": 1,
+}
+# max_leverage = 10000 / min_initial_margin_fraction (confirmed live, not the
+# maintenance_margin_fraction — that field gives a much lower, wrong number).
+MAX_LEVERAGE = {
+    "BTC": 50, "ETH": 50, "SOL": 25, "XRP": 20, "BNB": 20,
+    "LINK": 10, "DOT": 10, "AVAX": 10, "ADA": 10, "POL": 8,
 }
 MIN_NOTIONAL_USD = 10.0
 

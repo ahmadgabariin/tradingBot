@@ -10,11 +10,11 @@ import requests
 BINANCE_BASE = "https://api.binance.com"
 CANDLE_LIMIT = 300
 
-# Lighter symbol -> Binance symbol
+# Lighter symbol -> Binance symbol. Matches COMP9_PAIRS (paper9/paper11 agents).
 SYMBOL_MAP = {
-    "BTC": "BTCUSDT",
-    "ETH": "ETHUSDT",
-    "SOL": "SOLUSDT",
+    "BTC": "BTCUSDT", "ETH": "ETHUSDT", "SOL": "SOLUSDT", "BNB": "BNBUSDT",
+    "XRP": "XRPUSDT", "ADA": "ADAUSDT", "LINK": "LINKUSDT", "DOT": "DOTUSDT",
+    "AVAX": "AVAXUSDT", "POL": "POLUSDT",
 }
 
 _cache = {}          # (symbol, timeframe) -> {"data": {...}, "ts": float}
