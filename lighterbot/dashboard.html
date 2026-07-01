@@ -277,6 +277,17 @@ let currentConfig = null;
 let allTrades = [];
 let tradesPage = 0;
 
+// Lightweight useMemo equivalent — only 2 agents and 10 pairs exist, so full
+// DOM rebuilds every 5s poll are wasted work when nothing actually changed.
+// Skip re-rendering a section unless its underlying data actually changed.
+const _memo = {};
+function memoized(key, data, renderFn) {
+  const snapshot = JSON.stringify(data);
+  if (_memo[key] === snapshot) return;
+  _memo[key] = snapshot;
+  renderFn();
+}
+
 let pwdResolve = null;
 
 function openPwdModal(errorMsg='') {
@@ -377,46 +388,53 @@ async function refresh() {
   badge.className = 'badge ' + (d.running ? 'on' : 'off');
   document.getElementById('live-dot').className = 'dot' + (d.running ? ' live' : '');
 
-  const agentsDiv = document.getElementById('agents');
-  agentsDiv.innerHTML = '';
-  const dirColor = {LONG: '#3fb950', SHORT: '#f85149', BOTH: '#7d8590'};
-  for (const [name, acfg] of Object.entries(d.config.agents)) {
-    const el = document.createElement('div');
-    el.className = 'agent-card';
-    const dirLabel = acfg.direction === 'BOTH' ? 'Long & Short' : acfg.direction + ' only';
-    el.innerHTML = `
-      <div>
-        <div class="agent-name">${name}</div>
-        <div class="agent-desc" style="color:${dirColor[acfg.direction] || '#7d8590'}; font-weight:600;">${dirLabel}</div>
-      </div>
-      <div style="display:flex; align-items:center; gap:12px;">
-        <select onchange="setDirection('${name}', this.value)">
-          <option value="LONG" ${acfg.direction==='LONG'?'selected':''}>Long only</option>
-          <option value="SHORT" ${acfg.direction==='SHORT'?'selected':''}>Short only</option>
-          <option value="BOTH" ${acfg.direction==='BOTH'?'selected':''}>Both</option>
-        </select>
-        <label class="toggle">
-          <input type="checkbox" ${acfg.enabled?'checked':''} onchange="toggleAgent('${name}', this.checked)">
-          <span class="slider"></span>
-        </label>
-      </div>`;
-    agentsDiv.appendChild(el);
-  }
+  // Agents (2 fixed) and leverage (10 fixed pairs) rarely change — only on
+  // explicit user edits or a max-leverage refresh. Skip rebuilding this DOM
+  // every 5s poll when nothing actually changed.
+  memoized('agents', d.config.agents, () => {
+    const agentsDiv = document.getElementById('agents');
+    agentsDiv.innerHTML = '';
+    const dirColor = {LONG: '#3fb950', SHORT: '#f85149', BOTH: '#7d8590'};
+    for (const [name, acfg] of Object.entries(d.config.agents)) {
+      const el = document.createElement('div');
+      el.className = 'agent-card';
+      const dirLabel = acfg.direction === 'BOTH' ? 'Long & Short' : acfg.direction + ' only';
+      el.innerHTML = `
+        <div>
+          <div class="agent-name">${name}</div>
+          <div class="agent-desc" style="color:${dirColor[acfg.direction] || '#7d8590'}; font-weight:600;">${dirLabel}</div>
+        </div>
+        <div style="display:flex; align-items:center; gap:12px;">
+          <select onchange="setDirection('${name}', this.value)">
+            <option value="LONG" ${acfg.direction==='LONG'?'selected':''}>Long only</option>
+            <option value="SHORT" ${acfg.direction==='SHORT'?'selected':''}>Short only</option>
+            <option value="BOTH" ${acfg.direction==='BOTH'?'selected':''}>Both</option>
+          </select>
+          <label class="toggle">
+            <input type="checkbox" ${acfg.enabled?'checked':''} onchange="toggleAgent('${name}', this.checked)">
+            <span class="slider"></span>
+          </label>
+        </div>`;
+      agentsDiv.appendChild(el);
+    }
+  });
 
   document.getElementById('sizing-mode').value = d.config.sizing.mode;
   renderSizingValue();
 
-  const levRow = document.getElementById('leverage-row');
-  levRow.innerHTML = '';
-  const maxLev = d.max_leverage || {};
-  for (const [sym, lev] of Object.entries(d.config.leverage)) {
-    const max = maxLev[sym];
-    levRow.innerHTML += `<div class="lev-item">
-      <label class="field">${sym}${max ? ` <span style="color:#484f58;">(max ${max}x)</span>` : ''}</label>
-      <input id="lev-${sym}" type="number" value="${lev}" ${max ? `max="${max}"` : ''}
-             onchange="if(this.value>${max||9999}) this.value=${max||9999};">
-    </div>`;
-  }
+  memoized('leverage', {leverage: d.config.leverage, max: d.max_leverage}, () => {
+    const levRow = document.getElementById('leverage-row');
+    levRow.innerHTML = '';
+    const maxLev = d.max_leverage || {};
+    for (const [sym, lev] of Object.entries(d.config.leverage)) {
+      const max = maxLev[sym];
+      levRow.innerHTML += `<div class="lev-item">
+        <label class="field">${sym}${max ? ` <span style="color:#484f58;">(max ${max}x)</span>` : ''}</label>
+        <input id="lev-${sym}" type="number" value="${lev}" ${max ? `max="${max}"` : ''}
+               onchange="if(this.value>${max||9999}) this.value=${max||9999};">
+      </div>`;
+    }
+  });
 
   const tbody = document.querySelector('#positions tbody');
   const positions = d.open_positions || [];
@@ -580,27 +598,31 @@ function renderTradesPage() {
   const start = tradesPage * perPage;
   const pageItems = allTrades.slice(start, start + perPage);
 
-  const tbody = document.querySelector('#trades tbody');
-  tbody.innerHTML = pageItems.length ? pageItems.map(t => {
-    const sideColor = t.side === 'LONG' ? '#3fb950' : '#f85149';
-    const pnlColor = t.pnl >= 0 ? '#3fb950' : '#f85149';
-    const resultColor = t.result === 'WIN' ? '#3fb950' : '#f85149';
-    const exitColor = t.exit_type === 'TP' ? '#3fb950' : (t.exit_type === 'SL' ? '#f85149' : '#7d8590');
-    const opened = t.opened_at ? new Date(t.opened_at * 1000).toLocaleString() : '—';
-    const closed = t.closed_at ? new Date(t.closed_at * 1000).toLocaleString() : '—';
-    return `<tr>
-      <td>${t.trade_number}</td>
-      <td style="color:${t.agent === 'Manual' ? '#7d8590' : '#e6edf3'}">${t.agent}</td>
-      <td>${t.symbol}</td>
-      <td style="color:${sideColor}">${t.side}</td>
-      <td>${t.entry_price}</td>
-      <td>${t.exit_price} <span style="color:${exitColor}; font-size:11px;">(${t.exit_type})</span></td>
-      <td style="color:${resultColor}; font-weight:600;">${t.result}</td>
-      <td style="color:${pnlColor}">$${t.pnl.toFixed(4)}</td>
-      <td>${opened}</td>
-      <td>${closed}</td>
-    </tr>`;
-  }).join('') : `<tr class="empty-row"><td colspan="10">No trades yet</td></tr>`;
+  // Trade history only changes when a trade actually closes — skip rebuilding
+  // this table on every fetch if the current page's content is unchanged.
+  memoized('trades-page', {items: pageItems, page: tradesPage, perPage}, () => {
+    const tbody = document.querySelector('#trades tbody');
+    tbody.innerHTML = pageItems.length ? pageItems.map(t => {
+      const sideColor = t.side === 'LONG' ? '#3fb950' : '#f85149';
+      const pnlColor = t.pnl >= 0 ? '#3fb950' : '#f85149';
+      const resultColor = t.result === 'WIN' ? '#3fb950' : '#f85149';
+      const exitColor = t.exit_type === 'TP' ? '#3fb950' : (t.exit_type === 'SL' ? '#f85149' : '#7d8590');
+      const opened = t.opened_at ? new Date(t.opened_at * 1000).toLocaleString() : '—';
+      const closed = t.closed_at ? new Date(t.closed_at * 1000).toLocaleString() : '—';
+      return `<tr>
+        <td>${t.trade_number}</td>
+        <td style="color:${t.agent === 'Manual' ? '#7d8590' : '#e6edf3'}">${t.agent}</td>
+        <td>${t.symbol}</td>
+        <td style="color:${sideColor}">${t.side}</td>
+        <td>${t.entry_price}</td>
+        <td>${t.exit_price} <span style="color:${exitColor}; font-size:11px;">(${t.exit_type})</span></td>
+        <td style="color:${resultColor}; font-weight:600;">${t.result}</td>
+        <td style="color:${pnlColor}">$${t.pnl.toFixed(4)}</td>
+        <td>${opened}</td>
+        <td>${closed}</td>
+      </tr>`;
+    }).join('') : `<tr class="empty-row"><td colspan="10">No trades yet</td></tr>`;
+  });
 
   document.getElementById('trades-page-label').textContent =
     allTrades.length ? `Page ${tradesPage+1} of ${totalPages} (${allTrades.length} trades)` : '';
