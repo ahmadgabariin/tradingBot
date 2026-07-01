@@ -52,6 +52,10 @@ class LighterBotEngine:
         """Verifies API credentials and prints the raw account shape so balance
         field names can be confirmed before trading logic depends on them."""
         client = await self.ensure_client()
+        if client.client_check_error:
+            self.log(f"SELFTEST FAILED: check_client() error — API key not properly "
+                      f"registered for this account: {client.client_check_error}")
+            return False, client.client_check_error
         ok, res = await client.get_account_raw()
         if not ok:
             self.log(f"SELFTEST FAILED: {res}")

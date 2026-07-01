@@ -20,6 +20,7 @@ async def _call(fn, *args, **kwargs):
         result = await result
     return result
 
+
 MARKET_INDEX = {
     "ETH": 0,
     "BTC": 1,
@@ -35,18 +36,18 @@ PRICE_DECIMALS = {
     "BTC": 1,
     "SOL": 3,
 }
-# From live orderBookDetails (size_decimals) — the SDK's create_order wants
-# base_amount and price as scaled integers, not floats.
+# From live orderBookDetails (size_decimals) — the SDK wants base_amount and
+# price as scaled integers, not floats.
 SIZE_DECIMALS = {
     "ETH": 4,
     "BTC": 5,
     "SOL": 3,
 }
+MIN_NOTIONAL_USD = 10.0
 
 
 def to_scaled_int(value: float, decimals: int) -> int:
     return int(round(value * (10 ** decimals)))
-MIN_NOTIONAL_USD = 10.0
 
 
 class LighterClient:
@@ -68,6 +69,12 @@ class LighterClient:
             configuration=lighter.Configuration(host=self.base_url)
         )
         self.account_api = lighter.AccountApi(self.api_client)
+
+        # Validates the API key is actually registered on-chain for this
+        # account. Skipping this is what produces "invalid signature" (21120)
+        # on every signed request instead of a clear error up front.
+        check_err = self.signer.check_client()
+        self.client_check_error = str(check_err) if check_err else None
 
     # ── Read-only ──────────────────────────────────────────────────────────
     async def get_account_raw(self):
@@ -101,7 +108,6 @@ class LighterClient:
                     val = getattr(acct, attr)
                     if val is not None:
                         return float(val), None
-            # Nothing matched — dump the full record so the real field name is visible
             dump = acct.to_dict() if hasattr(acct, "to_dict") else vars(acct)
             return None, f"Could not find balance field. Full account record: {dump}"
         except Exception as e:
@@ -119,6 +125,8 @@ class LighterClient:
 
     # ── Leverage ───────────────────────────────────────────────────────────
     async def set_leverage(self, symbol: str, leverage: int):
+        if self.client_check_error:
+            return False, f"Client not properly initialized: {self.client_check_error}"
         market_index = MARKET_INDEX.get(symbol)
         if market_index is None:
             return False, f"Unknown symbol {symbol}"
@@ -141,11 +149,14 @@ class LighterClient:
                                               sl_price: float, tp_price: float):
         """
         is_ask=False -> BUY (long), is_ask=True -> SELL (short)
-        Places a market entry, then attaches OCO stop-loss/take-profit via
-        create_grouped_orders. Every step is independently error-checked;
-        if SL/TP attachment fails, the position is flattened immediately
-        rather than left unprotected.
+        Places a market entry via create_market_order, then attaches OCO
+        stop-loss/take-profit via create_grouped_orders. Every step is
+        independently error-checked; if SL/TP attachment fails, the position
+        is flattened immediately rather than left unprotected.
         """
+        if self.client_check_error:
+            return False, f"Client not properly initialized: {self.client_check_error}"
+
         market_index = MARKET_INDEX.get(symbol)
         if market_index is None:
             return False, f"Unknown symbol {symbol}"
@@ -166,43 +177,46 @@ class LighterClient:
         tp_price_i  = to_scaled_int(tp_price, price_dec)
 
         try:
-            client_order_index = int(time.time() * 1000) % 1_000_000
+            entry_client_order_index = int(time.time() * 1000) % 1_000_000
             entry_tx, entry_hash, err = await _call(
-                self.signer.create_order,
+                self.signer.create_market_order,
                 market_index=market_index,
-                client_order_index=client_order_index,
+                client_order_index=entry_client_order_index,
                 base_amount=amount_i,
-                price=ref_price_i,
+                avg_execution_price=ref_price_i,
                 is_ask=is_ask,
-                order_type=self.signer.ORDER_TYPE_MARKET,
-                time_in_force=self.signer.ORDER_TIME_IN_FORCE_IMMEDIATE_OR_CANCEL,
-                reduce_only=False,
-                order_expiry=self.signer.DEFAULT_IOC_EXPIRY,
             )
             if err:
                 return False, f"entry order failed: {err}"
         except Exception as e:
             return False, f"entry order exception: {e}"
 
-        # Attach OCO stop-loss / take-profit, reduce-only, opposite side of entry
+        # Attach OCO stop-loss / take-profit, reduce-only, opposite side of entry.
+        # CreateOrderTxReq field names are capitalized — confirmed from SDK source.
         try:
             tp_order = {
-                "market_index": market_index,
-                "is_ask": not is_ask,
-                "base_amount": amount_i,
-                "trigger_price": tp_price_i,
-                "price": tp_price_i,
-                "order_type": self.signer.ORDER_TYPE_TAKE_PROFIT_LIMIT,
-                "reduce_only": True,
+                "MarketIndex": market_index,
+                "ClientOrderIndex": (entry_client_order_index + 1) % 1_000_000,
+                "BaseAmount": amount_i,
+                "Price": tp_price_i,
+                "IsAsk": not is_ask,
+                "Type": self.signer.ORDER_TYPE_TAKE_PROFIT_LIMIT,
+                "TimeInForce": self.signer.ORDER_TIME_IN_FORCE_GOOD_TILL_TIME,
+                "ReduceOnly": True,
+                "TriggerPrice": tp_price_i,
+                "OrderExpiry": self.signer.DEFAULT_28_DAY_ORDER_EXPIRY,
             }
             sl_order = {
-                "market_index": market_index,
-                "is_ask": not is_ask,
-                "base_amount": amount_i,
-                "trigger_price": sl_price_i,
-                "price": sl_price_i,
-                "order_type": self.signer.ORDER_TYPE_STOP_LOSS_LIMIT,
-                "reduce_only": True,
+                "MarketIndex": market_index,
+                "ClientOrderIndex": (entry_client_order_index + 2) % 1_000_000,
+                "BaseAmount": amount_i,
+                "Price": sl_price_i,
+                "IsAsk": not is_ask,
+                "Type": self.signer.ORDER_TYPE_STOP_LOSS_LIMIT,
+                "TimeInForce": self.signer.ORDER_TIME_IN_FORCE_GOOD_TILL_TIME,
+                "ReduceOnly": True,
+                "TriggerPrice": sl_price_i,
+                "OrderExpiry": self.signer.DEFAULT_28_DAY_ORDER_EXPIRY,
             }
             oco_tx = await _call(
                 self.signer.create_grouped_orders,
@@ -222,16 +236,13 @@ class LighterClient:
         try:
             client_order_index = int(time.time() * 1000) % 1_000_000
             tx, tx_hash, err = await _call(
-                self.signer.create_order,
+                self.signer.create_market_order,
                 market_index=market_index,
                 client_order_index=client_order_index,
                 base_amount=to_scaled_int(base_amount, size_dec),
-                price=to_scaled_int(ref_price, price_dec),
+                avg_execution_price=to_scaled_int(ref_price, price_dec),
                 is_ask=is_ask,
-                order_type=self.signer.ORDER_TYPE_MARKET,
-                time_in_force=self.signer.ORDER_TIME_IN_FORCE_IMMEDIATE_OR_CANCEL,
                 reduce_only=True,
-                order_expiry=self.signer.DEFAULT_IOC_EXPIRY,
             )
             return (err is None), (tx_hash or err)
         except Exception as e:
