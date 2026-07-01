@@ -1,0 +1,16 @@
+[Unit]
+Description=LighterBot — real-money trading on Lighter.xyz (port 8140)
+After=network.target
+
+[Service]
+Type=simple
+User=mrpolo
+WorkingDirectory=/home/mrpolo/binanceBot
+ExecStart=/usr/bin/python3 -m lighterbot.server
+Restart=always
+RestartSec=5
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target
