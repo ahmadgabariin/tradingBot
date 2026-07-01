@@ -9,7 +9,7 @@ from datetime import datetime, timezone
 
 from lighterbot import config as cfgmod
 from lighterbot import data_feed
-from lighterbot.agents import AGENTS, LONG_SIGNALS, SHORT_SIGNALS
+from lighterbot.agents import AGENTS, LONG_SIGNALS, SHORT_SIGNALS, PAIRS
 from lighterbot.lighter_client import LighterClient, MARKET_INDEX
 
 STATE_FILE = os.path.join(os.path.dirname(__file__), "lighterbot_state.json")
@@ -20,7 +20,7 @@ def _load_state():
     if os.path.exists(STATE_FILE):
         with open(STATE_FILE) as f:
             return json.load(f)
-    return {"open_positions": {}, "trade_log": [], "leverage_applied": {}}
+    return {"trade_log": []}
 
 
 def _save_state(state):
@@ -92,9 +92,6 @@ class LighterBotEngine:
                 self.last_error = str(e)
                 self.log(f"TICK ERROR: {e}\n{traceback.format_exc()}")
             await asyncio.sleep(TICK_INTERVAL)
-
-    def _open_count(self):
-        return len(self.state["open_positions"])
 
     async def _compute_size(self, symbol, leverage, ref_price, cfg):
         """Returns base_amount in coin units, sized per config, bumped to the
@@ -208,6 +205,20 @@ class LighterBotEngine:
         cfg = cfgmod.load_config()
         client = await self.ensure_client()
 
+        # Check LIVE positions from Lighter, not local state — local state
+        # drifts from reality when trades happen outside the engine (manual
+        # trades, dashboard closes), so it's not a safe source of truth for
+        # dedup/limit checks.
+        live_positions, pos_err = await client.get_open_positions()
+        if pos_err:
+            self.log(f"Could not fetch live positions, skipping tick: {pos_err}")
+            return
+        symbols_with_position = {
+            getattr(p, "symbol", None) for p in live_positions
+            if float(getattr(p, "position", 0) or 0) != 0
+        }
+        open_count = len(symbols_with_position)
+
         for agent_name, acfg in cfg["agents"].items():
             if not acfg.get("enabled"):
                 continue
@@ -216,68 +227,63 @@ class LighterBotEngine:
             if not agent:
                 continue
 
-            symbol = agent["symbol"]
-            key = f"{agent_name}:{symbol}"
-            if key in self.state["open_positions"]:
-                continue  # already open — Lighter's native SL/TP will close it, we just watch for cleanup
-
-            if self._open_count() >= cfg["max_open_positions"]:
-                continue
-
-            p = data_feed.get_candles(symbol, agent["timeframe"])
-            if not p or p["n"] < 50:
-                continue
-            idx = p["n"] - 2
-
             direction = acfg.get("direction", "BOTH")
-            long_sig = short_sig = False
-            if direction in ("LONG", "BOTH"):
-                fn = LONG_SIGNALS.get(agent_name)
-                try: long_sig = fn(p, idx) if fn else False
-                except Exception as e: self.log(f"{agent_name} long signal error: {e}")
-            if direction in ("SHORT", "BOTH") and not long_sig:
-                fn = SHORT_SIGNALS.get(agent_name)
-                try: short_sig = fn(p, idx) if fn else False
-                except Exception as e: self.log(f"{agent_name} short signal error: {e}")
+            sfn_long  = LONG_SIGNALS.get(agent_name)
+            sfn_short = SHORT_SIGNALS.get(agent_name)
 
-            if not (long_sig or short_sig):
-                continue
+            for symbol in PAIRS:
+                if open_count >= cfg["max_open_positions"]:
+                    break
+                if symbol in symbols_with_position:
+                    continue  # already have a position on this symbol (any agent)
 
-            side = "LONG" if long_sig else "SHORT"
-            price = data_feed.get_live_price(symbol)
-            if not price:
-                self.log(f"No live price for {symbol}, skipping signal")
-                continue
+                p = data_feed.get_candles(symbol, agent["timeframe"])
+                if not p or p["n"] < 50:
+                    continue
+                idx = p["n"] - 2
 
-            leverage = cfg["leverage"].get(symbol, cfg["default_leverage"])
-            ok, lev_res = await client.set_leverage(symbol, leverage)
-            if not ok:
-                self.log(f"Leverage set failed for {symbol} @ {leverage}x: {lev_res} — skipping trade")
-                continue
+                long_sig = short_sig = False
+                if direction in ("LONG", "BOTH"):
+                    try: long_sig = sfn_long(p, idx) if sfn_long else False
+                    except Exception as e: self.log(f"{agent_name} {symbol} long signal error: {e}")
+                if direction in ("SHORT", "BOTH") and not long_sig:
+                    try: short_sig = sfn_short(p, idx) if sfn_short else False
+                    except Exception as e: self.log(f"{agent_name} {symbol} short signal error: {e}")
 
-            base_amount = await self._compute_size(symbol, leverage, price, cfg)
-            if base_amount is None:
-                continue
+                if not (long_sig or short_sig):
+                    continue
 
-            is_ask = (side == "SHORT")
-            sl_dist = agent["atr_sl_mult"] * p["atr"][idx]
-            tp_dist = agent["atr_tp_mult"] * p["atr"][idx]
-            sl_price = price - sl_dist if side == "LONG" else price + sl_dist
-            tp_price = price + tp_dist if side == "LONG" else price - tp_dist
+                side = "LONG" if long_sig else "SHORT"
+                price = data_feed.get_live_price(symbol)
+                if not price:
+                    self.log(f"No live price for {symbol}, skipping signal")
+                    continue
 
-            ok, result = await client.place_market_order_with_sl_tp(
-                symbol, is_ask, base_amount, price, sl_price, tp_price
-            )
-            self.log(f"{agent_name} SIGNAL {side} {symbol} amount={base_amount} "
-                      f"price={price} sl={sl_price} tp={tp_price} -> ok={ok} result={result}")
+                leverage = cfg["leverage"].get(symbol, cfg["default_leverage"])
+                ok, lev_res = await client.set_leverage(symbol, leverage)
+                if not ok:
+                    self.log(f"Leverage set failed for {symbol} @ {leverage}x: {lev_res} — skipping trade")
+                    continue
 
-            if ok:
-                self.state["open_positions"][key] = {
-                    "agent": agent_name, "symbol": symbol, "side": side,
-                    "entry": price, "sl": sl_price, "tp": tp_price,
-                    "base_amount": base_amount, "open_at": time.time(),
-                }
-                _save_state(self.state)
+                base_amount = await self._compute_size(symbol, leverage, price, cfg)
+                if base_amount is None:
+                    continue
+
+                is_ask = (side == "SHORT")
+                sl_dist = agent["atr_sl_mult"] * p["atr"][idx]
+                tp_dist = agent["atr_tp_mult"] * p["atr"][idx]
+                sl_price = price - sl_dist if side == "LONG" else price + sl_dist
+                tp_price = price + tp_dist if side == "LONG" else price - tp_dist
+
+                ok, result = await client.place_market_order_with_sl_tp(
+                    symbol, is_ask, base_amount, price, sl_price, tp_price
+                )
+                self.log(f"{agent_name} SIGNAL {side} {symbol} amount={base_amount} "
+                          f"price={price} sl={sl_price} tp={tp_price} -> ok={ok} result={result}")
+
+                if ok:
+                    symbols_with_position.add(symbol)
+                    open_count += 1
 
 
 engine = LighterBotEngine()

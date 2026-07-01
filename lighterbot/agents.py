@@ -5,15 +5,19 @@ existing paper-trading project.
 """
 import numpy as np
 
+# Same 10 pairs as paper9/paper11 (COMP9_PAIRS) — each agent scans all of them
+# every tick, same as the paper-trading competitions.
+PAIRS = ["BTC", "ETH", "SOL", "BNB", "XRP", "ADA", "LINK", "DOT", "AVAX", "POL"]
+
 AGENTS = {
     "Liquidity Hunt": {
-        "symbol": "BTC", "timeframe": "1h",
+        "timeframe": "1h",
         "atr_sl_mult": 1.5, "atr_tp_mult": 3.0,
         "exit_mode": "chandelier",
         "description": "Stop sweep reversal — Chandelier exit anchors SL to the post-sweep peak.",
     },
     "Surgeon v2": {
-        "symbol": "BTC", "timeframe": "15m",
+        "timeframe": "15m",
         "atr_sl_mult": 1.5, "atr_tp_mult": 3.0,
         "exit_mode": "chandelier",
         "description": "RSI reversal — Chandelier exit anchors SL to the spike top.",
