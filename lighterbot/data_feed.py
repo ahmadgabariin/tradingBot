@@ -7,8 +7,14 @@ Indicator math below is ported 1:1 from fast_backtest.py's precompute() and
 paper_shared/base_engine.py's _calc_swing() — comp9/comp10 use these exact
 formulas, so LighterBot's Liquidity Hunt / Surgeon v2 signals fire on the
 same conditions as the real comp10 agents, not an approximation.
+
+get_candles()/get_live_price() are async and run their blocking `requests`
+calls via asyncio.to_thread — calling `requests.get` directly inside an async
+function freezes the ENTIRE event loop for the duration of the HTTP call,
+which was blocking the dashboard's own requests (/state, etc.) every tick
+since this runs for every pair on every 15s cycle.
 """
-import time
+import asyncio, time
 import numpy as np
 import requests
 
@@ -107,11 +113,8 @@ def _swing_series(h, l, lookback=10):
     return s_hi, s_lo
 
 
-def get_candles(symbol: str, timeframe: str):
-    """Returns dict with the exact fields comp9/comp10's precompute() produces
-    (c, h, l, v, o, rsi, adx, vol_avg, green, s_hi, s_lo, atr, n), so ported
-    signal functions run on identical data. Cached briefly to avoid hammering
-    Binance every tick."""
+def _get_candles_sync(symbol: str, timeframe: str):
+    """Blocking implementation — only ever called via asyncio.to_thread."""
     key = (symbol, timeframe)
     now = time.time()
     cached = _cache.get(key)
@@ -152,7 +155,16 @@ def get_candles(symbol: str, timeframe: str):
     return data
 
 
-def get_live_price(symbol: str):
+async def get_candles(symbol: str, timeframe: str):
+    """Returns dict with the exact fields comp9/comp10's precompute() produces
+    (c, h, l, v, o, rsi, adx, vol_avg, green, s_hi, s_lo, atr, n), so ported
+    signal functions run on identical data. Cached briefly to avoid hammering
+    Binance every tick. Runs off the event loop thread so it never blocks
+    other requests (like the dashboard's own /state polling) while fetching."""
+    return await asyncio.to_thread(_get_candles_sync, symbol, timeframe)
+
+
+def _get_live_price_sync(symbol: str):
     binance_symbol = SYMBOL_MAP.get(symbol)
     if not binance_symbol:
         return None
@@ -164,3 +176,7 @@ def get_live_price(symbol: str):
     except Exception as e:
         print(f"[data_feed] price fetch error {symbol}: {e}")
         return None
+
+
+async def get_live_price(symbol: str):
+    return await asyncio.to_thread(_get_live_price_sync, symbol)

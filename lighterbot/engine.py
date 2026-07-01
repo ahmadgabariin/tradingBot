@@ -158,7 +158,7 @@ class LighterBotEngine:
 
             leverage = leverage_override or cfg["leverage"].get(symbol, cfg["default_leverage"])
 
-            price = data_feed.get_live_price(symbol)
+            price = await data_feed.get_live_price(symbol)
             if not price:
                 return False, "Could not fetch live price"
 
@@ -209,7 +209,7 @@ class LighterBotEngine:
                 return False, f"No open position on {symbol}"
 
             p, size = target
-            price = data_feed.get_live_price(symbol)
+            price = await data_feed.get_live_price(symbol)
             if not price:
                 return False, "Could not fetch live price"
 
@@ -262,7 +262,7 @@ class LighterBotEngine:
             if not agent or agent.get("exit_mode") != "atr_trail":
                 continue
 
-            p_candles = data_feed.get_candles(symbol, agent["timeframe"])
+            p_candles = await data_feed.get_candles(symbol, agent["timeframe"])
             if not p_candles or p_candles["n"] < 20 or "atr" not in p_candles:
                 continue
             idx = p_candles["n"] - 2
@@ -270,7 +270,7 @@ class LighterBotEngine:
             if not atr or atr <= 0:
                 continue
 
-            price = data_feed.get_live_price(symbol)
+            price = await data_feed.get_live_price(symbol)
             if not price:
                 continue
 
@@ -339,7 +339,7 @@ class LighterBotEngine:
                     if symbol in symbols_with_position:
                         continue  # already have a position on this symbol (any agent)
 
-                    p = data_feed.get_candles(symbol, agent["timeframe"])
+                    p = await data_feed.get_candles(symbol, agent["timeframe"])
                     if not p or p["n"] < 50:
                         continue
                     idx = p["n"] - 2
@@ -356,7 +356,7 @@ class LighterBotEngine:
                         continue
 
                     side = "LONG" if long_sig else "SHORT"
-                    price = data_feed.get_live_price(symbol)
+                    price = await data_feed.get_live_price(symbol)
                     if not price:
                         self.log(f"No live price for {symbol}, skipping signal")
                         continue
