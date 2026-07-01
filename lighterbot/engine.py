@@ -226,11 +226,13 @@ class LighterBotEngine:
 
     async def update_trailing_stops(self, client, live_positions):
         """Live equivalent of comp9/comp10's _update_trailing_stops(): moves the
-        resting stop-loss to lock in profit as price moves favorably. Lighter
-        has no 'modify order' — moving a stop means cancel the old OCO pair and
-        recreate it with the new SL (same TP), same as comp9's ATR trail formula:
-        LONG:  new_sl = price - atr_mult*atr   (only moves up)
-        SHORT: new_sl = price + atr_mult*atr   (only moves down)
+        resting stop-loss to lock in profit as price moves favorably, using
+        modify_order to update the trigger price in place — confirmed live to
+        leave the paired take-profit order completely untouched. This is
+        better than cancel+recreate: no window where the position is
+        unprotected, and one tx instead of three. Same ATR trail formula as
+        comp9: LONG new_sl = price - atr_mult*atr (only moves up), SHORT
+        mirrors (only moves down).
         """
         pos_map = self.state.get("position_agent_map", {})
         for p in live_positions:
@@ -267,8 +269,7 @@ class LighterBotEngine:
             if err:
                 continue
             sl_order = next((o for o in orders if getattr(o, "type", "") == "stop-loss-limit"), None)
-            tp_order = next((o for o in orders if getattr(o, "type", "") == "take-profit-limit"), None)
-            if not sl_order or not tp_order:
+            if not sl_order:
                 continue  # nothing resting to trail, or already closed
 
             current_sl = float(getattr(sl_order, "trigger_price", 0) or 0)
@@ -276,23 +277,15 @@ class LighterBotEngine:
             if not favorable:
                 continue
 
-            tp_price = float(getattr(tp_order, "trigger_price", 0) or 0)
-            ok1, r1 = await client.cancel_order(symbol, getattr(sl_order, "order_index"))
-            ok2, r2 = await client.cancel_order(symbol, getattr(tp_order, "order_index"))
-            if not (ok1 and ok2):
-                self.log(f"Trailing stop cancel failed for {symbol}: sl={r1} tp={r2} — leaving old bracket in place")
-                continue
-
-            is_ask = (side == "SHORT")
-            ok, result = await client.attach_sl_tp(symbol, is_ask, new_sl, tp_price)
+            is_close_ask = (side == "LONG")  # closing a LONG is a SELL
+            ok, result = await client.modify_stop_order(
+                symbol, getattr(sl_order, "order_index"), new_sl, is_close_ask
+            )
             if ok:
                 self.log(f"Trailing stop {symbol}: {current_sl} -> {new_sl} (price={price})")
             else:
-                self.log(f"Trailing stop re-attach FAILED for {symbol} after cancelling old bracket "
-                          f"(position now unprotected!): {result}")
-                # Best-effort safety: flatten rather than leave a real position with no SL/TP at all.
-                await client.close_position_market(symbol, is_ask=not is_ask, base_amount=abs(size), ref_price=price)
-                self.log(f"Flattened {symbol} after failed trailing re-attach.")
+                self.log(f"Trailing stop modify FAILED for {symbol}, old SL still resting at "
+                          f"{current_sl} (position remains protected, just not trailed this tick): {result}")
 
     async def run_tick(self):
         async with self._trade_lock:

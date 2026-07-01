@@ -219,6 +219,35 @@ class LighterClient:
         except Exception as e:
             return False, str(e)
 
+    async def modify_stop_order(self, symbol: str, order_index: int, new_trigger_price: float,
+                                  is_close_ask: bool, fill_buffer_pct: float = 0.5):
+        """Moves a resting stop-loss/take-profit trigger price in place —
+        confirmed live to NOT touch the paired OCO order (TP stays resting
+        untouched when only the SL is modified). Strictly better than
+        cancel+recreate: no window where the position is unprotected, and one
+        less thing that can fail (only one tx instead of cancel+cancel+create)."""
+        market_index = MARKET_INDEX.get(symbol)
+        if market_index is None:
+            return False, f"Unknown symbol {symbol}"
+        price_dec = PRICE_DECIMALS.get(symbol, 2)
+
+        # Same fill-buffer direction logic as attach_sl_tp: closing side needs
+        # a worse price than trigger to guarantee execution once triggered.
+        fill_price = (new_trigger_price * (1 - fill_buffer_pct/100) if is_close_ask
+                      else new_trigger_price * (1 + fill_buffer_pct/100))
+        try:
+            result = await _call(
+                self.signer.modify_order,
+                market_index=market_index,
+                order_index=order_index,
+                base_amount=0,  # keep position-tied semantics (closes whatever size exists)
+                price=to_scaled_int(fill_price, price_dec),
+                trigger_price=to_scaled_int(new_trigger_price, price_dec),
+            )
+            return True, result
+        except Exception as e:
+            return False, str(e)
+
     # ── Leverage ───────────────────────────────────────────────────────────
     async def set_leverage(self, symbol: str, leverage: int):
         if self.client_check_error:
