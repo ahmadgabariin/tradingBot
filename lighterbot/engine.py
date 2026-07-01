@@ -301,61 +301,84 @@ class LighterBotEngine:
                           f"{current_sl} (position remains protected, just not trailed this tick): {result}")
 
     async def run_tick(self):
+        """Data fetching and signal detection run WITHOUT holding the trade
+        lock — scanning 2 agents x 10 pairs against Binance takes 10+ seconds,
+        and holding the lock for that whole time made manual trades/closes
+        wait for the entire tick to finish before they could even start. Only
+        the actual order-placement moment (leverage + size + submit) takes the
+        lock, and re-verifies the position state fresh at that point in case
+        something changed (a manual trade, another signal) during the scan."""
+        cfg = cfgmod.load_config()
+        client = await self.ensure_client()
+
+        # Check LIVE positions from Lighter, not local state — local state
+        # drifts from reality when trades happen outside the engine (manual
+        # trades, dashboard closes), so it's not a safe source of truth for
+        # dedup/limit checks.
+        live_positions, pos_err = await client.get_open_positions()
+        if pos_err:
+            self.log(f"Could not fetch live positions, skipping tick: {pos_err}")
+            return
+        symbols_with_position = {
+            getattr(p, "symbol", None) for p in live_positions
+            if signed_position_size(p) != 0
+        }
+        open_count = len(symbols_with_position)
+
         async with self._trade_lock:
-            cfg = cfgmod.load_config()
-            client = await self.ensure_client()
-
-            # Check LIVE positions from Lighter, not local state — local state
-            # drifts from reality when trades happen outside the engine (manual
-            # trades, dashboard closes), so it's not a safe source of truth for
-            # dedup/limit checks.
-            live_positions, pos_err = await client.get_open_positions()
-            if pos_err:
-                self.log(f"Could not fetch live positions, skipping tick: {pos_err}")
-                return
-            symbols_with_position = {
-                getattr(p, "symbol", None) for p in live_positions
-                if float(getattr(p, "position", 0) or 0) != 0
-            }
-            open_count = len(symbols_with_position)
-
             await self.update_trailing_stops(client, live_positions)
 
-            for agent_name, acfg in cfg["agents"].items():
-                if not acfg.get("enabled"):
+        for agent_name, acfg in cfg["agents"].items():
+            if not acfg.get("enabled"):
+                continue
+
+            agent = AGENTS.get(agent_name)
+            if not agent:
+                continue
+
+            direction = acfg.get("direction", "BOTH")
+            sfn_long  = LONG_SIGNALS.get(agent_name)
+            sfn_short = SHORT_SIGNALS.get(agent_name)
+
+            for symbol in PAIRS:
+                if open_count >= cfg["max_open_positions"]:
+                    break
+                if symbol in symbols_with_position:
+                    continue  # already have a position on this symbol (any agent)
+
+                p = await data_feed.get_candles(symbol, agent["timeframe"])
+                if not p or p["n"] < 50:
+                    continue
+                idx = p["n"] - 2
+
+                long_sig = short_sig = False
+                if direction in ("LONG", "BOTH"):
+                    try: long_sig = sfn_long(p, idx) if sfn_long else False
+                    except Exception as e: self.log(f"{agent_name} {symbol} long signal error: {e}")
+                if direction in ("SHORT", "BOTH") and not long_sig:
+                    try: short_sig = sfn_short(p, idx) if sfn_short else False
+                    except Exception as e: self.log(f"{agent_name} {symbol} short signal error: {e}")
+
+                if not (long_sig or short_sig):
                     continue
 
-                agent = AGENTS.get(agent_name)
-                if not agent:
-                    continue
+                side = "LONG" if long_sig else "SHORT"
 
-                direction = acfg.get("direction", "BOTH")
-                sfn_long  = LONG_SIGNALS.get(agent_name)
-                sfn_short = SHORT_SIGNALS.get(agent_name)
-
-                for symbol in PAIRS:
-                    if open_count >= cfg["max_open_positions"]:
-                        break
-                    if symbol in symbols_with_position:
-                        continue  # already have a position on this symbol (any agent)
-
-                    p = await data_feed.get_candles(symbol, agent["timeframe"])
-                    if not p or p["n"] < 50:
+                # Found a real signal — now take the lock for the actual
+                # mutating part, re-checking fresh since the slow scan above
+                # ran lock-free and state may have changed in the meantime.
+                async with self._trade_lock:
+                    fresh_positions, err2 = await client.get_open_positions()
+                    if err2:
+                        self.log(f"Could not re-verify positions before opening {symbol}: {err2}")
                         continue
-                    idx = p["n"] - 2
+                    fresh_symbols = {
+                        getattr(p2, "symbol", None) for p2 in fresh_positions
+                        if signed_position_size(p2) != 0
+                    }
+                    if symbol in fresh_symbols or len(fresh_symbols) >= cfg["max_open_positions"]:
+                        continue  # someone else (manual trade, another signal) already acted
 
-                    long_sig = short_sig = False
-                    if direction in ("LONG", "BOTH"):
-                        try: long_sig = sfn_long(p, idx) if sfn_long else False
-                        except Exception as e: self.log(f"{agent_name} {symbol} long signal error: {e}")
-                    if direction in ("SHORT", "BOTH") and not long_sig:
-                        try: short_sig = sfn_short(p, idx) if sfn_short else False
-                        except Exception as e: self.log(f"{agent_name} {symbol} short signal error: {e}")
-
-                    if not (long_sig or short_sig):
-                        continue
-
-                    side = "LONG" if long_sig else "SHORT"
                     price = await data_feed.get_live_price(symbol)
                     if not price:
                         self.log(f"No live price for {symbol}, skipping signal")
