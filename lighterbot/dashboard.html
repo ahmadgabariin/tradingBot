@@ -227,6 +227,17 @@
   </div>
 </div>
 
+<div class="modal-backdrop" id="info-modal" style="display:none">
+  <div class="modal">
+    <div class="icon" id="info-icon">ℹ️</div>
+    <h2 id="info-title">Notice</h2>
+    <p id="info-body" style="white-space:pre-wrap; word-break:break-word;"></p>
+    <div class="actions" id="info-actions">
+      <button class="primary" onclick="closeInfoModal(true)">OK</button>
+    </div>
+  </div>
+</div>
+
 <script>
 let pwd = sessionStorage.getItem('lb_pwd') || '';
 let currentConfig = null;
@@ -259,7 +270,32 @@ document.addEventListener('keydown', e => {
     if (e.key === 'Enter') submitPwdModal();
     if (e.key === 'Escape') cancelPwdModal();
   }
+  if (document.getElementById('info-modal').style.display === 'flex') {
+    if (e.key === 'Enter') closeInfoModal(true);
+    if (e.key === 'Escape') closeInfoModal(false);
+  }
 });
+
+let infoResolve = null;
+
+function showInfo(title, body, {ok=true, confirm=false} = {}) {
+  return new Promise(resolve => {
+    infoResolve = resolve;
+    document.getElementById('info-icon').textContent = ok ? '✅' : '⚠️';
+    document.getElementById('info-icon').style.background = ok ? 'rgba(63,185,80,.12)' : 'rgba(248,81,73,.12)';
+    document.getElementById('info-title').textContent = title;
+    document.getElementById('info-body').textContent = body;
+    const actions = document.getElementById('info-actions');
+    actions.innerHTML = confirm
+      ? `<button class="ghost" onclick="closeInfoModal(false)">Cancel</button><button class="${ok?'primary':'danger'}" onclick="closeInfoModal(true)">Confirm</button>`
+      : `<button class="primary" onclick="closeInfoModal(true)">OK</button>`;
+    document.getElementById('info-modal').style.display = 'flex';
+  });
+}
+function closeInfoModal(result) {
+  document.getElementById('info-modal').style.display = 'none';
+  if (infoResolve) infoResolve(result);
+}
 
 async function authFetch(url, opts={}) {
   if (!pwd) {
@@ -378,11 +414,21 @@ async function stopBot()  { await authFetch('/stop',  {method:'POST'}); refresh(
 async function selftest() {
   const res = await authFetch('/selftest', {method:'POST'});
   const d = await res.json();
-  alert(d.ok ? 'Self-test OK — check log for account field names' : 'Self-test FAILED: ' + d.result);
+  await showInfo(
+    d.ok ? 'Self-Test Passed' : 'Self-Test Failed',
+    d.ok ? 'Check log for account field names' : d.result,
+    {ok: d.ok}
+  );
   refresh();
 }
 async function manualTrade() {
-  if (!confirm('Place a REAL order with real money?')) return;
+  const proceed = await showInfo(
+    'Place Real Trade?',
+    'This will place a REAL order with real money and leverage.',
+    {ok:true, confirm:true}
+  );
+  if (!proceed) return;
+
   const override  = document.getElementById('m-usd').value;
   const leverage  = document.getElementById('m-leverage').value;
   const res = await authFetch('/manual-trade', {method:'POST', body: JSON.stringify({
@@ -394,7 +440,11 @@ async function manualTrade() {
     tp_pct: parseFloat(document.getElementById('m-tp').value),
   })});
   const d = await res.json();
-  alert(d.ok ? 'Trade placed: ' + d.result : 'Trade FAILED: ' + d.result);
+  await showInfo(
+    d.ok ? 'Trade Placed' : 'Trade Failed',
+    d.result,
+    {ok: d.ok}
+  );
   refresh();
 }
 
