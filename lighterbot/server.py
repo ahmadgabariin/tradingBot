@@ -4,6 +4,7 @@ Real-money trading — every mutating endpoint requires X-Action-Password,
 same pattern as the paper-trading competitions.
 """
 import os, sys
+from contextlib import asynccontextmanager
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from fastapi import FastAPI, Request
@@ -34,7 +35,22 @@ def _load_dotenv():
 _load_dotenv()
 PASSWORD = os.environ.get("LIGHTERBOT_PASSWORD", "BOT2024")
 
-app = FastAPI(title="LighterBot")
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # If the process crashes or the server restarts while trading was
+    # active, the saved config still says running=True — without this, the
+    # engine would silently stay stopped until someone notices and clicks
+    # Start again, even though real positions may still be open and need
+    # their trailing stops managed.
+    cfg = cfgmod.load_config()
+    if cfg.get("running"):
+        engine.log("Server restarted with running=True in saved config — auto-resuming trading loop.")
+        await engine.start()
+    yield
+
+
+app = FastAPI(title="LighterBot", lifespan=lifespan)
 app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"])
 
 
@@ -42,19 +58,6 @@ def _auth(request: Request):
     if not PASSWORD:
         return True
     return request.headers.get("X-Action-Password", "") == PASSWORD
-
-
-@app.on_event("startup")
-async def resume_if_was_running():
-    """If the process crashes or the server restarts while trading was
-    active, the saved config still says running=True — without this, the
-    engine would silently stay stopped until someone notices and clicks
-    Start again, even though real positions may still be open and need
-    their trailing stops managed."""
-    cfg = cfgmod.load_config()
-    if cfg.get("running"):
-        engine.log("Server restarted with running=True in saved config — auto-resuming trading loop.")
-        await engine.start()
 
 
 @app.get("/", response_class=HTMLResponse)
