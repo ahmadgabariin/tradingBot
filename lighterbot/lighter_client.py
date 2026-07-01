@@ -174,9 +174,15 @@ class LighterClient:
         size_dec  = SIZE_DECIMALS.get(symbol, 4)
         price_dec = PRICE_DECIMALS.get(symbol, 2)
         amount_i    = to_scaled_int(base_amount, size_dec)
-        ref_price_i = to_scaled_int(ref_price, price_dec)
         sl_price_i  = to_scaled_int(sl_price, price_dec)
         tp_price_i  = to_scaled_int(tp_price, price_dec)
+
+        # avg_execution_price is a worst-acceptable-price bound for the IOC
+        # market order, not an exact price. Apply slippage tolerance so a
+        # SELL entry (short) or SELL close actually crosses the book.
+        slippage_pct = 1.0
+        entry_limit_price = ref_price * (1 + slippage_pct/100) if not is_ask else ref_price * (1 - slippage_pct/100)
+        entry_limit_price_i = to_scaled_int(entry_limit_price, price_dec)
 
         try:
             entry_client_order_index = int(time.time() * 1000) % 1_000_000
@@ -185,7 +191,7 @@ class LighterClient:
                 market_index=market_index,
                 client_order_index=entry_client_order_index,
                 base_amount=amount_i,
-                avg_execution_price=ref_price_i,
+                avg_execution_price=entry_limit_price_i,
                 is_ask=is_ask,
             )
             if err:
@@ -232,10 +238,16 @@ class LighterClient:
             await self.close_position_market(symbol, is_ask=not is_ask, base_amount=base_amount, ref_price=ref_price)
             return False, f"SL/TP attach failed, position flattened: {e}"
 
-    async def close_position_market(self, symbol: str, is_ask: bool, base_amount: float, ref_price: float):
+    async def close_position_market(self, symbol: str, is_ask: bool, base_amount: float,
+                                      ref_price: float, slippage_pct: float = 1.0):
+        """avg_execution_price acts as a worst-acceptable-price bound for a
+        marketable IOC order, not an exact price — passing the exact mid price
+        can fail to cross the book. Apply slippage tolerance so it actually fills:
+        selling needs a price below market, buying needs a price above market."""
         market_index = MARKET_INDEX.get(symbol)
         size_dec  = SIZE_DECIMALS.get(symbol, 4)
         price_dec = PRICE_DECIMALS.get(symbol, 2)
+        limit_price = ref_price * (1 - slippage_pct/100) if is_ask else ref_price * (1 + slippage_pct/100)
         try:
             client_order_index = int(time.time() * 1000) % 1_000_000
             tx, tx_hash, err = await _call(
@@ -243,7 +255,7 @@ class LighterClient:
                 market_index=market_index,
                 client_order_index=client_order_index,
                 base_amount=to_scaled_int(base_amount, size_dec),
-                avg_execution_price=to_scaled_int(ref_price, price_dec),
+                avg_execution_price=to_scaled_int(limit_price, price_dec),
                 is_ask=is_ask,
                 reduce_only=True,
             )
