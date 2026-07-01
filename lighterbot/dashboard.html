@@ -201,9 +201,9 @@
 </div>
 
 <div class="card">
-  <h3>Open Positions</h3>
+  <h3>Open Positions <span style="font-weight:400; color:#7d8590; text-transform:none; letter-spacing:0;">(live from Lighter)</span></h3>
   <table id="positions">
-    <thead><tr><th>Agent</th><th>Symbol</th><th>Side</th><th>Entry</th><th>SL</th><th>TP</th><th>Amount</th></tr></thead>
+    <thead><tr><th>Symbol</th><th>Side</th><th>Size</th><th>Entry</th><th>Value</th><th>Unrealized P&amp;L</th><th>Protected (SL/TP)</th></tr></thead>
     <tbody><tr class="empty-row"><td colspan="7">No open positions</td></tr></tbody>
   </table>
 </div>
@@ -376,10 +376,20 @@ async function refresh() {
   }
 
   const tbody = document.querySelector('#positions tbody');
-  const entries = Object.entries(d.open_positions);
-  tbody.innerHTML = entries.length ? entries.map(([key, pos]) =>
-    `<tr><td>${pos.agent}</td><td>${pos.symbol}</td><td>${pos.side}</td><td>${pos.entry}</td><td>${pos.sl}</td><td>${pos.tp}</td><td>${pos.base_amount}</td></tr>`
-  ).join('') : `<tr class="empty-row"><td colspan="7">No open positions</td></tr>`;
+  const positions = d.open_positions || [];
+  tbody.innerHTML = positions.length ? positions.map(pos => {
+    const side = pos.size > 0 ? 'LONG' : 'SHORT';
+    const pnlColor = pos.unrealized_pnl >= 0 ? '#3fb950' : '#f85149';
+    const protectedBadge = pos.open_order_count > 0
+      ? '<span class="badge on">YES</span>'
+      : '<span class="badge off">NO — unprotected!</span>';
+    return `<tr>
+      <td>${pos.symbol}</td><td>${side}</td><td>${Math.abs(pos.size)}</td>
+      <td>${pos.avg_entry_price}</td><td>$${pos.position_value.toFixed(2)}</td>
+      <td style="color:${pnlColor}">$${pos.unrealized_pnl.toFixed(4)}</td>
+      <td>${protectedBadge}</td>
+    </tr>`;
+  }).join('') : `<tr class="empty-row"><td colspan="7">No open positions</td></tr>`;
 
   const log = document.getElementById('log');
   log.innerHTML = d.trade_log.map(l => `<div>${l}</div>`).join('');

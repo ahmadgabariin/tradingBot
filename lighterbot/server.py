@@ -53,18 +53,35 @@ async def state():
     cfg = cfgmod.load_config()
     st = _load_state()
     balance, bal_err = (None, None)
+    live_positions, pos_err = ([], None)
     try:
         client = await engine.ensure_client()
         balance, bal_err = await client.get_balance_usd()
+        raw_positions, pos_err = await client.get_open_positions()
+        for p in raw_positions:
+            size = float(getattr(p, "position", 0) or 0)
+            if size == 0:
+                continue
+            live_positions.append({
+                "symbol": getattr(p, "symbol", "?"),
+                "size": size,
+                "avg_entry_price": float(getattr(p, "avg_entry_price", 0) or 0),
+                "position_value": float(getattr(p, "position_value", 0) or 0),
+                "unrealized_pnl": float(getattr(p, "unrealized_pnl", 0) or 0),
+                "liquidation_price": getattr(p, "liquidation_price", None),
+                "open_order_count": getattr(p, "open_order_count", 0),
+            })
     except Exception as e:
-        bal_err = str(e)
+        bal_err = bal_err or str(e)
+
     return JSONResponse({
         "config": cfg,
-        "open_positions": st["open_positions"],
+        "open_positions": live_positions,   # live from Lighter — shows manual + auto trades alike
         "trade_log": st["trade_log"][-100:],
         "running": engine.running,
         "balance_usd": balance,
         "balance_error": bal_err,
+        "positions_error": pos_err,
         "last_error": engine.last_error,
     })
 
