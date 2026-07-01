@@ -145,12 +145,8 @@
 </div>
 
 <div class="card">
-  <h3>Manual Test Trade</h3>
+  <h3>Manual Trade</h3>
   <div class="row">
-    <div class="field-group">
-      <label class="field">Agent</label>
-      <select id="m-agent"><option>Liquidity Hunt</option><option>Surgeon v2</option></select>
-    </div>
     <div class="field-group">
       <label class="field">Symbol</label>
       <select id="m-symbol"><option>BTC</option><option>ETH</option><option>SOL</option></select>
@@ -160,8 +156,20 @@
       <select id="m-side"><option>LONG</option><option>SHORT</option></select>
     </div>
     <div class="field-group">
-      <label class="field">Override margin $ (optional)</label>
-      <input id="m-usd" type="number" step="0.1" placeholder="e.g. 0.5" style="width:110px">
+      <label class="field">Margin $ (optional)</label>
+      <input id="m-usd" type="number" step="0.1" placeholder="uses sizing config" style="width:130px">
+    </div>
+    <div class="field-group">
+      <label class="field">Leverage (optional)</label>
+      <input id="m-leverage" type="number" step="1" placeholder="uses configured" style="width:110px">
+    </div>
+    <div class="field-group">
+      <label class="field">SL %</label>
+      <input id="m-sl" type="number" step="0.1" value="1.5" style="width:70px">
+    </div>
+    <div class="field-group">
+      <label class="field">TP %</label>
+      <input id="m-tp" type="number" step="0.1" value="3.0" style="width:70px">
     </div>
     <button class="danger" onclick="manualTrade()">Place Real Trade</button>
   </div>
@@ -296,12 +304,15 @@ async function selftest() {
 }
 async function manualTrade() {
   if (!confirm('Place a REAL order with real money?')) return;
-  const override = document.getElementById('m-usd').value;
+  const override  = document.getElementById('m-usd').value;
+  const leverage  = document.getElementById('m-leverage').value;
   const res = await authFetch('/manual-trade', {method:'POST', body: JSON.stringify({
-    agent: document.getElementById('m-agent').value,
     symbol: document.getElementById('m-symbol').value,
     side: document.getElementById('m-side').value,
     override_usd: override ? parseFloat(override) : null,
+    leverage: leverage ? parseInt(leverage) : null,
+    sl_pct: parseFloat(document.getElementById('m-sl').value),
+    tp_pct: parseFloat(document.getElementById('m-tp').value),
   })});
   const d = await res.json();
   alert(d.ok ? 'Trade placed: ' + d.result : 'Trade FAILED: ' + d.result);

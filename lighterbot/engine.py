@@ -112,10 +112,12 @@ class LighterBotEngine:
         base_amount = notional_usd / ref_price
         return round(base_amount, 6)
 
-    async def manual_trade(self, agent_name, symbol, side, override_usd=None):
-        """side: 'LONG' or 'SHORT'. Used by the dashboard's manual test-trade button."""
+    async def manual_trade(self, symbol, side, override_usd=None,
+                            leverage_override=None, sl_pct=1.5, tp_pct=3.0):
+        """side: 'LONG' or 'SHORT'. Plain manual trade ticket — no agent involved.
+        sl_pct/tp_pct are simple % distance from entry price (defaults: 1.5% / 3%)."""
         cfg = cfgmod.load_config()
-        leverage = cfg["leverage"].get(symbol, cfg["default_leverage"])
+        leverage = leverage_override or cfg["leverage"].get(symbol, cfg["default_leverage"])
         client = await self.ensure_client()
 
         price = data_feed.get_live_price(symbol)
@@ -134,17 +136,16 @@ class LighterBotEngine:
             if base_amount is None:
                 return False, "Sizing failed"
 
-        agent_cfg = AGENTS.get(agent_name, {"atr_sl_mult": 1.5, "atr_tp_mult": 3.0})
         is_ask = (side == "SHORT")
-        sl_dist = price * 0.01 * agent_cfg["atr_sl_mult"]
-        tp_dist = price * 0.01 * agent_cfg["atr_tp_mult"]
+        sl_dist = price * (sl_pct / 100.0)
+        tp_dist = price * (tp_pct / 100.0)
         sl_price = price - sl_dist if side == "LONG" else price + sl_dist
         tp_price = price + tp_dist if side == "LONG" else price - tp_dist
 
         ok, result = await client.place_market_order_with_sl_tp(
             symbol, is_ask, base_amount, price, sl_price, tp_price
         )
-        self.log(f"MANUAL {side} {symbol} agent={agent_name} amount={base_amount} "
+        self.log(f"MANUAL {side} {symbol} amount={base_amount} leverage={leverage} "
                   f"price={price} sl={sl_price} tp={tp_price} -> ok={ok} result={result}")
         return ok, result
 

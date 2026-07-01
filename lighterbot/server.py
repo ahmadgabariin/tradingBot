@@ -117,12 +117,14 @@ async def update_config(request: Request, payload: dict):
 @app.post("/manual-trade")
 async def manual_trade(request: Request, payload: dict):
     if not _auth(request): return JSONResponse({"error": "forbidden"}, status_code=403)
-    agent_name  = payload.get("agent", "Liquidity Hunt")
-    symbol      = payload.get("symbol", "BTC")
-    side        = payload.get("side", "LONG")
-    override_usd = payload.get("override_usd")  # e.g. 0.5 for a tiny test trade
+    symbol       = payload.get("symbol", "BTC")
+    side         = payload.get("side", "LONG")
+    override_usd = payload.get("override_usd")        # margin $ override, e.g. 0.5
+    leverage     = payload.get("leverage")             # optional leverage override
+    sl_pct       = payload.get("sl_pct", 1.5)
+    tp_pct       = payload.get("tp_pct", 3.0)
 
-    ok, result = await engine.manual_trade(agent_name, symbol, side, override_usd)
+    ok, result = await engine.manual_trade(symbol, side, override_usd, leverage, sl_pct, tp_pct)
     return {"ok": ok, "result": str(result)}
 
 
