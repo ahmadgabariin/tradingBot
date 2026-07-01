@@ -209,12 +209,20 @@ async def trades():
                     "agent": agent,
                     "symbol": symbol,
                     "side": side,
+                    "entry_price": entry_price,
+                    "exit_price": exit_price,
                     "exit_type": exit_label,
+                    "result": "WIN" if pnl >= 0 else "LOSS",
                     "pnl": round(pnl, 4),
                     "opened_at": opened_at,
                     "closed_at": closed_at,
                 })
 
+        # Number trades in chronological order (#1 = earliest), then present
+        # most-recent-first — trade_number reflects real sequence, not page position.
+        result.sort(key=lambda t: t["closed_at"])
+        for i, t in enumerate(result):
+            t["trade_number"] = i + 1
         result.sort(key=lambda t: t["closed_at"], reverse=True)
         return JSONResponse({"trades": result, "error": None})
     except Exception as e:

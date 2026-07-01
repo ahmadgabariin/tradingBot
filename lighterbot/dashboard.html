@@ -228,8 +228,8 @@
     </div>
   </div>
   <table id="trades">
-    <thead><tr><th>Agent</th><th>Pair</th><th>Side</th><th>Exit</th><th>PNL</th><th>Opened</th><th>Closed</th></tr></thead>
-    <tbody><tr class="empty-row"><td colspan="7">No trades yet</td></tr></tbody>
+    <thead><tr><th>#</th><th>Agent</th><th>Pair</th><th>Side</th><th>Entry</th><th>Exit</th><th>Result</th><th>PNL</th><th>Opened</th><th>Closed</th></tr></thead>
+    <tbody><tr class="empty-row"><td colspan="10">No trades yet</td></tr></tbody>
   </table>
   <div class="stat-row" style="margin-top:12px; justify-content:center; gap:14px;">
     <button class="ghost" onclick="tradesPage=Math.max(0,tradesPage-1); renderTradesPage();">&laquo; Prev</button>
@@ -584,19 +584,23 @@ function renderTradesPage() {
   tbody.innerHTML = pageItems.length ? pageItems.map(t => {
     const sideColor = t.side === 'LONG' ? '#3fb950' : '#f85149';
     const pnlColor = t.pnl >= 0 ? '#3fb950' : '#f85149';
+    const resultColor = t.result === 'WIN' ? '#3fb950' : '#f85149';
     const exitColor = t.exit_type === 'TP' ? '#3fb950' : (t.exit_type === 'SL' ? '#f85149' : '#7d8590');
     const opened = t.opened_at ? new Date(t.opened_at * 1000).toLocaleString() : '—';
     const closed = t.closed_at ? new Date(t.closed_at * 1000).toLocaleString() : '—';
     return `<tr>
+      <td>${t.trade_number}</td>
       <td style="color:${t.agent === 'Manual' ? '#7d8590' : '#e6edf3'}">${t.agent}</td>
       <td>${t.symbol}</td>
       <td style="color:${sideColor}">${t.side}</td>
-      <td style="color:${exitColor}">${t.exit_type}</td>
+      <td>${t.entry_price}</td>
+      <td>${t.exit_price} <span style="color:${exitColor}; font-size:11px;">(${t.exit_type})</span></td>
+      <td style="color:${resultColor}; font-weight:600;">${t.result}</td>
       <td style="color:${pnlColor}">$${t.pnl.toFixed(4)}</td>
       <td>${opened}</td>
       <td>${closed}</td>
     </tr>`;
-  }).join('') : `<tr class="empty-row"><td colspan="7">No trades yet</td></tr>`;
+  }).join('') : `<tr class="empty-row"><td colspan="10">No trades yet</td></tr>`;
 
   document.getElementById('trades-page-label').textContent =
     allTrades.length ? `Page ${tradesPage+1} of ${totalPages} (${allTrades.length} trades)` : '';
