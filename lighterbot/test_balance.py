@@ -1,5 +1,5 @@
 """
-Standalone balance-fetch test — run directly to verify get_balance_usd()
+Standalone balance-fetch test - run directly to verify get_balance_usd()
 works reliably before trusting it for percent-based position sizing.
 
 Usage:
@@ -13,7 +13,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 def _load_dotenv():
     env_path = os.path.join(os.path.dirname(__file__), ".env")
     if not os.path.exists(env_path):
-        print("No .env found — copy .env.example to .env and fill in your keys first.")
+        print("No .env found - copy .env.example to .env and fill in your keys first.")
         sys.exit(1)
     with open(env_path) as f:
         for line in f:
@@ -32,35 +32,35 @@ async def main():
     client = LighterClient()
 
     if client.client_check_error:
-        print(f"❌ check_client() FAILED: {client.client_check_error}")
+        print(f"[FAIL] check_client() FAILED: {client.client_check_error}")
         print("   Fix LIGHTER_API_KEY_INDEX / LIGHTER_API_PRIVATE_KEY in .env before continuing.")
         return
-    print("✅ check_client() passed — API key is valid for this account.\n")
+    print("[OK] check_client() passed - API key is valid for this account.\n")
 
     print("Fetching raw account object...")
     acct, err = await client._get_account_obj()
     if acct is None:
-        print(f"❌ Could not fetch account: {err}")
+        print(f"[FAIL] Could not fetch account: {err}")
         return
 
     dump = acct.to_dict() if hasattr(acct, "to_dict") else vars(acct)
-    print("✅ Raw account record:")
+    print("[OK] Raw account record:")
     for k, v in dump.items():
         print(f"   {k}: {v}")
 
     print("\nFetching balance via get_balance_usd()...")
     balance, bal_err = await client.get_balance_usd()
     if balance is not None:
-        print(f"✅ Balance: ${balance:.2f}")
+        print(f"[OK] Balance: ${balance:.2f}")
     else:
-        print(f"❌ Balance fetch failed: {bal_err}")
+        print(f"[FAIL] Balance fetch failed: {bal_err}")
 
     print("\nFetching open positions...")
     positions, pos_err = await client.get_open_positions()
     if pos_err:
-        print(f"❌ Positions fetch failed: {pos_err}")
+        print(f"[FAIL] Positions fetch failed: {pos_err}")
     else:
-        print(f"✅ Open positions: {len(positions)}")
+        print(f"[OK] Open positions: {len(positions)}")
         for p in positions:
             print(f"   {p}")
 
@@ -68,7 +68,8 @@ async def main():
     print("\nRunning 3x consistency check...")
     for i in range(3):
         b, e = await client.get_balance_usd()
-        print(f"   Attempt {i+1}: {'$'+format(b,'.2f') if b is not None else 'FAILED — '+str(e)}")
+        result = ("$" + format(b, ".2f")) if b is not None else ("FAILED - " + str(e))
+        print(f"   Attempt {i+1}: {result}")
         await asyncio.sleep(1)
 
 
