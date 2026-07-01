@@ -145,6 +145,37 @@ async def manual_trade(request: Request, payload: dict):
     return {"ok": ok, "result": str(result)}
 
 
+@app.post("/close-position")
+async def close_position(request: Request, payload: dict):
+    if not _auth(request): return JSONResponse({"error": "forbidden"}, status_code=403)
+    symbol = payload.get("symbol")
+    if not symbol:
+        return JSONResponse({"error": "symbol required"}, status_code=400)
+    ok, result = await engine.close_position(symbol)
+    return {"ok": ok, "result": str(result)}
+
+
+@app.post("/close-all")
+async def close_all(request: Request):
+    if not _auth(request): return JSONResponse({"error": "forbidden"}, status_code=403)
+    results, err = await engine.close_all_positions()
+    if err:
+        return {"ok": False, "result": err}
+    all_ok = all(r["ok"] for r in results.values()) if results else True
+    return {"ok": all_ok, "result": results}
+
+
+@app.post("/emergency-stop")
+async def emergency_stop(request: Request):
+    if not _auth(request): return JSONResponse({"error": "forbidden"}, status_code=403)
+    await engine.stop()
+    results, err = await engine.close_all_positions()
+    if err:
+        return {"ok": False, "result": err}
+    all_ok = all(r["ok"] for r in results.values()) if results else True
+    return {"ok": all_ok, "result": results}
+
+
 @app.get("/health")
 async def health():
     return {"status": "ok", "running": engine.running}

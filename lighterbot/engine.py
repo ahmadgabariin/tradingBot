@@ -153,6 +153,53 @@ class LighterBotEngine:
                   f"price={price} sl={sl_price} tp={tp_price} -> ok={ok} result={result}")
         return ok, result
 
+    async def close_position(self, symbol: str):
+        """Closes whatever position currently exists on this symbol, sized to
+        the live position (not a guessed amount), so it always exactly flattens."""
+        client = await self.ensure_client()
+        positions, err = await client.get_open_positions()
+        if err:
+            return False, f"Could not fetch positions: {err}"
+
+        target = None
+        for p in positions:
+            if getattr(p, "symbol", None) == symbol:
+                size = float(getattr(p, "position", 0) or 0)
+                if size != 0:
+                    target = (p, size)
+                    break
+        if not target:
+            return False, f"No open position on {symbol}"
+
+        p, size = target
+        price = data_feed.get_live_price(symbol)
+        if not price:
+            return False, "Could not fetch live price"
+
+        is_ask = size > 0  # closing a LONG needs a SELL; closing a SHORT needs a BUY
+        ok, result = await client.close_position_market(symbol, is_ask=is_ask,
+                                                          base_amount=abs(size), ref_price=price)
+        self.log(f"CLOSE {symbol} size={size} -> ok={ok} result={result}")
+        return ok, result
+
+    async def close_all_positions(self):
+        """Closes every open position one by one. Returns a per-symbol result
+        dict so a failure on one symbol doesn't hide successes on others."""
+        client = await self.ensure_client()
+        positions, err = await client.get_open_positions()
+        if err:
+            return {}, f"Could not fetch positions: {err}"
+
+        results = {}
+        for p in positions:
+            symbol = getattr(p, "symbol", None)
+            size = float(getattr(p, "position", 0) or 0)
+            if not symbol or size == 0:
+                continue
+            ok, result = await self.close_position(symbol)
+            results[symbol] = {"ok": ok, "result": str(result)}
+        return results, None
+
     async def run_tick(self):
         cfg = cfgmod.load_config()
         client = await self.ensure_client()
