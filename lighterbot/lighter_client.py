@@ -59,26 +59,40 @@ class LighterClient:
         except Exception as e:
             return False, str(e)
 
-    async def get_balance_usd(self):
+    async def _get_account_obj(self):
+        """The account() call returns DetailedAccounts{accounts: [...]}, not a
+        flat object — drill into accounts[0] for the actual account record."""
         ok, res = await self.get_account_raw()
         if not ok:
             return None, res
+        accounts = getattr(res, "accounts", None)
+        if not accounts:
+            return None, f"No accounts in response: {res.to_dict() if hasattr(res,'to_dict') else res}"
+        return accounts[0], None
+
+    async def get_balance_usd(self):
+        acct, err = await self._get_account_obj()
+        if acct is None:
+            return None, err
         try:
-            # Field name confirmed via startup self-test (see server.py /selftest).
-            # Common shapes: res.available_balance, res.collateral, res.total_asset_value
-            for attr in ("available_balance", "collateral", "total_asset_value", "balance"):
-                if hasattr(res, attr):
-                    return float(getattr(res, attr)), None
-            return None, f"Could not find balance field on account response: {dir(res)}"
+            for attr in ("available_balance", "collateral", "total_asset_value",
+                         "balance", "portfolio_value", "cross_asset_value"):
+                if hasattr(acct, attr):
+                    val = getattr(acct, attr)
+                    if val is not None:
+                        return float(val), None
+            # Nothing matched — dump the full record so the real field name is visible
+            dump = acct.to_dict() if hasattr(acct, "to_dict") else vars(acct)
+            return None, f"Could not find balance field. Full account record: {dump}"
         except Exception as e:
             return None, str(e)
 
     async def get_open_positions(self):
-        ok, res = await self.get_account_raw()
-        if not ok:
-            return [], res
+        acct, err = await self._get_account_obj()
+        if acct is None:
+            return [], err
         try:
-            positions = getattr(res, "positions", []) or []
+            positions = getattr(acct, "positions", []) or []
             return positions, None
         except Exception as e:
             return [], str(e)
