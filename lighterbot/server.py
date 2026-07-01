@@ -95,8 +95,12 @@ async def state():
             sl_order = next((o for o in market_orders if getattr(o, "type", "") == "stop-loss-limit"), None)
             tp_order = next((o for o in market_orders if getattr(o, "type", "") == "take-profit-limit"), None)
 
+            mapping = st.get("position_agent_map", {}).get(symbol)
+            agent_label = mapping["agent"] if mapping else "Manual"
+
             live_positions.append({
                 "symbol": symbol,
+                "agent": agent_label,
                 "size": size,
                 "avg_entry_price": float(getattr(p, "avg_entry_price", 0) or 0),
                 "position_value": float(getattr(p, "position_value", 0) or 0),

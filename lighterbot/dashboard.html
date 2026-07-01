@@ -211,8 +211,8 @@
 <div class="card">
   <h3>Open Positions <span style="font-weight:400; color:#7d8590; text-transform:none; letter-spacing:0;">(live from Lighter)</span></h3>
   <table id="positions">
-    <thead><tr><th>Symbol</th><th>Side</th><th>Size</th><th>Entry</th><th>SL</th><th>TP</th><th>Value</th><th>Unrealized P&amp;L</th><th>Protected</th><th></th></tr></thead>
-    <tbody><tr class="empty-row"><td colspan="10">No open positions</td></tr></tbody>
+    <thead><tr><th>Agent</th><th>Symbol</th><th>Side</th><th>Size</th><th>Entry</th><th>SL</th><th>TP</th><th>Value</th><th>Unrealized P&amp;L</th><th>Protected</th><th></th></tr></thead>
+    <tbody><tr class="empty-row"><td colspan="11">No open positions</td></tr></tbody>
   </table>
 </div>
 
@@ -426,7 +426,9 @@ async function refresh() {
     const protectedBadge = pos.open_order_count > 0
       ? '<span class="badge on">YES</span>'
       : '<span class="badge off">NO — unprotected!</span>';
+    const agentColor = pos.agent === 'Manual' ? '#7d8590' : '#e6edf3';
     return `<tr>
+      <td style="color:${agentColor}">${pos.agent}</td>
       <td>${pos.symbol}</td><td>${side}</td><td>${Math.abs(pos.size)}</td>
       <td>${pos.avg_entry_price}</td>
       <td>${pos.sl_price != null ? pos.sl_price : '—'}</td>
@@ -436,7 +438,7 @@ async function refresh() {
       <td>${protectedBadge}</td>
       <td><button class="danger" onclick="closePosition('${pos.symbol}')">Close</button></td>
     </tr>`;
-  }).join('') : `<tr class="empty-row"><td colspan="10">No open positions</td></tr>`;
+  }).join('') : `<tr class="empty-row"><td colspan="11">No open positions</td></tr>`;
 
   const log = document.getElementById('log');
   log.innerHTML = d.trade_log.map(l => `<div>${l}</div>`).join('');
