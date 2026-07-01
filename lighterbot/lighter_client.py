@@ -4,12 +4,21 @@ Every call that touches real money is wrapped in try/except and returns a
 structured (ok, result_or_error) tuple instead of raising — the engine logs
 failures and skips the trade rather than crashing or retrying blindly.
 """
-import os, time
+import os, time, inspect
 
 try:
     import lighter
 except ImportError:
     lighter = None  # allows the dashboard/config to load even before `pip install lighter-sdk`
+
+
+async def _call(fn, *args, **kwargs):
+    """Call an SDK method that may be sync or async depending on SDK version —
+    avoids hardcoding an assumption that breaks on a version mismatch."""
+    result = fn(*args, **kwargs)
+    if inspect.isawaitable(result):
+        result = await result
+    return result
 
 MARKET_INDEX = {
     "ETH": 0,
@@ -104,7 +113,8 @@ class LighterClient:
             return False, f"Unknown symbol {symbol}"
         try:
             fraction = 10_000 // leverage
-            tx = await self.signer.sign_update_leverage(
+            tx = await _call(
+                self.signer.sign_update_leverage,
                 market_index=market_index,
                 fraction=fraction,
                 margin_mode=self.signer.ISOLATED_MARGIN_MODE,
@@ -139,7 +149,8 @@ class LighterClient:
 
         try:
             client_order_index = int(time.time() * 1000) % 1_000_000
-            entry_tx, entry_hash, err = await self.signer.create_order(
+            entry_tx, entry_hash, err = await _call(
+                self.signer.create_order,
                 market_index=market_index,
                 client_order_index=client_order_index,
                 base_amount=base_amount,
@@ -175,7 +186,8 @@ class LighterClient:
                 "order_type": self.signer.ORDER_TYPE_STOP_LOSS_LIMIT,
                 "reduce_only": True,
             }
-            oco_tx = await self.signer.create_grouped_orders(
+            oco_tx = await _call(
+                self.signer.create_grouped_orders,
                 grouping_type=self.signer.GROUPING_TYPE_ONE_CANCELS_THE_OTHER,
                 orders=[tp_order, sl_order],
             )
@@ -189,7 +201,8 @@ class LighterClient:
         market_index = MARKET_INDEX.get(symbol)
         try:
             client_order_index = int(time.time() * 1000) % 1_000_000
-            tx, tx_hash, err = await self.signer.create_order(
+            tx, tx_hash, err = await _call(
+                self.signer.create_order,
                 market_index=market_index,
                 client_order_index=client_order_index,
                 base_amount=base_amount,
