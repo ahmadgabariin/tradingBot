@@ -131,7 +131,7 @@ def _get_candles_sync(symbol: str, timeframe: str):
         print(f"[data_feed] fetch error {symbol} {timeframe}: {e}")
         return cached["data"] if cached else None
 
-    if not raw or len(raw) < 50:
+    if not raw or len(raw) < 100:  # matches comp11's warmup requirement
         return None
 
     o = np.array([float(k[1]) for k in raw])

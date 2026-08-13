@@ -4,7 +4,7 @@ Every call that touches real money is wrapped in try/except and returns a
 structured (ok, result_or_error) tuple instead of raising — the engine logs
 failures and skips the trade rather than crashing or retrying blindly.
 """
-import os, time, inspect
+import os, time, inspect, asyncio
 
 try:
     import lighter
@@ -101,6 +101,17 @@ class LighterClient:
         self.max_leverage_cache = dict(MAX_LEVERAGE_FALLBACK)
         self.max_leverage_last_refresh = 0.0
 
+        # Instance-level mirrors of the module constants above — lets
+        # engine.py call client.MARKET_INDEX/client.PRICE_DECIMALS/etc
+        # identically regardless of whether client is a LighterClient or a
+        # BinanceClient, instead of importing platform-specific constants
+        # directly (which would make the platform switch not actually work).
+        self.MARKET_INDEX = MARKET_INDEX
+        self.PRICE_DECIMALS = PRICE_DECIMALS
+        self.SIZE_DECIMALS = SIZE_DECIMALS
+        self.MIN_BASE_AMOUNT = MIN_BASE_AMOUNT
+        self.min_notional_usd = MIN_NOTIONAL_USD
+
     def get_max_leverage(self, symbol: str) -> int:
         return self.max_leverage_cache.get(symbol, MAX_LEVERAGE_FALLBACK.get(symbol, 1))
 
@@ -155,12 +166,21 @@ class LighterClient:
         return accounts[0], None
 
     async def get_balance_usd(self):
+        """Total account equity (mark-to-market: cash + open position value +
+        unrealized PnL) — NOT just uncommitted/free cash. Confirmed live on a
+        real account: available_balance read $0.50 while total_asset_value
+        (==cross_asset_value) correctly read $11.94 with $10+ margin locked in
+        open positions. Using available_balance here silently understated the
+        real account size any time a position was open, which corrupted
+        anything computed from it — displayed Balance, per-agent auto-split
+        start_balance, and manual-trade percent sizing all inherited the same
+        deflated number."""
         acct, err = await self._get_account_obj()
         if acct is None:
             return None, err
         try:
-            for attr in ("available_balance", "collateral", "total_asset_value",
-                         "balance", "portfolio_value", "cross_asset_value"):
+            for attr in ("total_asset_value", "cross_asset_value", "collateral",
+                         "balance", "portfolio_value", "available_balance"):
                 if hasattr(acct, attr):
                     val = getattr(acct, attr)
                     if val is not None:
@@ -198,23 +218,51 @@ class LighterClient:
         except Exception as e:
             return [], str(e)
 
-    async def get_inactive_orders(self, limit: int = 100):
+    async def get_inactive_orders(self, limit: int = 100, cursor: str = None):
         """Real trade history — filled/cancelled orders (entries, SL/TP fills,
         manual closes). This is ground truth from the exchange, not something
-        the bot reconstructs locally."""
+        the bot reconstructs locally. `limit` is capped at 100 by Lighter's
+        API — pass the previous response's next_cursor to page further back
+        (see trade_history.get_closed_trades, which walks multiple pages).
+        Returns (orders, next_cursor, error)."""
         try:
             auth_token, err = self.signer.create_auth_token_with_expiry()
             if err:
-                return [], f"auth token error: {err}"
+                return [], None, f"auth token error: {err}"
             res = await _call(
                 self.order_api.account_inactive_orders,
                 authorization=auth_token,
                 account_index=self.account_index,
                 limit=limit,
+                cursor=cursor,
             )
-            return getattr(res, "orders", []) or [], None
+            return getattr(res, "orders", []) or [], getattr(res, "next_cursor", None), None
         except Exception as e:
-            return [], str(e)
+            return [], None, str(e)
+
+    async def _describe_fill_failure(self, market_index: int, base_amount: float, actual_filled: float) -> str:
+        """Looks up the real exchange rejection reason for the order that was
+        just submitted, instead of guessing. Confirmed live: the previous
+        hardcoded 'likely price moved past the slippage tolerance' message
+        was shown for EVERY failed fill regardless of cause — including a
+        stretch where the true reason was margin exhaustion
+        (canceled-margin-not-allowed), not slippage at all. Falls back to the
+        old generic wording only if the real status can't be determined."""
+        try:
+            orders, _cursor, err = await self.get_inactive_orders(limit=5)
+            if not err and orders:
+                same_market = [o for o in orders if getattr(o, "market_index", None) == market_index]
+                if same_market:
+                    latest = max(same_market, key=lambda o: getattr(o, "timestamp", 0))
+                    status = getattr(latest, "status", None)
+                    if status and status != "filled":
+                        return (f"order rejected by exchange: status={status} "
+                                f"(intended {base_amount}, actual change {actual_filled})")
+        except Exception:
+            pass
+        return (f"order accepted but did not fill as expected "
+                f"(intended {base_amount}, actual change {actual_filled}) — "
+                f"likely price moved past the slippage tolerance before matching")
 
     async def cancel_order(self, symbol: str, order_index: int):
         market_index = MARKET_INDEX.get(symbol)
@@ -273,14 +321,25 @@ class LighterClient:
             return False, f"Requested {leverage}x exceeds {symbol}'s live max of {max_lev}x"
 
         try:
-            fraction = 10_000 // leverage
-            tx = await _call(
-                self.signer.sign_update_leverage,
+            # sign_update_leverage() ONLY SIGNS the tx — it never submits it,
+            # so the leverage change was never actually applied on-chain.
+            # update_leverage() does sign + send_tx (confirmed by reading the
+            # SDK source directly) and is the one that actually changes
+            # anything. Found live: BTC/XRP positions were still sitting at
+            # whatever leverage they'd always been at (20x/15x) while every
+            # set_leverage() call kept reporting success and the bot's own
+            # position-sizing math assumed the configured 50x/20x — a real
+            # mismatch between assumed and actual margin usage, not just a
+            # display bug.
+            tx_info, api_response, error = await _call(
+                self.signer.update_leverage,
                 market_index=market_index,
-                fraction=fraction,
                 margin_mode=self.signer.ISOLATED_MARGIN_MODE,
+                leverage=leverage,
             )
-            return True, tx
+            if error is not None:
+                return False, error
+            return True, api_response
         except Exception as e:
             # Exchange rejected the leverage tier (too high for this market/risk bracket).
             return False, str(e)
@@ -288,13 +347,22 @@ class LighterClient:
     # ── Orders ─────────────────────────────────────────────────────────────
     async def place_market_order_with_sl_tp(self, symbol: str, is_ask: bool,
                                               base_amount: float, ref_price: float,
-                                              sl_price: float, tp_price: float):
+                                              sl_price: float, tp_price: float,
+                                              size_before_hint: float = None):
         """
         is_ask=False -> BUY (long), is_ask=True -> SELL (short)
         Places a market entry via create_market_order, then attaches OCO
         stop-loss/take-profit via create_grouped_orders. Every step is
         independently error-checked; if SL/TP attachment fails, the position
         is flattened immediately rather than left unprotected.
+
+        size_before_hint: if the caller already fetched positions moments
+        earlier in the same locked section (e.g. manual_trade's duplicate-
+        position check, or run_tick's fresh-position re-check before opening),
+        pass that known size here to skip a redundant get_open_positions()
+        call — cuts a full network round-trip off every trade with no loss
+        of accuracy, since nothing can trade on this symbol between that
+        fetch and this call (same trade lock held the whole time).
         """
         if self.client_check_error:
             return False, f"Client not properly initialized: {self.client_check_error}"
@@ -308,7 +376,7 @@ class LighterClient:
             return False, f"base_amount {base_amount} below exchange minimum {min_base} for {symbol}"
 
         notional = base_amount * ref_price
-        if notional < MIN_NOTIONAL_USD:
+        if notional < MIN_NOTIONAL_USD - 0.01:  # tolerance for float rounding (e.g. $9.99998 is really $10)
             return False, f"notional ${notional:.2f} below exchange minimum ${MIN_NOTIONAL_USD}"
 
         size_dec  = SIZE_DECIMALS.get(symbol, 4)
@@ -323,6 +391,20 @@ class LighterClient:
         slippage_pct = 1.0
         entry_limit_price = ref_price * (1 + slippage_pct/100) if not is_ask else ref_price * (1 - slippage_pct/100)
         entry_limit_price_i = to_scaled_int(entry_limit_price, price_dec)
+
+        # Same fill-verification as add_to_position_market: an IOC order can
+        # be accepted on-chain (code=200, no error) while filling ZERO if it
+        # can't cross the book within our slippage tolerance — confirmed live
+        # to otherwise let the bot think a position exists (and here, worse,
+        # go on to attach a real SL/TP bracket) when nothing actually traded.
+        if size_before_hint is not None:
+            size_before = size_before_hint
+        else:
+            before_positions, before_err = await self.get_open_positions()
+            size_before = 0.0
+            if not before_err:
+                existing = next((p for p in before_positions if getattr(p, "symbol", None) == symbol), None)
+                size_before = signed_position_size(existing) if existing is not None else 0.0
 
         try:
             entry_client_order_index = int(time.time() * 1000) % 1_000_000
@@ -339,13 +421,138 @@ class LighterClient:
         except Exception as e:
             return False, f"entry order exception: {e}"
 
-        ok, result = await self.attach_sl_tp(symbol, is_ask, sl_price, tp_price,
-                                              client_order_seed=entry_client_order_index)
+        # Same propagation-lag handling as add_to_position_market — a single
+        # instant re-check is not reliable, poll with backoff first.
+        actual_filled = 0.0
+        for attempt, delay in enumerate((0, 0.5, 1.0, 2.0)):
+            if delay:
+                await asyncio.sleep(delay)
+            after_positions, after_err = await self.get_open_positions()
+            if after_err:
+                continue
+            existing_after = next((p for p in after_positions if getattr(p, "symbol", None) == symbol), None)
+            size_after = signed_position_size(existing_after) if existing_after is not None else 0.0
+            actual_filled = abs(size_after - size_before)
+            if actual_filled >= base_amount * 0.5:
+                break
+        if actual_filled < base_amount * 0.5:
+            return False, await self._describe_fill_failure(market_index, base_amount, actual_filled)
+
+        # A handful of quick retries absorbs transient failures (network
+        # blip, rate limit, momentary RPC error) without leaving the position
+        # unprotected for long — each attempt needs a FRESH seed since
+        # attach_sl_tp derives its two order IDs from it (seed+1/seed+2),
+        # and reusing a failed attempt's seed would collide with those IDs.
+        # If every attempt fails, flatten immediately rather than keep
+        # retrying indefinitely with a real position sitting naked.
+        ok, result = False, None
+        for attempt in range(3):
+            retry_seed = int(time.time() * 1000 + attempt) % 1_000_000
+            ok, result = await self.attach_sl_tp(symbol, is_ask, sl_price, tp_price,
+                                                  client_order_seed=retry_seed)
+            if ok:
+                break
+            if attempt < 2:
+                await asyncio.sleep(0.5)
         if not ok:
-            # SL/TP failed to attach — flatten the now-unprotected position immediately.
+            # SL/TP failed to attach after 3 attempts — flatten the now-unprotected position immediately.
             await self.close_position_market(symbol, is_ask=not is_ask, base_amount=base_amount, ref_price=ref_price)
-            return False, f"SL/TP attach failed, position flattened: {result}"
+            return False, f"SL/TP attach failed after 3 attempts, position flattened: {result}"
         return True, {"entry": entry_hash, "oco": result}
+
+    async def add_to_position_market(self, symbol: str, is_ask: bool, base_amount: float, ref_price: float):
+        """Increases an ALREADY-OPEN position via another market entry in the
+        SAME direction — used when max_positions_per_symbol > 1 lets an agent
+        stack onto a symbol it already holds. Deliberately does NOT touch the
+        existing SL/TP orders: they were placed with BaseAmount=0, meaning
+        "close whatever the position size is at trigger time" (confirmed via
+        the SDK's own create_position_tied_sl_tp.py example) — so they
+        automatically cover the new, larger combined position with no
+        modification needed. The original SL/TP price levels stay as they
+        were; this only adds size, not a new bracket."""
+        if self.client_check_error:
+            return False, f"Client not properly initialized: {self.client_check_error}"
+
+        market_index = MARKET_INDEX.get(symbol)
+        if market_index is None:
+            return False, f"Unknown symbol {symbol}"
+
+        min_base = MIN_BASE_AMOUNT.get(symbol, 0)
+        if base_amount < min_base:
+            return False, f"base_amount {base_amount} below exchange minimum {min_base} for {symbol}"
+
+        notional = base_amount * ref_price
+        if notional < MIN_NOTIONAL_USD - 0.01:  # tolerance for float rounding (e.g. $9.99998 is really $10)
+            return False, f"notional ${notional:.2f} below exchange minimum ${MIN_NOTIONAL_USD}"
+
+        size_dec = SIZE_DECIMALS.get(symbol, 4)
+        price_dec = PRICE_DECIMALS.get(symbol, 2)
+        amount_i = to_scaled_int(base_amount, size_dec)
+
+        slippage_pct = 1.0
+        entry_limit_price = ref_price * (1 + slippage_pct/100) if not is_ask else ref_price * (1 - slippage_pct/100)
+        entry_limit_price_i = to_scaled_int(entry_limit_price, price_dec)
+
+        # A market order can be accepted on-chain (code=200, no error) while
+        # actually filling ZERO — an IOC order that can't cross the book
+        # within our slippage tolerance just expires unmatched, which the
+        # chain treats as a valid outcome, not an error. Confirmed live: this
+        # was causing the bot to "successfully open" a position that never
+        # actually existed, over and over, every ~30s, with the resting
+        # SL/TP catastrophe-safety logic never even engaging because there
+        # was nothing real to protect. Comparing position size before/after
+        # is the only reliable way to know whether anything actually traded.
+        before_positions, before_err = await self.get_open_positions()
+        size_before = 0.0
+        if not before_err:
+            existing = next((p for p in before_positions if getattr(p, "symbol", None) == symbol), None)
+            size_before = signed_position_size(existing) if existing is not None else 0.0
+
+        try:
+            entry_client_order_index = int(time.time() * 1000) % 1_000_000
+            entry_tx, entry_hash, err = await _call(
+                self.signer.create_market_order,
+                market_index=market_index,
+                client_order_index=entry_client_order_index,
+                base_amount=amount_i,
+                avg_execution_price=entry_limit_price_i,
+                is_ask=is_ask,
+            )
+            if err:
+                return False, f"add-to-position entry failed: {err}"
+        except Exception as e:
+            return False, f"add-to-position entry exception: {e}"
+
+        # Lighter's own position-state can lag the transaction's real on-chain
+        # execution by anywhere from under a second to tens of seconds —
+        # confirmed live: a fill that genuinely happened was read as "zero
+        # change" on the FIRST immediate re-check, only to show up as a real,
+        # unprotected position a full 30+ seconds later once the safety net
+        # (check_for_unprotected_positions) caught it. A single instant
+        # re-check is not reliable — poll with backoff before concluding the
+        # order truly didn't fill, so a genuine fill isn't mistaken for a
+        # failure (which would otherwise skip attaching real protection).
+        actual_filled = 0.0
+        for attempt, delay in enumerate((0, 0.5, 1.0, 2.0)):
+            if delay:
+                await asyncio.sleep(delay)
+            after_positions, after_err = await self.get_open_positions()
+            if after_err:
+                continue
+            existing_after = next((p for p in after_positions if getattr(p, "symbol", None) == symbol), None)
+            size_after = signed_position_size(existing_after) if existing_after is not None else 0.0
+            actual_filled = abs(size_after - size_before)
+            if actual_filled >= base_amount * 0.5:
+                break
+
+        # Require at least half the intended size to have actually traded —
+        # a full-precision exact match isn't realistic (rounding, tiny
+        # partial fills), but near-zero fill after all retries means the
+        # order genuinely expired unmatched and nothing real happened.
+        if actual_filled < base_amount * 0.5:
+            return False, await self._describe_fill_failure(market_index, base_amount, actual_filled)
+
+        return True, {"entry": entry_hash, "filled": actual_filled}
 
     async def attach_sl_tp(self, symbol: str, is_ask: bool, sl_price: float, tp_price: float,
                             client_order_seed: int = None):
@@ -405,7 +612,90 @@ class LighterClient:
                 grouping_type=self.signer.GROUPING_TYPE_ONE_CANCELS_THE_OTHER,
                 orders=[tp_order, sl_order],
             )
+            # create_grouped_orders returns (None, None, error_str) on failure —
+            # this was previously never checked, so a failed OCO attach (e.g.
+            # "OrderExpiry is invalid") was silently reported as ok=True,
+            # leaving a real position open with zero SL/TP protection and
+            # never triggering the caller's flatten-on-failure safety net.
+            if isinstance(oco_tx, tuple) and len(oco_tx) >= 3 and oco_tx[2]:
+                return False, oco_tx[2]
             return True, oco_tx
+        except Exception as e:
+            return False, str(e)
+
+    async def attach_catastrophic_sl(self, symbol: str, is_ask: bool, sl_price: float,
+                                       client_order_seed: int = None):
+        """Places a SINGLE wide stop-loss-limit order with no paired take-profit
+        — used only as the safety-net backstop for 'interval_check' exit mode,
+        where the real (tight) trailing SL/TP is tracked in the bot's own
+        memory and checked/closed manually each tick instead of resting on
+        the exchange (matching comp11's polling behavior). This one order is
+        the only real protection against a crash that blows past the
+        in-memory SL faster than the bot's next check can react. BaseAmount=0
+        = close whatever the position size is at trigger time, same semantics
+        as attach_sl_tp's bracket orders."""
+        market_index = MARKET_INDEX.get(symbol)
+        if market_index is None:
+            return False, f"Unknown symbol {symbol}"
+        price_dec = PRICE_DECIMALS.get(symbol, 2)
+        seed = client_order_seed if client_order_seed is not None else int(time.time() * 1000) % 1_000_000
+
+        close_is_ask = not is_ask
+        fill_buffer_pct = 0.5
+        sl_fill_price = sl_price * (1 - fill_buffer_pct/100) if close_is_ask else sl_price * (1 + fill_buffer_pct/100)
+
+        try:
+            order, resp, err = await _call(
+                self.signer.create_sl_limit_order,
+                market_index=market_index,
+                client_order_index=seed % 1_000_000,
+                base_amount=0,
+                trigger_price=to_scaled_int(sl_price, price_dec),
+                price=to_scaled_int(sl_fill_price, price_dec),
+                is_ask=close_is_ask,
+                reduce_only=True,
+            )
+            if err:
+                return False, err
+            return True, resp
+        except Exception as e:
+            return False, str(e)
+
+    async def attach_real_tp(self, symbol: str, is_ask: bool, tp_price: float,
+                               client_order_seed: int = None):
+        """Places a SINGLE take-profit-limit order with no paired stop-loss —
+        the 'interval_check' exit mode's optional counterpart to
+        attach_catastrophic_sl: lets a user put the TAKE-PROFIT side back on
+        the exchange (watched continuously, fires the instant price touches
+        it) while the STOP-LOSS side stays purely in-memory/polled. There's
+        no downside-risk reason to keep TP in-memory — catching a good exit
+        early is never a problem the way an unprotected SL gap is.
+        BaseAmount=0 = close whatever the position size is at trigger time,
+        same semantics as attach_sl_tp's bracket orders."""
+        market_index = MARKET_INDEX.get(symbol)
+        if market_index is None:
+            return False, f"Unknown symbol {symbol}"
+        price_dec = PRICE_DECIMALS.get(symbol, 2)
+        seed = client_order_seed if client_order_seed is not None else int(time.time() * 1000) % 1_000_000
+
+        close_is_ask = not is_ask
+        fill_buffer_pct = 0.5
+        tp_fill_price = tp_price * (1 - fill_buffer_pct/100) if close_is_ask else tp_price * (1 + fill_buffer_pct/100)
+
+        try:
+            order, resp, err = await _call(
+                self.signer.create_tp_limit_order,
+                market_index=market_index,
+                client_order_index=seed % 1_000_000,
+                base_amount=0,
+                trigger_price=to_scaled_int(tp_price, price_dec),
+                price=to_scaled_int(tp_fill_price, price_dec),
+                is_ask=close_is_ask,
+                reduce_only=True,
+            )
+            if err:
+                return False, err
+            return True, resp
         except Exception as e:
             return False, str(e)
 

@@ -3,12 +3,13 @@
 <head>
 <meta charset="UTF-8">
 <title>LighterBot</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <style>
   * { box-sizing: border-box; }
   body {
     background: #0a0e14; color: #e6edf3;
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-    margin: 0; padding: 24px 32px 60px; max-width: 980px; margin-inline: auto;
+    margin: 0; padding: 24px 32px 60px; max-width: 1176px; margin-inline: auto;
   }
   h1 { font-size: 20px; display:flex; align-items:center; gap:10px; margin: 0 0 4px; }
   h1 .dot { width:9px; height:9px; border-radius:50%; background:#f85149; }
@@ -49,12 +50,41 @@
   .field-group { display:flex; flex-direction:column; gap:4px; }
   .row { display:flex; gap:14px; align-items:flex-end; flex-wrap:wrap; }
 
-  .agent-card {
-    border:1px solid #21262d; border-radius:10px; padding:14px 16px; margin-bottom:10px;
-    display:flex; align-items:center; justify-content:space-between; gap:14px; flex-wrap:wrap;
-    background:#0d1117;
+  .agents-grid { display:grid; grid-template-columns: 1fr 1fr; gap:16px; }
+  @media (max-width:760px){ .agents-grid { grid-template-columns: 1fr; } }
+  .leader-card {
+    background:#0d1117; border:1px solid #21262d; border-radius:12px;
+    padding:20px; position:relative; overflow:hidden; cursor:pointer; transition:border-color .15s;
   }
-  .agent-name { font-weight:600; font-size:14px; }
+  .leader-card:hover { border-color:#3fb950; }
+  .leader-card .color-bar { position:absolute; left:0; top:0; bottom:0; width:3px; }
+  .leader-card .agent-head { display:flex; align-items:center; gap:10px; margin-bottom:14px; }
+  .agent-emoji { font-size:28px; }
+  .leader-card .agent-name { font-size:15px; font-weight:700; }
+  .agent-strat { font-size:10px; letter-spacing:1px; color:#7d8590; text-transform:uppercase; }
+  .agent-pnl { font-size:26px; font-weight:900; margin-bottom:2px; font-variant-numeric:tabular-nums; }
+  .agent-pnl.up { color:#3fb950; } .agent-pnl.down { color:#f85149; }
+  .agent-sub { font-size:12px; color:#7d8590; margin-bottom:14px; }
+  .leader-card .agent-stats { display:grid; grid-template-columns:1fr 1fr; gap:6px; }
+  .leader-card .stat-item { background:#161b22; border-radius:6px; padding:7px 10px; }
+  .leader-card .stat-label { font-size:9px; letter-spacing:1px; text-transform:uppercase; color:#7d8590; }
+  .leader-card .stat-val { font-size:14px; font-weight:700; margin-top:2px; }
+  .open-positions { margin-top:12px; }
+  .open-pos-item {
+    display:flex; align-items:center; justify-content:space-between; gap:8px;
+    background:#161b22; border-radius:6px; padding:6px 10px; margin-bottom:5px; font-size:12px;
+  }
+  .open-pos-item .side-long  { color:#3fb950; font-weight:700; }
+  .open-pos-item .side-short { color:#f85149; font-weight:700; }
+  .open-pos-item .upnl.pos   { color:#3fb950; }
+  .open-pos-item .upnl.neg   { color:#f85149; }
+  .agent-controls { display:flex; align-items:center; justify-content:space-between; gap:10px; margin-top:14px; padding-top:14px; border-top:1px solid #1a1f27; }
+  .settings-row {
+    display:flex; align-items:center; justify-content:space-between; gap:14px; flex-wrap:wrap;
+    border:1px solid #21262d; border-radius:10px; padding:12px 16px; margin-bottom:10px; background:#0d1117;
+  }
+  .settings-row .name { font-weight:600; font-size:14px; display:flex; align-items:center; gap:8px; }
+  .settings-row .detail { font-size:12px; color:#7d8590; }
   .agent-desc { font-size:12px; color:#7d8590; margin-top:2px; }
   .toggle { position:relative; width:40px; height:22px; }
   .toggle input { opacity:0; width:0; height:0; }
@@ -112,6 +142,31 @@
   .modal .error { color:#f85149; font-size:12px; min-height:16px; margin-bottom:8px; }
   .modal .actions { display:flex; gap:8px; margin-top:6px; }
   .modal .actions button { flex:1; padding:10px; font-size:13px; }
+
+  .agent-modal-overlay { display:none; position:fixed; inset:0; background:rgba(1,4,9,.85); z-index:1001; align-items:center; justify-content:center; }
+  .agent-modal-overlay.open { display:flex; }
+  .agent-modal-box { background:#0d1117; border:1px solid #30363d; border-radius:14px; width:95%; max-width:900px; max-height:90vh; display:flex; flex-direction:column; overflow:hidden; }
+  .agent-modal-hdr { padding:18px 22px; border-bottom:1px solid #21262d; display:flex; justify-content:space-between; align-items:center; }
+  .agent-modal-hdr h2 { font-size:18px; font-weight:800; margin:0; }
+  .agent-modal-body { overflow-y:auto; flex:1; padding:20px; }
+  .modal-stats-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(140px,1fr)); gap:10px; margin-bottom:20px; }
+  .modal-stat { background:#161b22; border-radius:8px; padding:12px 14px; }
+  .modal-stat .lbl { font-size:9px; letter-spacing:1px; text-transform:uppercase; color:#7d8590; }
+  .modal-stat .val { font-size:20px; font-weight:800; margin-top:4px; }
+  .modal-chart-wrap { background:#161b22; border-radius:8px; padding:16px; margin-bottom:16px; }
+  .modal-chart-title { font-size:10px; letter-spacing:2px; text-transform:uppercase; color:#bb77ff; margin-bottom:10px; }
+  .modal-chart-wrap canvas { max-height:200px; }
+  .modal-trades-tbl { width:100%; border-collapse:collapse; font-size:11px; margin-top:10px; }
+  .modal-trades-tbl th { padding:8px 10px; text-align:left; font-size:9px; letter-spacing:1px; text-transform:uppercase; color:#7d8590; border-bottom:1px solid #21262d; background:#0a0e14; }
+  .modal-trades-tbl td { padding:8px 10px; border-bottom:1px solid #161b22; }
+  .modal-trades-tbl tr:hover td { background:#161b22; }
+
+  #toast-container { position:fixed; bottom:20px; right:20px; z-index:2000; display:flex; flex-direction:column; gap:8px; align-items:flex-end; }
+  .toast { display:flex; align-items:center; gap:8px; padding:12px 16px; border-radius:8px; background:#161b22; border:1px solid #30363d; box-shadow:0 4px 16px rgba(0,0,0,.4); font-size:13px; color:#e6edf3; max-width:360px; opacity:0; transform:translateX(20px); transition:opacity .2s, transform .2s; }
+  .toast.show { opacity:1; transform:translateX(0); }
+  .toast.success { border-color:#3fb950; }
+  .toast.error { border-color:#f85149; }
+  .toast .toast-icon { flex-shrink:0; }
 </style>
 </head>
 <body>
@@ -130,6 +185,10 @@
       <div class="label">Status</div>
       <div class="value"><span id="running-badge" class="badge off">STOPPED</span></div>
     </div>
+    <div class="stat">
+      <div class="label">Uptime</div>
+      <div class="value" id="uptime" style="font-size:16px;">--</div>
+    </div>
     <div class="btns">
       <button class="primary" onclick="startBot()">Start</button>
       <button class="danger" onclick="stopBot()">Stop</button>
@@ -141,13 +200,34 @@
 </div>
 
 <div class="card">
+  <h3>Exchange Platform</h3>
+  <div style="display:flex; align-items:center; gap:14px; flex-wrap:wrap;">
+    <select id="platform-select" onchange="switchPlatform(this.value)" style="background:#0d1117; color:#e6edf3; border:1px solid #30363d; border-radius:6px; padding:6px 10px; font-size:14px;">
+      <option value="lighter">Lighter</option>
+      <option value="binance">Binance</option>
+    </select>
+    <span id="platform-status" style="font-size:12px; color:#7d8590;"></span>
+  </div>
+  <div style="font-size:11px; color:#5c6773; margin-top:8px;">
+    Which exchange executes real orders. Requires the bot to be stopped before switching.
+    Binance needs BINANCE_API_KEY/BINANCE_API_SECRET set in the server's .env file first —
+    add those via SSH, they're never entered here for security.
+  </div>
+</div>
+
+<div class="card">
   <h3>Agents</h3>
-  <div id="agents"></div>
+  <div id="agents" class="agents-grid"></div>
+</div>
+
+<div class="card">
+  <h3>&#9881; Agent Settings <span style="font-weight:400; color:#7d8590; text-transform:none; letter-spacing:0;">(allocated balances must not exceed total account balance)</span></h3>
+  <div id="agent-settings-list"></div>
 </div>
 
 <div class="grid">
   <div class="card">
-    <h3>Position Sizing</h3>
+    <h3>Manual Trade Sizing <span style="font-weight:400; color:#7d8590; text-transform:none; letter-spacing:0;">(default, when Margin $ is left blank)</span></h3>
     <div class="row">
       <div class="field-group">
         <label class="field">Mode</label>
@@ -168,6 +248,13 @@
     <div class="stat-row" style="margin-bottom:0;">
       <h3 style="margin:0;">Leverage per Symbol</h3>
       <button class="ghost" id="refresh-lev-btn" onclick="refreshMaxLeverage()" title="Refresh max leverage from Lighter">⟳</button>
+    </div>
+    <div class="row" style="margin-top:12px;">
+      <div class="field-group">
+        <label class="field" title="Fills every symbol with this value, then clamps each one down to its own live max — e.g. entering 100 sets BTC to its max (e.g. 50x) and SOL to its own lower max, automatically.">Set All To</label>
+        <input id="leverage-set-all-input" type="number" step="1" style="width:90px">
+      </div>
+      <button class="ghost" onclick="setAllLeverage()">Apply to All</button>
     </div>
     <div class="lev-grid" id="leverage-row" style="margin-top:14px;"></div>
     <div style="margin-top:12px"><button onclick="saveLeverage()">Save Leverage</button></div>
@@ -197,12 +284,27 @@
       <input id="m-leverage" type="number" step="1" placeholder="uses configured" style="width:110px">
     </div>
     <div class="field-group">
+      <label class="field">SL/TP Mode</label>
+      <select id="m-sltp-mode" onchange="toggleSlTpMode()" style="width:110px">
+        <option value="pct">Percentage</option>
+        <option value="price">Exact Price</option>
+      </select>
+    </div>
+    <div class="field-group" id="m-sl-pct-group">
       <label class="field">SL %</label>
       <input id="m-sl" type="number" step="0.1" value="1.5" style="width:70px">
     </div>
-    <div class="field-group">
+    <div class="field-group" id="m-tp-pct-group">
       <label class="field">TP %</label>
       <input id="m-tp" type="number" step="0.1" value="3.0" style="width:70px">
+    </div>
+    <div class="field-group" id="m-sl-price-group" style="display:none;">
+      <label class="field">SL Price</label>
+      <input id="m-sl-price" type="number" step="any" placeholder="exact price" style="width:100px">
+    </div>
+    <div class="field-group" id="m-tp-price-group" style="display:none;">
+      <label class="field">TP Price</label>
+      <input id="m-tp-price" type="number" step="any" placeholder="exact price" style="width:100px">
     </div>
     <button class="danger" onclick="manualTrade()">Place Real Trade</button>
   </div>
@@ -211,16 +313,16 @@
 <div class="card">
   <h3>Open Positions <span style="font-weight:400; color:#7d8590; text-transform:none; letter-spacing:0;">(live from Lighter)</span></h3>
   <table id="positions">
-    <thead><tr><th>Agent</th><th>Symbol</th><th>Side</th><th>Size</th><th>Entry</th><th>SL</th><th>TP</th><th>Value</th><th>Unrealized P&amp;L</th><th>Protected</th><th></th></tr></thead>
-    <tbody><tr class="empty-row"><td colspan="11">No open positions</td></tr></tbody>
+    <thead><tr><th>Agent</th><th>Symbol</th><th>Side</th><th>Size</th><th>Entry</th><th>SL</th><th>TP</th><th>Value</th><th>Unrealized P&amp;L</th><th>Duration</th><th>Protected</th><th></th></tr></thead>
+    <tbody><tr class="empty-row"><td colspan="12">No open positions</td></tr></tbody>
   </table>
 </div>
 
 <div class="card">
   <div class="stat-row" style="margin-bottom:12px;">
-    <h3 style="margin:0;">Trade History <span style="font-weight:400; color:#7d8590; text-transform:none; letter-spacing:0;">(live from Lighter)</span></h3>
+    <h3 style="margin:0;">Trade History <span style="font-weight:400; color:#7d8590; text-transform:none; letter-spacing:0;">(saved to our database, validated from Lighter)</span></h3>
     <div style="display:flex; gap:10px; align-items:center;">
-      <select id="trades-per-page" onchange="renderTradesPage()" style="width:auto;">
+      <select id="trades-per-page" onchange="tradesPage=0; fetchTrades();" style="width:auto;">
         <option value="10">10 / page</option>
         <option value="25" selected>25 / page</option>
         <option value="50">50 / page</option>
@@ -229,14 +331,28 @@
     </div>
   </div>
   <table id="trades">
-    <thead><tr><th>#</th><th>Agent</th><th>Pair</th><th>Side</th><th>Entry</th><th>Exit</th><th>Result</th><th>PNL</th><th>Opened</th><th>Closed</th></tr></thead>
-    <tbody><tr class="empty-row"><td colspan="10">No trades yet</td></tr></tbody>
+    <thead><tr><th>#</th><th>Agent</th><th>Pair</th><th>Side</th><th>Entry</th><th>Exit</th><th>Result</th><th>PNL</th><th>Fee</th><th>Net PNL</th><th>Duration</th><th>Opened</th><th>Closed</th></tr></thead>
+    <tbody><tr class="empty-row"><td colspan="13">No trades yet</td></tr></tbody>
   </table>
   <div class="stat-row" style="margin-top:12px; justify-content:center; gap:14px;">
-    <button class="ghost" onclick="tradesPage=Math.max(0,tradesPage-1); renderTradesPage();">&laquo; Prev</button>
+    <button class="ghost" onclick="tradesPage=Math.max(0,tradesPage-1); fetchTrades();">&laquo; Prev</button>
     <span id="trades-page-label" style="font-size:13px; color:#7d8590;"></span>
-    <button class="ghost" onclick="tradesPage++; renderTradesPage();">Next &raquo;</button>
+    <button class="ghost" onclick="tradesPage++; fetchTrades();">Next &raquo;</button>
   </div>
+</div>
+
+<div class="card">
+  <div class="stat-row" style="margin-bottom:12px;">
+    <h3 style="margin:0;">&#9888; Critical Errors <span style="font-weight:400; color:#7d8590; text-transform:none; letter-spacing:0;">(permanent record — failed entries, failed SL/TP attachment, failed trailing)</span></h3>
+    <div style="display:flex; gap:8px;">
+      <button class="ghost" onclick="fetchCriticalErrors()">&#8635; Refresh</button>
+      <button class="ghost" onclick="clearCriticalErrors()">&#128465; Clear</button>
+    </div>
+  </div>
+  <table id="critical-errors">
+    <thead><tr><th>Time</th><th>Category</th><th>Agent</th><th>Symbol</th><th>Details</th></tr></thead>
+    <tbody><tr class="empty-row"><td colspan="5">No critical errors recorded</td></tr></tbody>
+  </table>
 </div>
 
 <div class="card">
@@ -247,7 +363,7 @@
   <div id="log"></div>
 </div>
 
-<div class="modal-backdrop" id="pwd-modal" style="display:none">
+<div class="modal-backdrop" id="pwd-modal" style="display:none; z-index:1010">
   <div class="modal">
     <div class="icon">🔒</div>
     <h2>Unlock Dashboard</h2>
@@ -261,7 +377,9 @@
   </div>
 </div>
 
-<div class="modal-backdrop" id="info-modal" style="display:none">
+<div id="toast-container"></div>
+
+<div class="modal-backdrop" id="info-modal" style="display:none; z-index:1010">
   <div class="modal">
     <div class="icon" id="info-icon">ℹ️</div>
     <h2 id="info-title">Notice</h2>
@@ -272,11 +390,398 @@
   </div>
 </div>
 
+<div class="modal-backdrop" id="agent-settings-modal" style="display:none">
+  <div class="modal" style="width:380px;">
+    <div class="icon" id="as-icon">⚙️</div>
+    <h2 id="as-title">Agent Settings</h2>
+
+    <div style="display:flex; gap:8px; margin-bottom:14px;">
+      <button class="ghost" style="flex:1;" onclick="resetAgentStats(editingAgentName)">&#8635; Reset Stats</button>
+      <button class="ghost" style="flex:1;" onclick="confirmResetAgentDefaults()">&#8634; Reset to Defaults</button>
+    </div>
+
+    <div class="tabs" style="display:flex; gap:4px; margin:10px 0 14px; border-bottom:1px solid #30363d;">
+      <button type="button" id="as-tab-balance-btn" class="ghost" onclick="switchAgentSettingsTab('balance')"
+              style="flex:1; border-radius:6px 6px 0 0;">💰 Balance</button>
+      <button type="button" id="as-tab-trailing-btn" class="ghost" onclick="switchAgentSettingsTab('trailing')"
+              style="flex:1; border-radius:6px 6px 0 0;">📐 Trailing</button>
+      <button type="button" id="as-tab-risk-btn" class="ghost" onclick="switchAgentSettingsTab('risk')"
+              style="flex:1; border-radius:6px 6px 0 0;">🛡 Risk</button>
+      <button type="button" id="as-tab-exit-btn" class="ghost" onclick="switchAgentSettingsTab('exit')"
+              style="flex:1; border-radius:6px 6px 0 0;">⏱ Exit Style</button>
+    </div>
+
+    <div id="as-tab-balance">
+      <p id="eb-sub" style="font-size:12px;"></p>
+      <label class="field" style="margin-top:8px; display:block;">Start Balance $</label>
+      <input type="number" id="eb-balance" step="1" onchange="if(this.max && +this.value>+this.max) this.value=this.max;">
+      <label class="field" style="margin-top:8px; display:block;">Sizing Mode</label>
+      <select id="eb-mode" onchange="renderEditBalanceValue()" style="width:100%; margin-bottom:8px;">
+        <option value="percent">% of agent balance</option>
+        <option value="fixed">Fixed USD</option>
+      </select>
+      <label class="field" id="eb-value-label" style="display:block;">Value</label>
+      <input type="number" id="eb-value" step="0.1">
+      <div class="error" id="eb-error"></div>
+    </div>
+
+    <div id="as-tab-risk" style="display:none;">
+      <label class="field" style="display:block;" title="Max different coins THIS agent can hold positions on at once — a per-agent budget, not shared with other agents.">Max Open Positions</label>
+      <input type="number" id="risk-max-open" step="1" min="1">
+      <label class="field" style="margin-top:8px; display:block;" title="How many times this agent may add to its own already-open position on the same coin (same direction) before a new signal on that coin is skipped.">Max Positions per Symbol</label>
+      <input type="number" id="risk-max-per-symbol" step="1" min="1">
+      <div class="error" id="risk-error"></div>
+    </div>
+
+    <div id="as-tab-trailing" style="display:none;">
+      <p style="font-size:12px; color:#7d8590; margin-bottom:14px;">How far the stop-loss trails behind price, and how far the take-profit target sits.</p>
+
+      <div id="tr-atr-fields">
+        <label class="field" style="display:block;">ATR Stop-Loss Multiplier</label>
+        <input type="number" id="tr-atr-sl" step="0.1" min="0.1">
+        <label class="field" style="margin-top:8px; display:block;">ATR Take-Profit Multiplier</label>
+        <input type="number" id="tr-atr-tp" step="0.1" min="0.1">
+      </div>
+
+      <div id="tr-fixed-pct-fields" style="display:none;">
+        <label class="field" style="display:block;" title="Fixed percentage distance from entry price — does not use ATR/volatility at all, matches this agent's original tested design">Stop-Loss %</label>
+        <input type="number" id="tr-sl-pct" step="0.1" min="0.1">
+        <label class="field" style="margin-top:8px; display:block;">Take-Profit %</label>
+        <input type="number" id="tr-tp-pct" step="0.1" min="0.1">
+      </div>
+
+      <div id="tr-parabolic-fields" style="display:none;">
+        <label class="field" style="margin-top:8px; display:block;" title="How fast the trailing stop starts tightening — 0.02 = 2% of the remaining gap per step">SAR Start (acceleration factor)</label>
+        <input type="number" id="tr-sar-start" step="0.01" min="0.01" max="1">
+        <label class="field" style="margin-top:8px; display:block;" title="How much faster it accelerates each time price makes a new favorable extreme">SAR Step (per new extreme)</label>
+        <input type="number" id="tr-sar-step" step="0.01" min="0.01" max="1">
+        <label class="field" style="margin-top:8px; display:block;" title="The fastest the trailing stop can ever tighten — lower = more room for normal price noise before getting stopped out">SAR Max (acceleration cap)</label>
+        <input type="number" id="tr-sar-max" step="0.01" min="0.01" max="1">
+      </div>
+
+      <div id="tr-supertrend-fields" style="display:none;">
+        <label class="field" style="margin-top:8px; display:block;">Supertrend Period</label>
+        <input type="number" id="tr-st-period" step="1" min="2">
+        <label class="field" style="margin-top:8px; display:block;">Supertrend Multiplier</label>
+        <input type="number" id="tr-st-mult" step="0.1" min="0.1">
+      </div>
+
+      <div id="tr-keltner-fields" style="display:none;">
+        <label class="field" style="margin-top:8px; display:block;">Keltner Period</label>
+        <input type="number" id="tr-keltner-period" step="1" min="2">
+        <label class="field" style="margin-top:8px; display:block;">Keltner Multiplier</label>
+        <input type="number" id="tr-keltner-mult" step="0.1" min="0.1">
+      </div>
+
+      <div class="error" id="tr-error"></div>
+    </div>
+
+    <div id="as-tab-exit" style="display:none;">
+      <label class="field" style="display:block;">SL/TP Mode</label>
+      <div style="display:flex; gap:6px; align-items:center;">
+        <select id="ex-mode" onchange="renderExitStyleFields()" style="flex:1;">
+          <option value="continuous">Continuous (resting orders)</option>
+          <option value="interval_check">Interval Check (matches comp11)</option>
+        </select>
+        <button type="button" class="ghost" style="padding:4px 10px;" onclick="showExitModeInfo()" title="What does this mean?">ℹ️</button>
+      </div>
+
+      <div id="ex-interval-fields" style="display:none; margin-top:10px;">
+        <label class="field" style="display:block;" title="How often (in seconds) the bot checks price against the tight SL/TP and closes if crossed — same idea as comp11's own polling cadence.">Check Interval (seconds)</label>
+        <input type="number" id="ex-interval" step="1" min="1">
+
+        <label id="ex-sl-on-exchange-label" style="margin-top:10px; display:flex; align-items:center; gap:8px; cursor:pointer;">
+          <input type="checkbox" id="ex-sl-on-exchange" onchange="renderExitStyleFields()" style="width:16px; height:16px;">
+          <span>Stop-Loss on Exchange (real resting SL at the normal tight level, not a wide backstop)</span>
+        </label>
+
+        <div id="ex-catastrophic-block">
+          <label id="ex-catastrophic-label" style="margin-top:10px; display:flex; align-items:center; gap:8px; cursor:pointer;">
+            <input type="checkbox" id="ex-catastrophic-enabled" onchange="renderExitStyleFields()" style="width:16px; height:16px;">
+            <span>Catastrophic Safety-Net (real wide stop-loss backstop)</span>
+          </label>
+
+          <div id="ex-catastrophic-pct-wrap" style="margin-top:8px;">
+            <label class="field" style="display:block;" title="How far from entry the real backstop stop-loss sits — should basically never trigger under normal conditions, only on a crash that outruns the interval check.">Catastrophic Distance (%)</label>
+            <input type="number" id="ex-catastrophic-pct" step="0.5" min="0.5">
+          </div>
+        </div>
+        <p id="ex-sl-on-exchange-note" style="display:none; font-size:12px; color:#7d8590; margin-top:8px;">
+          Catastrophic Safety-Net is redundant with Stop-Loss on Exchange enabled — the real tight SL already provides continuous protection, so it's skipped.
+        </p>
+
+        <label style="margin-top:10px; display:flex; align-items:center; gap:8px; cursor:pointer;">
+          <input type="checkbox" id="ex-tp-on-exchange" style="width:16px; height:16px;">
+          <span>Take-Profit on Exchange (real resting TP, watched continuously)</span>
+        </label>
+      </div>
+
+      <div class="error" id="ex-error"></div>
+    </div>
+
+    <div class="actions">
+      <button class="ghost" onclick="closeAgentSettingsModal()">Cancel</button>
+      <button class="primary" id="as-save-btn" onclick="submitAgentSettingsTab()">Save</button>
+    </div>
+  </div>
+</div>
+
+<div class="agent-modal-overlay" id="agent-modal" onclick="if(event.target===this)closeAgentModal()">
+  <div class="agent-modal-box">
+    <div class="agent-modal-hdr">
+      <h2 id="modal-agent-title">Agent</h2>
+      <button class="modal-close" onclick="closeAgentModal()" style="background:none;border:none;color:#7d8590;font-size:24px;cursor:pointer;">&times;</button>
+    </div>
+    <div class="agent-modal-body">
+      <div class="modal-stats-grid" id="modal-stats"></div>
+      <div class="modal-chart-wrap">
+        <div class="modal-chart-title">Cumulative PnL</div>
+        <canvas id="modal-equity-chart"></canvas>
+      </div>
+      <div class="modal-chart-wrap">
+        <div class="modal-chart-title">Daily PnL</div>
+        <canvas id="modal-daily-chart"></canvas>
+      </div>
+      <div class="modal-chart-title" style="margin-top:16px;margin-bottom:8px">Trade History</div>
+      <table class="modal-trades-tbl">
+        <thead><tr><th>#</th><th>Pair</th><th>Side</th><th>Result</th><th>PnL</th><th>Duration</th><th>Closed</th></tr></thead>
+        <tbody id="modal-trades-body"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
 <script>
 let pwd = sessionStorage.getItem('lb_pwd') || '';
 let currentConfig = null;
-let allTrades = [];
+let agentTradesCache = {};  // agent name -> its trades, from /agent-trades/{name} (MongoDB-backed)
 let tradesPage = 0;
+let currentOpenPositions = [];
+let agentRealizedPnl = {};
+
+// paperStats: a SNAPSHOT taken 2026-08-04 from the live, continuously-running
+// paper comps -- these drift day to day since those simulators never stop
+// trading. Shown as "last checked" reference data, not a live-synced feed.
+const AGENT_META = {
+  // 'Liquidity Hunt' (comp9/comp10's ATR-trailing version) removed from the
+  // config/agents — it was losing in both source comps. See 'The Liquidity
+  // Hunt' below for the profitable comp2 version. Left commented here (not
+  // deleted from history) in case AGENT_META is ever consulted for old
+  // trade-log entries still referencing the old name.
+  'Surgeon v2':     { emoji: '🧠', color: '#bb77ff', strategy: 'RSI reversal',        timeframe: '15m',
+                       atrSl: 1.5, atrTp: 3.0, exitLabel: 'Trail', exitMode: 'atr_trail', origin: 'comp9',
+                       paperStats: 'comp9: +140.3% (+$1,402.82), 605 trades, max 3 at once · comp10: +162.6% (+$1,625.68), 737 trades, max 8 at once' },
+  'Momentum':       { emoji: '🚀', color: '#FF1493', strategy: 'MACD momentum',       timeframe: '15m',
+                       atrSl: 2.0, atrTp: 4.0, exitLabel: 'SAR', exitMode: 'parabolic', origin: 'comp11',
+                       paperStats: 'comp11: +628.7% (+$6,286.68), 7,939 trades, max 15 at once — but lost money in comp6/comp10, treat this size with caution' },
+  'The Structure':  { emoji: '🏗️', color: '#a855f7', strategy: 'Break of Structure',  timeframe: '1h',
+                       atrSl: 2.5, atrTp: 5.0, exitLabel: 'Supertrend', exitMode: 'supertrend', origin: 'comp11',
+                       paperStats: 'comp11: +62.6% (+$626.32), 282 trades, max 13 at once' },
+  'Mean Reversion': { emoji: '🔄', color: '#FF8C00', strategy: 'BB fade',             timeframe: '15m',
+                       atrSl: 1.5, atrTp: 3.0, exitLabel: 'Keltner', exitMode: 'keltner_exit', origin: 'comp11',
+                       paperStats: 'comp11: +314.1% (+$3,140.51), 2,360 trades, max 17 at once' },
+  'The Surgeon v2': { emoji: '🧠', color: '#00e5a0', strategy: 'RSI cross reversal',  timeframe: '15m',
+                       atrSl: 1.5, atrTp: 3.0, exitLabel: 'Chandelier', exitMode: 'chandelier', origin: 'comp11',
+                       paperStats: 'comp11: +193.4% (+$1,934.21), 1,622 trades, max 12 at once — different signal from "Surgeon v2" above despite the similar name' },
+  'The Liquidity Hunt': { emoji: '🎯', color: '#00e5a0', strategy: 'Stop sweep reversal (fixed SL/TP)', timeframe: '1h',
+                       atrSl: 1.5, atrTp: 3.0, exitLabel: 'Fixed 1.2%/2.4%', exitMode: 'fixed_pct', origin: 'comp2',
+                       paperStats: 'comp2: +105.0% (+$1,050.01), 124 trades, max 3 at once — same entry signal as "Liquidity Hunt" above, fixed SL/TP instead of ATR trailing' },
+  'The Mean Reversion': { emoji: '🔄', color: '#00e5a0', strategy: 'BB fade + RSI/volume/candle filter (fixed SL/TP)', timeframe: '15m',
+                       atrSl: 1.5, atrTp: 3.0, exitLabel: 'Fixed 2.5%/2.5%', exitMode: 'fixed_pct', origin: 'comp6',
+                       paperStats: 'comp6 (unlimited): +125.0% (+$1,250.05), 142 trades, max 10 at once — profitable in ALL 7 comps tested (comp2 +43.8%, comp3 +37.5%, comp4 +25.0%, comp5 +87.5%, comp9 +75.9%, comp10 +72.4%), stricter/lower-frequency filter than "Mean Reversion" above' },
+};
+const DIR_COLOR = {LONG: '#3fb950', SHORT: '#f85149', BOTH: '#7d8590'};
+
+function computeAgentStats(name) {
+  const resetAt = currentConfig?.agents?.[name]?.stats_reset_at || 0;
+  // Server-side (/agent-trades/{name}) already filters by stats_reset_at —
+  // this is just a defensive re-check in case the cache is momentarily stale.
+  const trades = (agentTradesCache[name] || []).filter(t => t.closed_at > resetAt).sort((a,b) => a.closed_at - b.closed_at);
+  const wins = trades.filter(t => t.result === 'WIN');
+  const losses = trades.filter(t => t.result === 'LOSS');
+  const pnl = trades.reduce((s,t) => s + t.pnl, 0);
+  const win_rate = trades.length ? Math.round(wins.length/trades.length*1000)/10 : 0;
+  const avg_win = wins.length ? wins.reduce((s,t)=>s+t.pnl,0)/wins.length : 0;
+  const avg_loss = losses.length ? losses.reduce((s,t)=>s+t.pnl,0)/losses.length : 0;
+  const avg_duration_min = trades.length ? Math.round(trades.reduce((s,t)=>s+(t.closed_at-t.opened_at),0)/trades.length/60) : 0;
+
+  const longT = trades.filter(t=>t.side==='LONG'), shortT = trades.filter(t=>t.side==='SHORT');
+  const win_rate_long = longT.length ? Math.round(longT.filter(t=>t.result==='WIN').length/longT.length*1000)/10 : 0;
+  const win_rate_short = shortT.length ? Math.round(shortT.filter(t=>t.result==='WIN').length/shortT.length*1000)/10 : 0;
+
+  let running = 0, peak = 0, maxDD = 0;
+  const equity_curve = [];
+  for (const t of trades) {
+    running += t.pnl;
+    equity_curve.push(running);
+    peak = Math.max(peak, running);
+    maxDD = Math.max(maxDD, peak - running);
+  }
+  const max_drawdown_pct = peak > 0 ? Math.round(maxDD/peak*1000)/10 : 0;
+
+  const dailyMap = {};
+  for (const t of trades) {
+    const day = new Date(t.closed_at*1000).toLocaleDateString();
+    dailyMap[day] = (dailyMap[day]||0) + t.pnl;
+  }
+  const daily_pnl = Object.entries(dailyMap).map(([date,pnl])=>({date,pnl}));
+
+  const open_count = currentOpenPositions.filter(p => p.agent === name).length;
+
+  // Working (compounding) balance = start_balance + this agent's own
+  // cumulative realized PnL. Uses the backend's authoritative running total
+  // (agentRealizedPnl, from engine.sync_realized_pnl) — NOT the `pnl` above,
+  // which is only summed over the /trades endpoint's recent-history window
+  // and would silently understate lifetime PnL once an agent passes ~50
+  // trades. The windowed `pnl` is still fine for the other stats below
+  // (win rate, avg win/loss, charts) — those are historical views, not
+  // money-critical sizing inputs.
+  const start_balance = (currentConfig?.agents?.[name]?.start_balance) || 0;
+  const authoritativePnl = agentRealizedPnl[name] ?? pnl;
+  const balance = start_balance + authoritativePnl;
+  const equity = balance;
+  const return_pct = start_balance > 0 ? Math.round(authoritativePnl / start_balance * 1000) / 10 : 0;
+
+  return { trades, wins, losses, pnl: authoritativePnl, win_rate, avg_win, avg_loss, avg_duration_min,
+           win_rate_long, win_rate_short, total_long: longT.length, total_short: shortT.length,
+           equity_curve, max_drawdown_pct, daily_pnl, open_count, start_balance, balance, equity, return_pct };
+}
+
+function renderAgentCards(agents) {
+  const grid = document.getElementById('agents');
+  grid.innerHTML = Object.entries(agents).map(([name, acfg]) => {
+    const meta = AGENT_META[name] || { emoji:'🤖', color:'#7d8590', strategy: name, timeframe:'', atrSl:1.5, atrTp:3.0, exitLabel:'Trail' };
+    const s = computeAgentStats(name);
+    const cls = s.pnl >= 0 ? 'up' : 'down';
+    const ddColor = s.max_drawdown_pct > 20 ? '#f85149' : s.max_drawdown_pct > 10 ? '#ffaa00' : '#7d8590';
+    const durTxt = s.avg_duration_min >= 60 ? (s.avg_duration_min/60).toFixed(1)+'h' : s.avg_duration_min+'m';
+    const dirLabel = acfg.direction === 'BOTH' ? 'Long & Short' : acfg.direction + ' only';
+    const sizing = acfg.sizing || {mode:'percent', percent:20, fixed_usd:10};
+
+    const openHTML = currentOpenPositions.filter(p => p.agent === name).map(p => {
+      const side = p.size > 0 ? 'LONG' : 'SHORT';
+      const sc = side === 'LONG' ? 'side-long' : 'side-short';
+      const pc = p.unrealized_pnl >= 0 ? 'pos' : 'neg';
+      return `<div class="open-pos-item"><span class="${sc}">${side}</span><span>${p.symbol}</span><span class="upnl ${pc}">${p.unrealized_pnl>=0?'+':''}$${p.unrealized_pnl.toFixed(2)}</span></div>`;
+    }).join('');
+
+    return `<div class="leader-card" onclick="openAgentModal('${name.replace(/'/g,"\\'")}')">
+      <div class="color-bar" style="background:${meta.color}"></div>
+      <div class="agent-head">
+        <span class="agent-emoji">${meta.emoji}</span>
+        <div>
+          <div class="agent-name">${name} <span style="font-weight:800; font-size:11px; color:#3fb950; background:#0d2818; border:1px solid #1a5c34; border-radius:4px; padding:1px 6px; vertical-align:middle;" title="Which paper-trading competition this agent's signal logic was ported from">${meta.origin || ''}</span></div>
+          <div class="agent-strat">${meta.strategy} &middot; ${meta.timeframe} &middot; ${meta.exitMode === 'fixed_pct' ? meta.exitLabel : `ATR ${acfg.trailing?.atr_sl_mult ?? meta.atrSl}&#215;SL / ${acfg.trailing?.atr_tp_mult ?? meta.atrTp}&#215;TP + ${meta.exitLabel}`}</div>
+          ${meta.paperStats ? `<div class="agent-strat" style="margin-top:3px; color:#5c6773;" title="Snapshot from the paper-trading competitions -- drifts day to day, last checked 2026-08-04">📄 ${meta.paperStats}</div>` : ''}
+        </div>
+      </div>
+      <div class="agent-pnl ${cls}">$${s.equity.toFixed(2)}</div>
+      <div class="agent-sub" style="color:${s.return_pct>=0?'#3fb950':'#f85149'}">${s.return_pct>=0?'+':''}${s.return_pct}% &middot; Started $${s.start_balance.toFixed(2)}</div>
+      <div class="agent-stats">
+        <div class="stat-item"><div class="stat-label">Trades</div><div class="stat-val">${s.trades.length}</div></div>
+        <div class="stat-item"><div class="stat-label">Win Rate</div><div class="stat-val">${s.win_rate}%</div></div>
+        <div class="stat-item"><div class="stat-label">Max DD</div><div class="stat-val" style="color:${ddColor}">-${s.max_drawdown_pct}%</div></div>
+        <div class="stat-item"><div class="stat-label">Avg Duration</div><div class="stat-val">${durTxt}</div></div>
+        <div class="stat-item"><div class="stat-label">Open</div><div class="stat-val">${s.open_count}</div></div>
+        <div class="stat-item"><div class="stat-label">Long WR</div><div class="stat-val" style="color:${s.total_long>0?'#3fb950':'#7d8590'}">${s.total_long>0?s.win_rate_long+'%':'—'}</div></div>
+        <div class="stat-item"><div class="stat-label">Short WR</div><div class="stat-val" style="color:${s.total_short>0?'#3fb950':'#7d8590'}">${s.total_short>0?s.win_rate_short+'%':'—'}</div></div>
+      </div>
+      ${openHTML ? `<div class="open-positions">${openHTML}</div>` : ''}
+      <div class="agent-controls" onclick="event.stopPropagation()" style="flex-wrap:wrap;">
+        <select onchange="setDirection('${name}', this.value)">
+          <option value="LONG" ${acfg.direction==='LONG'?'selected':''}>Long only</option>
+          <option value="SHORT" ${acfg.direction==='SHORT'?'selected':''}>Short only</option>
+          <option value="BOTH" ${acfg.direction==='BOTH'?'selected':''}>Both</option>
+        </select>
+        <label class="toggle">
+          <input type="checkbox" ${acfg.enabled?'checked':''} onchange="toggleAgent('${name}', this.checked)">
+          <span class="slider"></span>
+        </label>
+        <span style="font-size:11px; color:${DIR_COLOR[acfg.direction]||'#7d8590'}; font-weight:600;">${dirLabel}</span>
+      </div>
+      <div class="agent-controls" onclick="event.stopPropagation()">
+        <div style="font-size:12px; color:#7d8590;">
+          Start Balance <span style="color:#e6edf3; font-weight:600;">$${acfg.start_balance.toFixed(2)}</span>
+          &middot; ${sizing.mode==='percent' ? sizing.percent+'% of balance' : '$'+sizing.fixed_usd+' fixed'}
+        </div>
+        <button class="ghost" title="Edit in Agent Settings" onclick="openAgentSettingsModal('${name.replace(/'/g,"\\'")}')" style="padding:4px 8px; font-size:13px;">&#9998;</button>
+      </div>
+      <div style="margin-top:10px;font-size:10px;color:#484f58;text-align:center;letter-spacing:1px">CLICK FOR DETAILS</div>
+    </div>`;
+  }).join('');
+}
+
+let modalCharts = {};
+
+async function openAgentModal(name) {
+  const meta = AGENT_META[name] || { emoji:'🤖', color:'#7d8590', strategy: name, timeframe:'', atrSl:1.5, atrTp:3.0, exitLabel:'Trail' };
+  const s = computeAgentStats(name);
+  document.getElementById('modal-agent-title').innerHTML = `${meta.emoji} ${name} <span style="font-weight:800; font-size:11px; color:#3fb950; background:#0d2818; border:1px solid #1a5c34; border-radius:4px; padding:1px 6px; vertical-align:middle;" title="Which paper-trading competition this agent's signal logic was ported from">${meta.origin || ''}</span>`;
+  document.getElementById('modal-agent-title').style.color = meta.color;
+  document.getElementById('agent-modal').classList.add('open');
+
+  const ddColor = s.max_drawdown_pct > 20 ? '#f85149' : s.max_drawdown_pct > 10 ? '#ffaa00' : '#3fb950';
+  const durTxt = s.avg_duration_min >= 60 ? (s.avg_duration_min/60).toFixed(1)+'h' : s.avg_duration_min+'m';
+  document.getElementById('modal-stats').innerHTML = [
+    ['Start Balance', `$${s.start_balance.toFixed(2)}`, '#e6edf3'],
+    ['Equity',       `$${s.equity.toFixed(2)}`, s.equity>=s.start_balance?'#3fb950':'#f85149'],
+    ['Return',       `${s.return_pct>=0?'+':''}${s.return_pct}%`, s.return_pct>=0?'#3fb950':'#f85149'],
+    ['Total PnL',    `${s.pnl>=0?'+':''}$${s.pnl.toFixed(2)}`, s.pnl>=0?'#3fb950':'#f85149'],
+    ['Win Rate',     `${s.win_rate}%`, '#00ccff'],
+    ['Trades',       `${s.wins.length}W / ${s.losses.length}L`, '#e6edf3'],
+    ['Avg Win',      `+$${s.avg_win.toFixed(2)}`, '#3fb950'],
+    ['Avg Loss',     `$${s.avg_loss.toFixed(2)}`, '#f85149'],
+    ['Max Drawdown', `-${s.max_drawdown_pct}%`, ddColor],
+    ['Avg Duration', durTxt, '#bb77ff'],
+    ['Open', `${s.open_count}`, '#e6edf3'],
+    ['Strategy', meta.strategy, '#e6edf3'],
+    ['Timeframe', meta.timeframe, '#e6edf3'],
+    ['SL / TP', meta.exitMode === 'fixed_pct' ? meta.exitLabel : `ATR ${currentConfig?.agents?.[name]?.trailing?.atr_sl_mult ?? meta.atrSl}× / ${currentConfig?.agents?.[name]?.trailing?.atr_tp_mult ?? meta.atrTp}× + ${meta.exitLabel}`, '#e6edf3'],
+  ].map(([l,v,c]) => `<div class="modal-stat"><div class="lbl">${l}</div><div class="val" style="color:${c}">${v}</div></div>`).join('');
+
+  _renderModalChart('modal-equity-chart', {
+    labels: s.equity_curve.map((_,i)=>i+1),
+    datasets: [{label:'Cumulative PnL', data:s.equity_curve, borderColor:meta.color, backgroundColor:'transparent', borderWidth:2, pointRadius:0, tension:0.3}]
+  }, 'line', v => '$'+v.toLocaleString());
+
+  // Precomputed server-side (MongoDB daily_pnl collection, see db.py) —
+  // not re-summed from scratch on every modal open.
+  let dailyPnl = s.daily_pnl;
+  try {
+    const dpRes = await fetch(`/daily-pnl?agent=${encodeURIComponent(name)}`);
+    const dpData = await dpRes.json();
+    if (dpData.daily_pnl) dailyPnl = dpData.daily_pnl;
+  } catch (e) { /* fall back to the client-computed value on a fetch error */ }
+
+  _renderModalChart('modal-daily-chart', {
+    labels: dailyPnl.map(d=>d.date),
+    datasets: [{label:'Daily PnL', data: dailyPnl.map(d=>d.pnl),
+      backgroundColor: dailyPnl.map(d=>d.pnl>=0?'rgba(63,185,80,.5)':'rgba(248,81,73,.5)'),
+      borderColor: dailyPnl.map(d=>d.pnl>=0?'#3fb950':'#f85149'), borderWidth:1}]
+  }, 'bar', v => '$'+v.toLocaleString());
+
+  const trades = [...s.trades].reverse().slice(0,100);
+  document.getElementById('modal-trades-body').innerHTML = trades.length
+    ? trades.map((t,i) => {
+        const pc = t.result==='WIN' ? '#3fb950' : '#f85149';
+        const sc = t.side==='LONG' ? '#3fb950' : '#f85149';
+        const dur = t.opened_at && t.closed_at ? Math.round((t.closed_at-t.opened_at)/60)+'m' : '—';
+        return `<tr><td style="color:#484f58">${i+1}</td><td style="font-weight:700">${t.symbol}</td><td style="color:${sc};font-weight:700">${t.side}</td><td style="color:${pc};font-weight:700">${t.result}</td><td style="color:${pc};font-weight:700">${t.pnl>=0?'+':''}$${t.pnl.toFixed(2)}</td><td style="color:#484f58">${dur}</td><td style="color:#484f58;font-size:10px">${t.closed_at?new Date(t.closed_at*1000).toLocaleString():'—'}</td></tr>`;
+      }).join('')
+    : '<tr><td colspan="7" style="color:#484f58;text-align:center;padding:20px">No closed trades yet</td></tr>';
+}
+
+function _renderModalChart(id, data, type, yCallback) {
+  if (modalCharts[id]) { modalCharts[id].destroy(); delete modalCharts[id]; }
+  const ctx = document.getElementById(id).getContext('2d');
+  modalCharts[id] = new Chart(ctx, {type, data, options: {
+    responsive:true, animation:false,
+    plugins:{legend:{display:false}},
+    scales:{x:{ticks:{color:'#7d8590',maxTicksLimit:8},grid:{color:'#21262d'}},y:{ticks:{color:'#7d8590',callback:yCallback},grid:{color:'#21262d'}}}
+  }});
+}
+
+function closeAgentModal() { document.getElementById('agent-modal').classList.remove('open'); }
 
 // Lightweight useMemo equivalent — only 2 agents and 10 pairs exist, so full
 // DOM rebuilds every 5s poll are wasted work when nothing actually changed.
@@ -324,6 +829,19 @@ document.addEventListener('keydown', e => {
 });
 
 let infoResolve = null;
+
+function showToast(message, type='success') {
+  const container = document.getElementById('toast-container');
+  const el = document.createElement('div');
+  el.className = `toast ${type}`;
+  el.innerHTML = `<span class="toast-icon">${type === 'success' ? '✅' : '⚠️'}</span><span>${message}</span>`;
+  container.appendChild(el);
+  requestAnimationFrame(() => el.classList.add('show'));
+  setTimeout(() => {
+    el.classList.remove('show');
+    setTimeout(() => el.remove(), 250);
+  }, 3000);
+}
 
 function showInfo(title, body, {ok=true, confirm=false} = {}) {
   return new Promise(resolve => {
@@ -378,47 +896,74 @@ function renderSizingValue() {
   }
 }
 
+let platformStatusCache = null;
+
+async function renderPlatformCard(cfg, running) {
+  const sel = document.getElementById('platform-select');
+  const statusEl = document.getElementById('platform-status');
+  const current = cfg.platform || 'lighter';
+  if (document.activeElement !== sel) sel.value = current;  // don't fight the user mid-click
+
+  if (!platformStatusCache) {
+    try {
+      const res = await fetch('/platform-status');
+      platformStatusCache = await res.json();
+    } catch (e) {
+      platformStatusCache = {lighter_configured: true, binance_configured: false};
+    }
+  }
+  const configured = current === 'binance' ? platformStatusCache.binance_configured : platformStatusCache.lighter_configured;
+  const binanceReady = platformStatusCache.binance_configured;
+  statusEl.innerHTML = `Active: <b style="color:${configured ? '#3fb950' : '#f85149'}">${current}</b>` +
+    (current === 'binance' && !configured ? ' <span style="color:#f85149;">(credentials missing in .env!)</span>' : '') +
+    (!binanceReady ? ' &middot; <span style="color:#5c6773;">Binance not configured yet</span>' : '') +
+    (running ? ' &middot; <span style="color:#f85149;">stop the bot to switch</span>' : '');
+  sel.disabled = running;
+}
+
+async function switchPlatform(value) {
+  const proceed = await showInfo(
+    `Switch execution platform to ${value === 'binance' ? 'Binance' : 'Lighter'}?`,
+    value === 'binance'
+      ? 'All future real orders will go through Binance instead of Lighter. Requires BINANCE_API_KEY/BINANCE_API_SECRET already set in .env, and the bot must be stopped.'
+      : 'All future real orders will go through Lighter instead of Binance. The bot must be stopped.',
+    {ok:false, confirm:true}
+  );
+  if (!proceed) { platformStatusCache = null; await refresh(); return; }  // revert the dropdown to the real saved value
+  const res = await authFetch('/config', {method: 'POST', body: JSON.stringify({platform: value})});
+  if (!res) return;
+  const d = await res.json();
+  if (!res.ok || d.error) {
+    showToast(d.error || 'Failed to switch platform', 'error');
+    platformStatusCache = null;
+  } else {
+    showToast(`Platform switched to ${value}`);
+  }
+  await refresh();
+}
+
 async function refresh() {
   const res = await fetch('/state');
   const d = await res.json();
   currentConfig = d.config;
+  await renderPlatformCard(d.config, d.running);
 
   document.getElementById('balance').textContent = d.balance_usd != null ? `$${d.balance_usd.toFixed(2)}` : '—';
   const badge = document.getElementById('running-badge');
   badge.textContent = d.running ? 'RUNNING' : 'STOPPED';
   badge.className = 'badge ' + (d.running ? 'on' : 'off');
   document.getElementById('live-dot').className = 'dot' + (d.running ? ' live' : '');
+  totalBalanceUsd = d.balance_usd;
+  agentRealizedPnl = d.agent_realized_pnl || {};
 
   // Agents (2 fixed) and leverage (10 fixed pairs) rarely change — only on
   // explicit user edits or a max-leverage refresh. Skip rebuilding this DOM
   // every 5s poll when nothing actually changed.
-  memoized('agents', d.config.agents, () => {
-    const agentsDiv = document.getElementById('agents');
-    agentsDiv.innerHTML = '';
-    const dirColor = {LONG: '#3fb950', SHORT: '#f85149', BOTH: '#7d8590'};
-    for (const [name, acfg] of Object.entries(d.config.agents)) {
-      const el = document.createElement('div');
-      el.className = 'agent-card';
-      const dirLabel = acfg.direction === 'BOTH' ? 'Long & Short' : acfg.direction + ' only';
-      el.innerHTML = `
-        <div>
-          <div class="agent-name">${name}</div>
-          <div class="agent-desc" style="color:${dirColor[acfg.direction] || '#7d8590'}; font-weight:600;">${dirLabel}</div>
-        </div>
-        <div style="display:flex; align-items:center; gap:12px;">
-          <select onchange="setDirection('${name}', this.value)">
-            <option value="LONG" ${acfg.direction==='LONG'?'selected':''}>Long only</option>
-            <option value="SHORT" ${acfg.direction==='SHORT'?'selected':''}>Short only</option>
-            <option value="BOTH" ${acfg.direction==='BOTH'?'selected':''}>Both</option>
-          </select>
-          <label class="toggle">
-            <input type="checkbox" ${acfg.enabled?'checked':''} onchange="toggleAgent('${name}', this.checked)">
-            <span class="slider"></span>
-          </label>
-        </div>`;
-      agentsDiv.appendChild(el);
-    }
+  currentOpenPositions = d.open_positions || [];
+  memoized('agents', {agents: d.config.agents, trades: agentTradesCache, positions: currentOpenPositions, realized: agentRealizedPnl}, () => {
+    renderAgentCards(d.config.agents);
   });
+  renderAgentSettingsList(d.config.agents);
 
   document.getElementById('sizing-mode').value = d.config.sizing.mode;
   renderSizingValue();
@@ -446,37 +991,401 @@ async function refresh() {
       ? '<span class="badge on">YES</span>'
       : '<span class="badge off">NO — unprotected!</span>';
     const agentColor = pos.agent === 'Manual' ? '#7d8590' : '#e6edf3';
+    const meta = AGENT_META[pos.agent];
+    const agentIcon = meta ? meta.emoji + ' ' : '';
+    const levTxt = pos.leverage ? ` <span style="color:#7d8590;font-size:11px;">(x${pos.leverage})</span>` : '';
     return `<tr>
-      <td style="color:${agentColor}">${pos.agent}</td>
-      <td>${pos.symbol}</td><td>${side}</td><td>${Math.abs(pos.size)}</td>
+      <td style="color:${agentColor}">${agentIcon}${pos.agent}</td>
+      <td>${pos.symbol}${levTxt}</td><td>${side}</td><td>${Math.abs(pos.size)}</td>
       <td>${pos.avg_entry_price}</td>
       <td>${pos.sl_price != null ? pos.sl_price : '—'}</td>
       <td>${pos.tp_price != null ? pos.tp_price : '—'}</td>
       <td>$${pos.position_value.toFixed(2)}</td>
       <td style="color:${pnlColor}">$${pos.unrealized_pnl.toFixed(4)}</td>
+      <td class="pos-duration" data-opened="${pos.opened_at||''}">--</td>
       <td>${protectedBadge}</td>
       <td><button class="danger" onclick="closePosition('${pos.symbol}')">Close</button></td>
     </tr>`;
-  }).join('') : `<tr class="empty-row"><td colspan="11">No open positions</td></tr>`;
+  }).join('') : `<tr class="empty-row"><td colspan="12">No open positions</td></tr>`;
+  tickTimers();
 
   const log = document.getElementById('log');
   log.innerHTML = d.trade_log.map(l => `<div>${l}</div>`).join('');
   log.scrollTop = log.scrollHeight;
+
+  engineStartedAt = d.started_at || null;
 }
+
+function formatDuration(sec) {
+  sec = Math.max(0, Math.floor(sec));
+  const h = Math.floor(sec / 3600), m = Math.floor((sec % 3600) / 60), s = sec % 60;
+  if (h > 0) return `${h}h ${m}m`;
+  if (m > 0) return `${m}m ${s}s`;
+  return `${s}s`;
+}
+
+let engineStartedAt = null;
+function tickTimers() {
+  const uptimeEl = document.getElementById('uptime');
+  uptimeEl.textContent = engineStartedAt ? formatDuration(Date.now()/1000 - engineStartedAt) : '--';
+  document.querySelectorAll('.pos-duration').forEach(td => {
+    const opened = parseFloat(td.dataset.opened);
+    td.textContent = opened ? formatDuration(Date.now()/1000 - opened) : '—';
+  });
+}
+setInterval(tickTimers, 1000);
 
 async function toggleAgent(name, enabled) {
   await authFetch('/config', {method:'POST', body: JSON.stringify({agents:{[name]:{enabled}}})});
+  showToast(`${name} ${enabled ? 'enabled' : 'disabled'}`);
   refresh();
 }
 async function setDirection(name, direction) {
   await authFetch('/config', {method:'POST', body: JSON.stringify({agents:{[name]:{direction}}})});
+  showToast(`${name} direction set to ${direction}`);
   refresh();
 }
+let totalBalanceUsd = null;
+let editingAgentName = null;
+let editingTrailingAgent = null;
+
+function renderAgentSettingsList(agents) {
+  const container = document.getElementById('agent-settings-list');
+  container.innerHTML = Object.entries(agents).map(([name, acfg]) => {
+    const meta = AGENT_META[name] || { emoji: '🤖' };
+    const sizing = acfg.sizing || {mode:'percent', percent:20, fixed_usd:10};
+    const sizingTxt = sizing.mode === 'percent' ? `${sizing.percent}% of balance` : `$${sizing.fixed_usd} fixed`;
+    return `<div class="settings-row">
+      <div class="name">${meta.emoji} ${name} <span style="font-weight:800; font-size:10px; color:#3fb950; background:#0d2818; border:1px solid #1a5c34; border-radius:4px; padding:1px 5px; vertical-align:middle;" title="Which paper-trading competition this agent's signal logic was ported from">${meta.origin || ''}</span></div>
+      <div class="detail">Start Balance: <span style="color:#e6edf3; font-weight:600;">$${acfg.start_balance.toFixed(2)}</span></div>
+      <div class="detail">Sizing: ${sizingTxt}</div>
+      <button class="ghost" onclick="openAgentSettingsModal('${name.replace(/'/g,"\\'")}')" title="Edit agent settings">&#9998; Edit</button>
+    </div>`;
+  }).join('');
+}
+
+let editingAgentSettingsTab = 'balance';
+
+function openAgentSettingsModal(name) {
+  const acfg = currentConfig?.agents?.[name];
+  const meta = AGENT_META[name];
+  if (!acfg || !meta) return;
+  editingAgentName = name;
+  editingTrailingAgent = name;
+
+  document.getElementById('as-icon').textContent = meta.emoji || '⚙️';
+  document.getElementById('as-title').textContent = `${name} — Agent Settings`;
+
+  // Balance tab fields
+  const sizing = acfg.sizing || {mode:'percent', percent:20, fixed_usd:10};
+  document.getElementById('eb-balance').value = acfg.start_balance;
+  document.getElementById('eb-mode').value = sizing.mode;
+  document.getElementById('eb-value').value = sizing.mode === 'fixed' ? sizing.fixed_usd : sizing.percent;
+  document.getElementById('eb-error').textContent = '';
+  renderEditBalanceValue();
+  updateEditBalanceSub();
+
+  // Trailing tab fields
+  const t = acfg.trailing || {};
+  document.getElementById('tr-atr-sl').value = t.atr_sl_mult ?? meta.atrSl;
+  document.getElementById('tr-atr-tp').value = t.atr_tp_mult ?? meta.atrTp;
+  document.getElementById('tr-sl-pct').value = t.sl_pct ?? 2.5;
+  document.getElementById('tr-tp-pct').value = t.tp_pct ?? 2.5;
+  document.getElementById('tr-error').textContent = '';
+  // fixed_pct agents (The Liquidity Hunt, The Mean Reversion) never use ATR
+  // at all -- show the SL%/TP% fields instead of the meaningless ATR ones.
+  document.getElementById('tr-atr-fields').style.display = meta.exitMode === 'fixed_pct' ? 'none' : 'block';
+  document.getElementById('tr-fixed-pct-fields').style.display = meta.exitMode === 'fixed_pct' ? 'block' : 'none';
+  document.getElementById('tr-parabolic-fields').style.display = meta.exitMode === 'parabolic' ? 'block' : 'none';
+  document.getElementById('tr-supertrend-fields').style.display = meta.exitMode === 'supertrend' ? 'block' : 'none';
+  document.getElementById('tr-keltner-fields').style.display = meta.exitMode === 'keltner_exit' ? 'block' : 'none';
+  if (meta.exitMode === 'parabolic') {
+    document.getElementById('tr-sar-start').value = t.sar_af_start ?? 0.02;
+    document.getElementById('tr-sar-step').value = t.sar_af_step ?? 0.02;
+    document.getElementById('tr-sar-max').value = t.sar_af_max ?? 0.2;
+  } else if (meta.exitMode === 'supertrend') {
+    document.getElementById('tr-st-period').value = t.st_period ?? 10;
+    document.getElementById('tr-st-mult').value = t.st_mult ?? 3.0;
+  } else if (meta.exitMode === 'keltner_exit') {
+    document.getElementById('tr-keltner-period').value = t.keltner_period ?? 20;
+    document.getElementById('tr-keltner-mult').value = t.keltner_mult ?? 1.5;
+  }
+
+  // Risk tab fields
+  document.getElementById('risk-max-open').value = acfg.max_open_positions ?? 9999;
+  document.getElementById('risk-max-per-symbol').value = acfg.max_positions_per_symbol ?? 9999;
+  document.getElementById('risk-error').textContent = '';
+
+  // Exit Style tab fields
+  document.getElementById('ex-mode').value = acfg.sl_tp_mode ?? 'continuous';
+  document.getElementById('ex-interval').value = acfg.interval_check_seconds ?? 10;
+  document.getElementById('ex-catastrophic-enabled').checked = acfg.catastrophic_enabled ?? true;
+  document.getElementById('ex-catastrophic-pct').value = acfg.catastrophic_pct ?? 7.0;
+  document.getElementById('ex-tp-on-exchange').checked = acfg.tp_on_exchange ?? true;
+  document.getElementById('ex-sl-on-exchange').checked = acfg.sl_on_exchange ?? false;
+  document.getElementById('ex-error').textContent = '';
+  renderExitStyleFields();
+
+  switchAgentSettingsTab('balance');
+  document.getElementById('agent-settings-modal').style.display = 'flex';
+}
+function closeAgentSettingsModal() {
+  document.getElementById('agent-settings-modal').style.display = 'none';
+  editingAgentName = null;
+  editingTrailingAgent = null;
+}
+function switchAgentSettingsTab(tab) {
+  editingAgentSettingsTab = tab;
+  document.getElementById('as-tab-balance').style.display = tab === 'balance' ? 'block' : 'none';
+  document.getElementById('as-tab-trailing').style.display = tab === 'trailing' ? 'block' : 'none';
+  document.getElementById('as-tab-risk').style.display = tab === 'risk' ? 'block' : 'none';
+  document.getElementById('as-tab-exit').style.display = tab === 'exit' ? 'block' : 'none';
+  document.getElementById('as-tab-balance-btn').classList.toggle('primary', tab === 'balance');
+  document.getElementById('as-tab-trailing-btn').classList.toggle('primary', tab === 'trailing');
+  document.getElementById('as-tab-risk-btn').classList.toggle('primary', tab === 'risk');
+  document.getElementById('as-tab-exit-btn').classList.toggle('primary', tab === 'exit');
+}
+async function submitAgentSettingsTab() {
+  const errIds = {balance: 'eb-error', trailing: 'tr-error', risk: 'risk-error', exit: 'ex-error'};
+  const errId = errIds[editingAgentSettingsTab];
+  if (editingAgentSettingsTab === 'balance') await submitEditBalance();
+  else if (editingAgentSettingsTab === 'trailing') await submitTrailingSettings();
+  else if (editingAgentSettingsTab === 'risk') await submitRiskSettings();
+  else await submitExitStyleSettings();
+  if (!document.getElementById(errId).textContent) closeAgentSettingsModal();
+}
+function renderExitStyleFields() {
+  const mode = document.getElementById('ex-mode').value;
+  document.getElementById('ex-interval-fields').style.display = mode === 'interval_check' ? 'block' : 'none';
+
+  const slOnExchange = document.getElementById('ex-sl-on-exchange').checked;
+  const catastrophicBlock = document.getElementById('ex-catastrophic-block');
+  const catastrophicEnabledInput = document.getElementById('ex-catastrophic-enabled');
+  if (slOnExchange) {
+    // Redundant once a real tight SL is resting on the exchange — hide and
+    // disable rather than let the user stack a pointless second stop order.
+    catastrophicBlock.style.display = 'none';
+    catastrophicEnabledInput.disabled = true;
+    document.getElementById('ex-sl-on-exchange-note').style.display = 'block';
+  } else {
+    catastrophicBlock.style.display = 'block';
+    catastrophicEnabledInput.disabled = false;
+    document.getElementById('ex-sl-on-exchange-note').style.display = 'none';
+  }
+
+  const catastrophicOn = catastrophicEnabledInput.checked;
+  document.getElementById('ex-catastrophic-pct-wrap').style.display = (catastrophicOn && !slOnExchange) ? 'block' : 'none';
+}
+async function showExitModeInfo() {
+  const mode = document.getElementById('ex-mode').value;
+  if (mode === 'continuous') {
+    await showInfo('Continuous (resting orders)',
+      "Today's default. Real stop-loss/take-profit orders sit on the exchange and are watched continuously — the instant price touches either level, it fires, even for a split second. The trailing stop is updated by modifying that resting order as price moves favorably. Protection never has a gap while the position is open.",
+      {ok:true});
+  } else {
+    await showInfo('Interval Check (matches comp11)',
+      "The tight stop-loss/take-profit is tracked in the bot's own memory instead of resting on the exchange, and checked every N seconds (your Check Interval) against the live price — closing with a real market order the instant it's crossed. This matches how comp11's paper simulation works, including its blind spot: a brief price spike that recovers between two checks won't be caught, and a stop-out is recorded at the exact SL/TP price rather than the real (possibly worse) fill. A wide 'Catastrophic Safety-Net' stop can stay resting on the exchange as a backstop for a crash that outruns the interval check — you can disable it, but then there is zero protection between checks. 'Take-Profit on Exchange' puts the take-profit side back on the exchange as a real resting order (watched continuously) — no downside risk, a free accuracy improvement. 'Stop-Loss on Exchange' does the same for the stop-loss side at its normal tight level (not the wide backstop) — this gives you a real, continuously-watched stop with accurate real fill prices, but gives up the comp11-style tie-break matching that keeping SL in-memory provides. The Catastrophic Safety-Net is automatically skipped when this is on, since a real tight SL already covers that role.",
+      {ok:false});
+  }
+}
+async function confirmResetAgentDefaults() {
+  const name = editingAgentName;
+  if (!name) return;
+  const proceed = await showInfo(
+    `Reset ${name}'s Exit Style to Defaults?`,
+    'This resets SL/TP Mode back to Continuous, Check Interval to 10 seconds, Catastrophic Safety-Net back to ON at 7%, Take-Profit on Exchange back to ON, and Stop-Loss on Exchange back to OFF. Your Start Balance, Sizing, and Trailing settings are NOT affected. Real trades on Lighter are never affected.',
+    {ok:false, confirm:true}
+  );
+  if (!proceed) return;
+  await authFetch('/config', {method:'POST', body: JSON.stringify({
+    agents: {[name]: {
+      sl_tp_mode: 'continuous', interval_check_seconds: 10,
+      catastrophic_enabled: true, catastrophic_pct: 7.0,
+      tp_on_exchange: true, sl_on_exchange: false,
+    }}
+  })});
+  await showInfo('Reset Complete', `${name}'s Exit Style settings are back to their defaults.`, {ok:true});
+  refresh();
+  openAgentSettingsModal(name);
+}
+async function submitExitStyleSettings() {
+  const name = editingAgentName;
+  if (!name) return;
+  const sl_tp_mode = document.getElementById('ex-mode').value;
+  const interval_check_seconds = parseInt(document.getElementById('ex-interval').value);
+  let catastrophic_enabled = document.getElementById('ex-catastrophic-enabled').checked;
+  const catastrophic_pct = parseFloat(document.getElementById('ex-catastrophic-pct').value);
+  const tp_on_exchange = document.getElementById('ex-tp-on-exchange').checked;
+  const sl_on_exchange = document.getElementById('ex-sl-on-exchange').checked;
+
+  if (sl_tp_mode === 'interval_check') {
+    if (!(interval_check_seconds >= 1)) {
+      document.getElementById('ex-error').textContent = 'Check interval must be at least 1 second.';
+      return;
+    }
+    if (sl_on_exchange) {
+      // Real tight SL already provides continuous protection — the wide
+      // backstop is redundant, force it off regardless of the (hidden,
+      // disabled) checkbox's last value so saved config matches the UI.
+      catastrophic_enabled = false;
+    } else {
+      if (catastrophic_enabled && !(catastrophic_pct >= 0.5)) {
+        document.getElementById('ex-error').textContent = 'Catastrophic distance must be at least 0.5%.';
+        return;
+      }
+      if (catastrophic_enabled === false) {
+        const proceed = await showInfo(
+          'Disable Catastrophic Safety-Net?',
+          'With Interval Check mode and the safety-net OFF, this agent has ZERO real protection between checks — a fast price move could run completely unchecked until the next check. This is a real, accepted risk, not a bug. Continue?',
+          {ok:false, confirm:true}
+        );
+        if (!proceed) return;
+      }
+    }
+  }
+
+  await authFetch('/config', {method:'POST', body: JSON.stringify({
+    agents: {[name]: {sl_tp_mode, interval_check_seconds, catastrophic_enabled, catastrophic_pct, tp_on_exchange, sl_on_exchange}}
+  })});
+  showToast(`${name}'s Exit Style settings saved`);
+  refresh();
+}
+async function submitRiskSettings() {
+  const name = editingAgentName;
+  if (!name) return;
+  const max_open_positions = parseInt(document.getElementById('risk-max-open').value);
+  const max_positions_per_symbol = parseInt(document.getElementById('risk-max-per-symbol').value);
+  if (!(max_open_positions >= 1) || !(max_positions_per_symbol >= 1)) {
+    document.getElementById('risk-error').textContent = 'Both values must be whole numbers of at least 1.';
+    return;
+  }
+  await authFetch('/config', {method:'POST', body: JSON.stringify({
+    agents: {[name]: {max_open_positions, max_positions_per_symbol}}
+  })});
+  showToast(`${name}'s Risk settings saved`);
+  refresh();
+}
+function renderEditBalanceValue() {
+  const mode = document.getElementById('eb-mode').value;
+  document.getElementById('eb-value-label').textContent = mode === 'percent' ? 'Percent of balance' : 'Fixed USD margin';
+  updateEditBalanceSub();
+}
+function updateEditBalanceSub() {
+  const balanceInput = document.getElementById('eb-balance');
+  if (totalBalanceUsd == null || !currentConfig) {
+    document.getElementById('eb-sub').textContent = 'Balance unavailable — cannot validate against total account balance right now.';
+    balanceInput.removeAttribute('max');
+    return;
+  }
+  const othersSum = Object.entries(currentConfig.agents)
+    .filter(([n]) => n !== editingAgentName)
+    .reduce((s, [, a]) => s + a.start_balance, 0);
+  const remaining = totalBalanceUsd - othersSum;
+  document.getElementById('eb-sub').textContent =
+    `Account balance: $${totalBalanceUsd.toFixed(2)} · Other agents use $${othersSum.toFixed(2)} · Max for this agent: $${remaining.toFixed(2)}`;
+  // Caps the number input's spinner arrows at the real remaining budget —
+  // typing/pasting above it is still caught by submitEditBalance's own check.
+  balanceInput.max = Math.max(0, remaining);
+}
+async function submitEditBalance() {
+  const name = editingAgentName;
+  if (!name) return;
+  const start_balance = parseFloat(document.getElementById('eb-balance').value) || 0;
+  const mode = document.getElementById('eb-mode').value;
+  const value = parseFloat(document.getElementById('eb-value').value) || 0;
+
+  // Never silently skip this check — if the real account balance couldn't be
+  // fetched (Lighter API error), refuse to save rather than let an unbounded
+  // value through unchecked.
+  if (totalBalanceUsd == null) {
+    document.getElementById('eb-error').textContent =
+      'Cannot validate against account balance right now (balance unavailable) — try again once it loads.';
+    return;
+  }
+  const othersSum = Object.entries(currentConfig.agents)
+    .filter(([n]) => n !== name)
+    .reduce((s, [, a]) => s + a.start_balance, 0);
+  if (othersSum + start_balance > totalBalanceUsd + 1e-9) {
+    document.getElementById('eb-error').textContent =
+      `Total would be $${(othersSum + start_balance).toFixed(2)}, but account balance is only $${totalBalanceUsd.toFixed(2)}. ` +
+      `Max allowed for this agent is $${(totalBalanceUsd - othersSum).toFixed(2)}.`;
+    return;
+  }
+
+  const sizing = mode === 'percent' ? {mode, percent: value, fixed_usd: currentConfig.agents[name].sizing.fixed_usd}
+                                     : {mode, fixed_usd: value, percent: currentConfig.agents[name].sizing.percent};
+  await authFetch('/config', {method:'POST', body: JSON.stringify({agents:{[name]:{start_balance, sizing}}})});
+  showToast(`${name}'s Balance settings saved`);
+  refresh();
+}
+
+async function submitTrailingSettings() {
+  const name = editingTrailingAgent;
+  if (!name) return;
+  const meta = AGENT_META[name];
+
+  let trailing;
+  if (meta.exitMode === 'fixed_pct') {
+    // No ATR involved at all for this agent -- validate/save SL%/TP% instead.
+    const slPct = parseFloat(document.getElementById('tr-sl-pct').value);
+    const tpPct = parseFloat(document.getElementById('tr-tp-pct').value);
+    if (!slPct || slPct <= 0 || !tpPct || tpPct <= 0) {
+      document.getElementById('tr-error').textContent = 'SL%/TP% must be positive numbers.';
+      return;
+    }
+    trailing = {sl_pct: slPct, tp_pct: tpPct};
+  } else {
+    const atrSl = parseFloat(document.getElementById('tr-atr-sl').value);
+    const atrTp = parseFloat(document.getElementById('tr-atr-tp').value);
+    if (!atrSl || atrSl <= 0 || !atrTp || atrTp <= 0) {
+      document.getElementById('tr-error').textContent = 'ATR multipliers must be positive numbers.';
+      return;
+    }
+    trailing = {atr_sl_mult: atrSl, atr_tp_mult: atrTp};
+  }
+
+  if (meta.exitMode === 'parabolic') {
+    const start = parseFloat(document.getElementById('tr-sar-start').value);
+    const step = parseFloat(document.getElementById('tr-sar-step').value);
+    const max = parseFloat(document.getElementById('tr-sar-max').value);
+    if (!(start > 0 && step > 0 && max > 0)) {
+      document.getElementById('tr-error').textContent = 'SAR values must be positive numbers.';
+      return;
+    }
+    if (start > max) {
+      document.getElementById('tr-error').textContent = 'SAR Start cannot be greater than SAR Max.';
+      return;
+    }
+    Object.assign(trailing, {sar_af_start: start, sar_af_step: step, sar_af_max: max});
+  } else if (meta.exitMode === 'supertrend') {
+    const period = parseInt(document.getElementById('tr-st-period').value);
+    const mult = parseFloat(document.getElementById('tr-st-mult').value);
+    if (!(period >= 2 && mult > 0)) {
+      document.getElementById('tr-error').textContent = 'Supertrend period/multiplier must be valid positive numbers.';
+      return;
+    }
+    Object.assign(trailing, {st_period: period, st_mult: mult});
+  } else if (meta.exitMode === 'keltner_exit') {
+    const period = parseInt(document.getElementById('tr-keltner-period').value);
+    const mult = parseFloat(document.getElementById('tr-keltner-mult').value);
+    if (!(period >= 2 && mult > 0)) {
+      document.getElementById('tr-error').textContent = 'Keltner period/multiplier must be valid positive numbers.';
+      return;
+    }
+    Object.assign(trailing, {keltner_period: period, keltner_mult: mult});
+  }
+
+  await authFetch('/config', {method:'POST', body: JSON.stringify({agents:{[name]:{trailing}}})});
+  showToast(`${name}'s Trailing settings saved`);
+  refresh();
+}
+
 async function saveSizing() {
   const mode = document.getElementById('sizing-mode').value;
   const value = parseFloat(document.getElementById('sizing-value').value);
   const payload = mode === 'percent' ? {mode, percent: value} : {mode, fixed_usd: value};
   await authFetch('/config', {method:'POST', body: JSON.stringify({sizing: payload})});
+  showToast('Manual trade sizing saved');
   refresh();
 }
 async function saveLeverage() {
@@ -484,11 +1393,38 @@ async function saveLeverage() {
   document.querySelectorAll('[id^="lev-"]').forEach(el => {
     leverage[el.id.replace('lev-','')] = parseInt(el.value);
   });
-  await authFetch('/config', {method:'POST', body: JSON.stringify({leverage})});
+  const res = await authFetch('/config', {method:'POST', body: JSON.stringify({leverage})});
+  const d = res ? await res.json() : null;
+  const sync = d?.leverage_sync || {};
+  const synced = Object.entries(sync).filter(([,v]) => v.synced).map(([s]) => s);
+  const pending = Object.entries(sync).filter(([,v]) => !v.synced);
+  if (synced.length && !pending.length) {
+    showToast(`Leverage saved and applied immediately: ${synced.join(', ')}`);
+  } else if (synced.length && pending.length) {
+    showToast(`Leverage saved — applied now: ${synced.join(', ')}. Waiting on next trade: ${pending.map(([s])=>s).join(', ')}`);
+  } else if (pending.length) {
+    showToast(`Leverage saved — all changed symbols have open positions, will apply on their next fresh trade: ${pending.map(([s])=>s).join(', ')}`, 'error');
+  } else {
+    showToast('Leverage saved');
+  }
   refresh();
 }
-async function startBot() { await authFetch('/start', {method:'POST'}); refresh(); }
-async function stopBot()  { await authFetch('/stop',  {method:'POST'}); refresh(); }
+function setAllLeverage() {
+  const requested = parseInt(document.getElementById('leverage-set-all-input').value);
+  if (!requested || requested < 1) return;
+  // Fill every symbol with the requested value, clamped down to that
+  // symbol's own live max (already set as the input's max="" attribute) —
+  // e.g. entering 100 sets BTC to its max (50x) and SOL to its own lower
+  // max, each independently. The server clamps again on save regardless,
+  // so this is just for a correct-looking preview before you click Save.
+  document.querySelectorAll('[id^="lev-"]').forEach(el => {
+    if (el.id === 'leverage-set-all-input') return;
+    const max = parseInt(el.max) || requested;
+    el.value = Math.min(requested, max);
+  });
+}
+async function startBot() { await authFetch('/start', {method:'POST'}); showToast('Bot started'); refresh(); }
+async function stopBot()  { await authFetch('/stop',  {method:'POST'}); showToast('Bot stopped'); refresh(); }
 async function selftest() {
   const res = await authFetch('/selftest', {method:'POST'});
   const d = await res.json();
@@ -499,6 +1435,14 @@ async function selftest() {
   );
   refresh();
 }
+function toggleSlTpMode() {
+  const isPrice = document.getElementById('m-sltp-mode').value === 'price';
+  document.getElementById('m-sl-pct-group').style.display = isPrice ? 'none' : '';
+  document.getElementById('m-tp-pct-group').style.display = isPrice ? 'none' : '';
+  document.getElementById('m-sl-price-group').style.display = isPrice ? '' : 'none';
+  document.getElementById('m-tp-price-group').style.display = isPrice ? '' : 'none';
+}
+
 async function manualTrade() {
   const proceed = await showInfo(
     'Place Real Trade?',
@@ -507,16 +1451,29 @@ async function manualTrade() {
   );
   if (!proceed) return;
 
-  const override  = document.getElementById('m-usd').value;
-  const leverage  = document.getElementById('m-leverage').value;
-  const res = await authFetch('/manual-trade', {method:'POST', body: JSON.stringify({
+  const override   = document.getElementById('m-usd').value;
+  const leverage    = document.getElementById('m-leverage').value;
+  const usePrice    = document.getElementById('m-sltp-mode').value === 'price';
+  const body = {
     symbol: document.getElementById('m-symbol').value,
     side: document.getElementById('m-side').value,
     override_usd: override ? parseFloat(override) : null,
     leverage: leverage ? parseInt(leverage) : null,
-    sl_pct: parseFloat(document.getElementById('m-sl').value),
-    tp_pct: parseFloat(document.getElementById('m-tp').value),
-  })});
+  };
+  if (usePrice) {
+    const slPrice = document.getElementById('m-sl-price').value;
+    const tpPrice = document.getElementById('m-tp-price').value;
+    if (!slPrice || !tpPrice) {
+      showToast('Enter both an exact SL price and TP price', 'error');
+      return;
+    }
+    body.sl_price = parseFloat(slPrice);
+    body.tp_price = parseFloat(tpPrice);
+  } else {
+    body.sl_pct = parseFloat(document.getElementById('m-sl').value);
+    body.tp_pct = parseFloat(document.getElementById('m-tp').value);
+  }
+  const res = await authFetch('/manual-trade', {method:'POST', body: JSON.stringify(body)});
   const d = await res.json();
   await showInfo(
     d.ok ? 'Trade Placed' : 'Trade Failed',
@@ -524,6 +1481,8 @@ async function manualTrade() {
     {ok: d.ok}
   );
   refresh();
+  fetchTrades();
+  fetchAgentTrades();
 }
 
 async function closePosition(symbol) {
@@ -537,6 +1496,8 @@ async function closePosition(symbol) {
   const d = await res.json();
   await showInfo(d.ok ? 'Position Closed' : 'Close Failed', d.result, {ok: d.ok});
   refresh();
+  fetchTrades();
+  fetchAgentTrades();
 }
 
 async function closeAll() {
@@ -554,6 +1515,8 @@ async function closeAll() {
     {ok: d.ok}
   );
   refresh();
+  fetchTrades();
+  fetchAgentTrades();
 }
 
 async function emergencyStop() {
@@ -571,6 +1534,8 @@ async function emergencyStop() {
     {ok: d.ok}
   );
   refresh();
+  fetchTrades();
+  fetchAgentTrades();
 }
 
 async function clearLog() {
@@ -581,7 +1546,53 @@ async function clearLog() {
   );
   if (!proceed) return;
   await authFetch('/clear-log', {method:'POST'});
+  showToast('Log cleared');
   refresh();
+}
+
+async function clearCriticalErrors() {
+  const proceed = await showInfo(
+    'Clear Critical Errors?',
+    'This will permanently erase the critical errors record shown below (failed entries, failed SL/TP attachment, failed trailing). This is your only permanent record of past failures — real trades on Lighter are never affected, only this log.',
+    {ok:false, confirm:true}
+  );
+  if (!proceed) return;
+  await authFetch('/clear-errors', {method:'POST'});
+  showToast('Critical errors cleared');
+  fetchCriticalErrors();
+}
+
+async function resetAgentStats(name) {
+  const proceed = await showInfo(
+    `Reset ${name} Stats?`,
+    'This resets Equity/Return/Total PnL/Win Rate/charts for this agent back to a clean slate starting now. Start Balance is kept as-is. Real trades on Lighter are never affected — this only resets what LighterBot displays.',
+    {ok:false, confirm:true}
+  );
+  if (!proceed) return;
+
+  // Always prompt fresh for the password here, even if one is already
+  // cached from earlier — this wipes real tracked PnL/stats, ask every time.
+  const enteredPwd = await openPwdModal();
+  if (!enteredPwd) return;
+
+  const res = await fetch('/reset-agent-stats', {
+    method: 'POST',
+    headers: {'X-Action-Password': enteredPwd, 'Content-Type': 'application/json'},
+    body: JSON.stringify({agent: name}),
+  });
+  if (res.status === 403) {
+    await showInfo('Wrong Password', `${name}'s stats were not reset.`, {ok:false});
+    return;
+  }
+  const d = await res.json();
+  await showInfo(
+    d.ok ? 'Stats Reset' : 'Failed',
+    d.ok ? `${name}'s stats have been reset. The dashboard will refresh now.` : JSON.stringify(d),
+    {ok: d.ok}
+  );
+  refresh();
+  fetchTrades();
+  fetchAgentTrades();
 }
 
 async function clearTradeHistory() {
@@ -612,22 +1623,37 @@ async function clearTradeHistory() {
     {ok: d.ok}
   );
   fetchTrades();
+  fetchAgentTrades();
+}
+
+async function fetchAgentTrades() {
+  // Populates agentTradesCache from MongoDB (via /agent-trades/{name}) — a
+  // single indexed DB query per agent, not a live re-fetch/re-page through
+  // Lighter's API. Used for card/modal stats (win rate, equity curve, etc).
+  if (!currentConfig) return;
+  const names = Object.keys(currentConfig.agents);
+  await Promise.all(names.map(async name => {
+    try {
+      const res = await fetch(`/agent-trades/${encodeURIComponent(name)}`);
+      const d = await res.json();
+      agentTradesCache[name] = d.trades || [];
+    } catch (e) { /* keep last-known cache on a transient fetch error */ }
+  }));
+  renderAgentCards(currentConfig.agents);
 }
 
 async function fetchTrades() {
-  const res = await fetch('/trades');
+  // Real server-side pagination against MongoDB (see db.py / server.py) —
+  // only the current page is ever fetched, not the whole trade history.
+  const perPage = parseInt(document.getElementById('trades-per-page').value) || 25;
+  const res = await fetch(`/trades?page=${tradesPage}&per_page=${perPage}`);
   const d = await res.json();
-  allTrades = d.trades || [];
-  renderTradesPage();
+  renderTradesPage(d.trades || [], d.total || 0, perPage);
 }
 
-function renderTradesPage() {
-  const perPage = parseInt(document.getElementById('trades-per-page').value);
-  const totalPages = Math.max(1, Math.ceil(allTrades.length / perPage));
+function renderTradesPage(pageItems, total, perPage) {
+  const totalPages = Math.max(1, Math.ceil(total / perPage));
   tradesPage = Math.min(Math.max(0, tradesPage), totalPages - 1);
-
-  const start = tradesPage * perPage;
-  const pageItems = allTrades.slice(start, start + perPage);
 
   // Trade history only changes when a trade actually closes — skip rebuilding
   // this table on every fetch if the current page's content is unchanged.
@@ -640,23 +1666,30 @@ function renderTradesPage() {
       const exitColor = t.exit_type === 'TP' ? '#3fb950' : (t.exit_type === 'SL' ? '#f85149' : '#7d8590');
       const opened = t.opened_at ? new Date(t.opened_at * 1000).toLocaleString() : '—';
       const closed = t.closed_at ? new Date(t.closed_at * 1000).toLocaleString() : '—';
+      const duration = (t.opened_at && t.closed_at) ? formatDuration(t.closed_at - t.opened_at) : '—';
+      const levTxt = t.leverage ? ` <span style="color:#7d8590;font-size:11px;">(x${t.leverage})</span>` : '';
+      const meta = AGENT_META[t.agent];
+      const agentIcon = meta ? meta.emoji + ' ' : '';
       return `<tr>
         <td>${t.trade_number}</td>
-        <td style="color:${t.agent === 'Manual' ? '#7d8590' : '#e6edf3'}">${t.agent}</td>
-        <td>${t.symbol}</td>
+        <td style="color:${t.agent === 'Manual' ? '#7d8590' : '#e6edf3'}">${agentIcon}${t.agent}</td>
+        <td>${t.symbol}${levTxt}</td>
         <td style="color:${sideColor}">${t.side}</td>
         <td>${t.entry_price}</td>
         <td>${t.exit_price} <span style="color:${exitColor}; font-size:11px;">(${t.exit_type})</span></td>
         <td style="color:${resultColor}; font-weight:600;">${t.result}</td>
         <td style="color:${pnlColor}">$${t.pnl.toFixed(4)}</td>
+        <td style="color:#7d8590">${t.fee !== undefined ? '$' + t.fee.toFixed(4) : '—'}</td>
+        <td style="color:${(t.net_pnl !== undefined ? t.net_pnl : t.pnl) >= 0 ? '#3fb950' : '#f85149'}">${t.net_pnl !== undefined ? '$' + t.net_pnl.toFixed(4) : '—'}</td>
+        <td>${duration}</td>
         <td>${opened}</td>
         <td>${closed}</td>
       </tr>`;
-    }).join('') : `<tr class="empty-row"><td colspan="10">No trades yet</td></tr>`;
+    }).join('') : `<tr class="empty-row"><td colspan="13">No trades yet</td></tr>`;
   });
 
   document.getElementById('trades-page-label').textContent =
-    allTrades.length ? `Page ${tradesPage+1} of ${totalPages} (${allTrades.length} trades)` : '';
+    total ? `Page ${tradesPage+1} of ${totalPages} (${total} trades)` : '';
 }
 
 async function refreshMaxLeverage() {
@@ -669,14 +1702,39 @@ async function refreshMaxLeverage() {
   btn.disabled = false;
   if (!d.ok) {
     await showInfo('Refresh Failed', d.result, {ok:false});
+  } else {
+    showToast('Max leverage refreshed');
   }
   refresh();
 }
 
+async function fetchCriticalErrors() {
+  const res = await fetch('/errors');
+  const d = await res.json();
+  const errors = d.errors || [];
+  const tbody = document.querySelector('#critical-errors tbody');
+  tbody.innerHTML = errors.length ? errors.map(e => {
+    const time = e.time_iso ? new Date(e.time_iso).toLocaleString() : '—';
+    const {timestamp, time_iso, category, agent, symbol, ...rest} = e;
+    const details = Object.entries(rest).map(([k,v]) => `${k}=${v}`).join('  ');
+    return `<tr>
+      <td style="color:#7d8590; font-size:11px;">${time}</td>
+      <td style="color:#f85149; font-weight:600;">${category || '—'}</td>
+      <td>${agent || '—'}</td>
+      <td>${symbol || '—'}</td>
+      <td style="font-size:11px; color:#e6edf3; word-break:break-word;">${details}</td>
+    </tr>`;
+  }).join('') : '<tr class="empty-row"><td colspan="5">No critical errors recorded</td></tr>';
+}
+
 refresh();
 fetchTrades();
+fetchAgentTrades();
+fetchCriticalErrors();
 setInterval(refresh, 5000);
-setInterval(fetchTrades, 20000);
+setInterval(fetchTrades, 8000);
+setInterval(fetchAgentTrades, 10000);
+setInterval(fetchCriticalErrors, 15000);
 </script>
 </body>
 </html>

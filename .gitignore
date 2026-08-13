@@ -1,3 +1,5 @@
 lighterbot/.env
 lighterbot/lighterbot_state.json
 lighterbot/lighterbot_config.json
+__pycache__/
+*.pyc

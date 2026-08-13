@@ -13,10 +13,10 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from lighterbot import config as cfgmod
 from lighterbot.engine import engine, _load_state
-from lighterbot.lighter_client import MARKET_INDEX, PRICE_DECIMALS, signed_position_size
-
-_SYMBOL_BY_MARKET_INDEX = {v: k for k, v in MARKET_INDEX.items()}
-
+from lighterbot.lighter_client import signed_position_size
+# MARKET_INDEX/PRICE_DECIMALS come from client.MARKET_INDEX/client.PRICE_DECIMALS
+# below (platform-aware), not a flat import — see engine.py's ensure_client().
+from lighterbot import db
 
 def _load_dotenv():
     """Minimal .env loader — avoids adding python-dotenv as a hard dependency."""
@@ -38,6 +38,11 @@ PASSWORD = os.environ.get("LIGHTERBOT_PASSWORD", "BOT2024")
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    try:
+        await db.ensure_indexes()
+    except Exception as e:
+        engine.log(f"MongoDB index setup failed (trade history persistence may be degraded): {e}")
+
     # If the process crashes or the server restarts while trading was
     # active, the saved config still says running=True — without this, the
     # engine would silently stay stopped until someone notices and clicks
@@ -79,6 +84,9 @@ async def state():
         await client.refresh_max_leverage()
         max_leverage = dict(client.max_leverage_cache)
         balance, bal_err = await client.get_balance_usd()
+        await engine.maybe_init_agent_balances()
+        await engine.sync_realized_pnl()
+        cfg = cfgmod.load_config()  # reload — may have just been auto-initialized above
         raw_positions, pos_err = await client.get_open_positions()
 
         # Fetch all active orders once, group by market so SL/TP trigger
@@ -93,14 +101,30 @@ async def state():
             if size == 0:
                 continue
             symbol = getattr(p, "symbol", "?")
-            market_index = MARKET_INDEX.get(symbol)
+            market_index = client.MARKET_INDEX.get(symbol)
             market_orders = orders_by_market.get(market_index, [])
             sl_order = next((o for o in market_orders if getattr(o, "type", "") == "stop-loss-limit"), None)
             tp_order = next((o for o in market_orders if getattr(o, "type", "") == "take-profit-limit"), None)
 
             mapping = st.get("position_agent_map", {}).get(symbol)
             agent_label = mapping["agent"] if mapping else "Manual"
-            price_dec = PRICE_DECIMALS.get(symbol, 4)
+            price_dec = client.PRICE_DECIMALS.get(symbol, 4)
+
+            # Best-effort open time: latest agent_open_log entry for this
+            # symbol (opens are logged, closes aren't, so the newest entry
+            # for a symbol that's still open is the one that opened it).
+            open_log_matches = [e for e in st.get("agent_open_log", []) if e["symbol"] == symbol]
+            opened_at = max((e["opened_at"] for e in open_log_matches), default=None)
+
+            # Prefer the REAL leverage Binance reports for this specific
+            # open position over the current config value — the config can
+            # change after a position opens (e.g. bumping leverage for
+            # future trades), but Binance refuses to change leverage on a
+            # symbol with an open position, so the live position keeps
+            # running at whatever leverage it actually opened with. Showing
+            # the new config value here would misrepresent the real trade.
+            real_leverage = getattr(p, "leverage", None)
+            leverage = real_leverage if real_leverage else cfg.get("leverage", {}).get(symbol, cfg.get("default_leverage"))
 
             live_positions.append({
                 "symbol": symbol,
@@ -113,6 +137,8 @@ async def state():
                 "open_order_count": getattr(p, "open_order_count", 0),
                 "sl_price": round(float(getattr(sl_order, "trigger_price", 0) or 0), price_dec) if sl_order else None,
                 "tp_price": round(float(getattr(tp_order, "trigger_price", 0) or 0), price_dec) if tp_order else None,
+                "opened_at": opened_at,
+                "leverage": leverage,
             })
     except Exception as e:
         bal_err = bal_err or str(e)
@@ -127,121 +153,64 @@ async def state():
         "positions_error": pos_err,
         "last_error": engine.last_error,
         "max_leverage": max_leverage,       # live from Lighter, refreshed every 5 min
+        "started_at": engine.started_at,    # engine process start time, for uptime display
+        # Authoritative, never-windowed per-agent realized PnL (see
+        # engine.sync_realized_pnl) — the dashboard uses THIS for equity/
+        # return%, not a live recompute from the capped /trades list, so
+        # those numbers stay exact no matter how much trade history piles up.
+        "agent_realized_pnl": engine.state.get("agent_realized_pnl", {}),
     })
 
 
-def _find_agent(agent_open_log, symbol, opened_at, tolerance_sec=180):
-    """Best-effort join: find the agent_open_log entry for this symbol whose
-    logged open time is closest to (and within tolerance of) the exchange's
-    actual fill timestamp. Falls back to 'Manual' if nothing matches — this
-    happens for trades placed before this tracking existed, or from outside
-    the bot entirely."""
-    candidates = [e for e in agent_open_log if e["symbol"] == symbol]
-    if not candidates:
-        return "Manual"
-    best = min(candidates, key=lambda e: abs(e["opened_at"] - opened_at))
-    if abs(best["opened_at"] - opened_at) <= tolerance_sec:
-        return best["agent"]
-    return "Manual"
-
-
 @app.get("/trades")
-async def trades():
-    """Real trade history built by pairing entry fills with their exit fills
-    from Lighter's account_inactive_orders — ground truth for prices/timing,
-    not reconstructed from local guesses. PNL is computed from the real
-    entry/exit prices. Agent attribution comes from the bot's own open-log
-    (the exchange has no concept of 'which agent'), matched by nearest
-    timestamp. Frontend paginates client-side over this list."""
+async def trades(page: int = 0, per_page: int = 25, agent: str = None):
+    """Real, validated trade history — served from MongoDB (see db.py), NOT
+    re-fetched from Lighter's API on every call. Each trade is written to the
+    DB exactly once, the moment engine.sync_realized_pnl() first confirms it
+    closed. Real pagination: only the requested page is ever queried, not
+    the whole history sorted/sliced in memory."""
     try:
-        client = await engine.ensure_client()
-        orders, err = await client.get_inactive_orders(limit=100)
-        if err:
-            return JSONResponse({"trades": [], "error": err})
+        cfg = cfgmod.load_config()
+        cutoff = cfg.get("trade_history_cutoff", 0)
+        per_page = max(1, min(per_page, 200))
+        page = max(0, page)
 
-        st = _load_state()
-        agent_open_log = st.get("agent_open_log", [])
+        result, total = await db.get_trades_page(page=page, per_page=per_page, agent=agent, cutoff=cutoff)
 
-        filled = [o for o in orders if getattr(o, "status", "") == "filled"]
-        by_market = {}
-        for o in filled:
-            by_market.setdefault(getattr(o, "market_index", None), []).append(o)
-
-        result = []
-        for market_index, group in by_market.items():
-            group.sort(key=lambda o: getattr(o, "timestamp", 0))
-            symbol = _SYMBOL_BY_MARKET_INDEX.get(market_index, f"market_{market_index}")
-
-            pending_entry = None
-            for o in group:
-                reduce_only = getattr(o, "reduce_only", False)
-                if not reduce_only:
-                    # A new entry — if one was already pending with no exit yet,
-                    # it's superseded (shouldn't normally happen with
-                    # max_open_positions=1, but don't silently drop data).
-                    pending_entry = o
-                    continue
-
-                if pending_entry is None:
-                    continue  # exit with no matching entry in this window — skip
-
-                entry = pending_entry
-                pending_entry = None
-
-                # `price` on a filled market order is the worst-acceptable
-                # slippage-buffer price WE submitted, not the real fill price
-                # (confirmed against Lighter's own trade history UI — differs
-                # by exactly the buffer we apply for guaranteed execution).
-                # The real average fill price is filled_quote/filled_base.
-                def _real_price(order):
-                    amt = float(getattr(order, "filled_base_amount", 0) or 0)
-                    quote = float(getattr(order, "filled_quote_amount", 0) or 0)
-                    return quote / amt if amt else float(getattr(order, "price", 0) or 0)
-
-                side = "LONG" if not getattr(entry, "is_ask", False) else "SHORT"
-                price_dec = PRICE_DECIMALS.get(symbol, 4)
-                entry_price = round(_real_price(entry), price_dec)
-                exit_price  = round(_real_price(o), price_dec)
-                qty = float(getattr(entry, "filled_base_amount", 0) or 0)
-                pnl = qty * (exit_price - entry_price) if side == "LONG" else qty * (entry_price - exit_price)
-
-                exit_type_raw = getattr(o, "type", "")
-                if "take-profit" in exit_type_raw:
-                    exit_label = "TP"
-                elif "stop-loss" in exit_type_raw:
-                    exit_label = "SL"
-                else:
-                    exit_label = "Manual"
-
-                opened_at = getattr(entry, "timestamp", 0)
-                closed_at = getattr(o, "timestamp", 0)
-                agent = _find_agent(agent_open_log, symbol, opened_at)
-
-                result.append({
-                    "agent": agent,
-                    "symbol": symbol,
-                    "side": side,
-                    "entry_price": entry_price,
-                    "exit_price": exit_price,
-                    "exit_type": exit_label,
-                    "result": "WIN" if pnl >= 0 else "LOSS",
-                    "pnl": round(pnl, 4),
-                    "opened_at": opened_at,
-                    "closed_at": closed_at,
-                })
-
-        # Trades at/before the cutoff are hidden from the displayed table (the
-        # real trades still exist on Lighter — this only clears the view).
-        cutoff = cfgmod.load_config().get("trade_history_cutoff", 0)
-        result = [t for t in result if t["closed_at"] > cutoff]
-
-        # Number trades in chronological order (#1 = earliest visible), then
-        # present most-recent-first — trade_number reflects real sequence,
-        # not page position.
-        result.sort(key=lambda t: t["closed_at"])
+        # trade_number reflects true chronological sequence (#1 = earliest
+        # visible) even though this page shows most-recent-first.
         for i, t in enumerate(result):
-            t["trade_number"] = i + 1
-        result.sort(key=lambda t: t["closed_at"], reverse=True)
+            t["trade_number"] = total - (page * per_page + i)
+
+        return JSONResponse({"trades": result, "total": total, "page": page, "per_page": per_page, "error": None})
+    except Exception as e:
+        return JSONResponse({"trades": [], "total": 0, "page": page, "per_page": per_page, "error": str(e)})
+
+
+@app.get("/daily-pnl")
+async def daily_pnl(agent: str = None):
+    """Precomputed per-day PnL aggregates (see db.py) — not recalculated by
+    summing every trade on each request."""
+    try:
+        cfg = cfgmod.load_config()
+        cutoff = cfg.get("trade_history_cutoff", 0)
+        data = await db.get_daily_pnl(agent=agent, cutoff=cutoff)
+        return JSONResponse({"daily_pnl": data, "error": None})
+    except Exception as e:
+        return JSONResponse({"daily_pnl": [], "error": str(e)})
+
+
+@app.get("/agent-trades/{agent_name}")
+async def agent_trades(agent_name: str):
+    """All of one agent's trades, for computing its stats/equity-curve on the
+    dashboard — a single indexed MongoDB query instead of the old approach of
+    re-paging through Lighter's live API on every poll."""
+    try:
+        cfg = cfgmod.load_config()
+        global_cutoff = cfg.get("trade_history_cutoff", 0)
+        agent_cutoff = cfg.get("agents", {}).get(agent_name, {}).get("stats_reset_at", 0)
+        cutoff = max(global_cutoff, agent_cutoff)
+        result = await db.get_agent_trades(agent_name, cutoff=cutoff)
         return JSONResponse({"trades": result, "error": None})
     except Exception as e:
         return JSONResponse({"trades": [], "error": str(e)})
@@ -283,10 +252,22 @@ async def update_config(request: Request, payload: dict):
 
     if "agents" in payload:
         for name, acfg in payload["agents"].items():
-            if name in cfg["agents"]:
-                cfg["agents"][name].update(acfg)
+            if name not in cfg["agents"]:
+                continue
+            # "sizing"/"trailing" are nested dicts — a shallow .update() would
+            # replace the whole sub-dict and silently drop any sibling keys
+            # the caller didn't include (e.g. sending only {"sar_af_max": 0.1}
+            # would wipe sar_af_start/sar_af_step). Merge those one level
+            # deeper; everything else (enabled, direction, start_balance) is
+            # a flat scalar and still gets a plain overwrite.
+            for k, v in acfg.items():
+                if k in ("sizing", "trailing") and isinstance(v, dict) and isinstance(cfg["agents"][name].get(k), dict):
+                    cfg["agents"][name][k].update(v)
+                else:
+                    cfg["agents"][name][k] = v
     if "sizing" in payload:
         cfg["sizing"].update(payload["sizing"])
+    leverage_sync = None
     if "leverage" in payload:
         client = await engine.ensure_client()
         await client.refresh_max_leverage()
@@ -295,15 +276,65 @@ async def update_config(request: Request, payload: dict):
             max_lev = client.get_max_leverage(symbol)
             clamped[symbol] = min(int(requested), max_lev)
         cfg["leverage"].update(clamped)
+
+        # Leverage on the exchange only ever changes at the moment the bot
+        # opens a fresh trade — saving a new value here otherwise just sits
+        # unapplied until the next signal fires on that symbol, which is
+        # confusing (a user changing BNB to 20x sees it still at whatever it
+        # was last set to, with no obvious reason why). Push it immediately
+        # to every symbol that's currently FLAT (no position, no resting
+        # orders) so the change takes effect right away instead of silently
+        # waiting; symbols with an open position/order are left alone since
+        # the exchange always rejects a leverage change there regardless —
+        # those pick up the new value automatically on their next fresh open.
+        positions, pos_err = await client.get_open_positions()
+        held_symbols = set()
+        if not pos_err:
+            held_symbols = {getattr(p, "symbol", None) for p in positions if signed_position_size(p) != 0}
+        leverage_sync = {}
+        for symbol, new_lev in clamped.items():
+            if symbol in held_symbols:
+                leverage_sync[symbol] = {"synced": False, "reason": "position open — will apply on next fresh trade"}
+                continue
+            ok, result = await client.set_leverage(symbol, new_lev)
+            leverage_sync[symbol] = {"synced": ok, "reason": None if ok else str(result)}
+            if not ok:
+                engine.log_critical_error("leverage_sync_failed", symbol=symbol, requested=new_lev, error=str(result))
+
     if "default_leverage" in payload:
         cfg["default_leverage"] = payload["default_leverage"]
-    if "max_open_positions" in payload:
-        cfg["max_open_positions"] = payload["max_open_positions"]
     if "min_notional_usd" in payload:
         cfg["min_notional_usd"] = payload["min_notional_usd"]
 
+    if "platform" in payload:
+        requested = payload["platform"]
+        if requested not in ("lighter", "binance"):
+            return JSONResponse({"error": f"unknown platform '{requested}'"}, status_code=400)
+        # Switching which exchange executes real orders while the bot is
+        # live is exactly the kind of state change that should never happen
+        # silently mid-tick — require a stop first, same principle as not
+        # letting leverage change under an open position.
+        if requested != cfg.get("platform", "lighter") and cfg.get("running"):
+            return JSONResponse({"error": "stop the bot before switching platforms"}, status_code=400)
+        if requested == "binance" and not (os.environ.get("BINANCE_API_KEY") and os.environ.get("BINANCE_API_SECRET")):
+            return JSONResponse({"error": "BINANCE_API_KEY/BINANCE_API_SECRET not set in .env — add them first"}, status_code=400)
+        cfg["platform"] = requested
+        engine.client = None  # force ensure_client() to rebuild against the new platform next tick
+
     cfgmod.save_config(cfg)
-    return {"ok": True, "config": cfg}
+    return {"ok": True, "config": cfg, "leverage_sync": leverage_sync}
+
+
+@app.get("/platform-status")
+async def platform_status():
+    """Lets the dashboard show whether Binance credentials are actually
+    present WITHOUT ever exposing the key/secret values themselves — only a
+    boolean, same boundary as how Lighter's own credentials are never
+    surfaced through any endpoint."""
+    return {
+        "lighter_configured": bool(os.environ.get("LIGHTER_API_PRIVATE_KEY")),
+        "binance_configured": bool(os.environ.get("BINANCE_API_KEY") and os.environ.get("BINANCE_API_SECRET")),
+    }
 
 
 @app.post("/manual-trade")
@@ -315,8 +346,11 @@ async def manual_trade(request: Request, payload: dict):
     leverage     = payload.get("leverage")             # optional leverage override
     sl_pct       = payload.get("sl_pct", 1.5)
     tp_pct       = payload.get("tp_pct", 3.0)
+    sl_price     = payload.get("sl_price")             # exact price, overrides sl_pct if present
+    tp_price     = payload.get("tp_price")             # exact price, overrides tp_pct if present
 
-    ok, result = await engine.manual_trade(symbol, side, override_usd, leverage, sl_pct, tp_pct)
+    ok, result = await engine.manual_trade(symbol, side, override_usd, leverage, sl_pct, tp_pct,
+                                            sl_price_override=sl_price, tp_price_override=tp_price)
     return {"ok": ok, "result": str(result)}
 
 
@@ -324,6 +358,36 @@ async def manual_trade(request: Request, payload: dict):
 async def clear_log(request: Request):
     if not _auth(request): return JSONResponse({"error": "forbidden"}, status_code=403)
     engine.clear_log()
+    return {"ok": True}
+
+
+@app.post("/clear-errors")
+async def clear_errors(request: Request):
+    if not _auth(request): return JSONResponse({"error": "forbidden"}, status_code=403)
+    engine.clear_critical_errors()
+    return {"ok": True}
+
+
+@app.post("/reset-agent-stats")
+async def reset_agent_stats(request: Request, payload: dict):
+    if not _auth(request): return JSONResponse({"error": "forbidden"}, status_code=403)
+    agent = payload.get("agent")
+    cfg = cfgmod.load_config()
+    if not agent or agent not in cfg["agents"]:
+        return JSONResponse({"error": "unknown agent"}, status_code=400)
+
+    import time
+    # Marks the boundary so the dashboard's displayed win rate/avg win-loss/
+    # charts/trade table for this agent also start fresh from now, in sync
+    # with the realized-PnL reset below — real trades on Lighter are
+    # untouched, this only resets what's displayed/tracked for this agent.
+    cfg["agents"][agent]["stats_reset_at"] = time.time()
+    cfgmod.save_config(cfg)
+    engine.reset_agent_stats(agent)
+    try:
+        await db.reset_agent_daily_pnl(agent)
+    except Exception as e:
+        engine.log(f"Could not clear MongoDB daily_pnl for {agent} on reset: {e}")
     return {"ok": True}
 
 
@@ -366,6 +430,19 @@ async def emergency_stop(request: Request):
         return {"ok": False, "result": err}
     all_ok = all(r["ok"] for r in results.values()) if results else True
     return {"ok": all_ok, "result": results}
+
+
+@app.get("/errors")
+async def critical_errors():
+    """Permanent (last 500, not the rotating 300-line trade_log) record of
+    anything that could have left real money at risk — failed entries,
+    failed leverage sets, failed SL/TP attachments, failed trailing modifies.
+    Built after the POL-left-unprotected incident on 2026-07-05, where the
+    actual root cause had already scrolled off the regular trade_log by the
+    time anyone went looking for it."""
+    st = _load_state()
+    errors = list(reversed(st.get("critical_errors", [])))  # most recent first
+    return JSONResponse({"errors": errors})
 
 
 @app.get("/health")
